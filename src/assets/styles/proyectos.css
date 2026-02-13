@@ -1,0 +1,25 @@
+.btn-crear {
+  background: #2563eb;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-crear:hover {
+  background: #1d4ed8;
+}
+
+.btn-eliminar {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-eliminar:hover {
+  background: #b91c1c;
+}

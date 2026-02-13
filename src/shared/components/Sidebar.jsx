@@ -18,6 +18,7 @@ import "./sidebar.css";
 
 export default function Sidebar() {
     const [openTerritorial, setOpenTerritorial] = useState(false);
+    const [openProyectos, setOpenProyectos] = useState(false);
 
     const navigate = useNavigate();
 
@@ -93,18 +94,59 @@ export default function Sidebar() {
                     </div>
                 )}
 
-
                 <div className="menu-item">
                     <Play size={18} />
                     <span>Ejecución</span>
                     <ChevronDown size={16} className="arrow" />
                 </div>
 
-                <div className="menu-item">
+                <div
+                    className="menu-item"
+                    onClick={() => setOpenProyectos(!openProyectos)}
+                >
                     <Folder size={18} />
                     <span>Proyectos</span>
-                    <ChevronDown size={16} className="arrow" />
+                    <ChevronDown
+                        size={16}
+                        className={`arrow ${openProyectos ? "rotate" : ""}`}
+                    />
                 </div>
+
+                {openProyectos && (
+                    <div className="submenu">
+                        <div
+                            className="submenu-item"
+                            onClick={() => navigate("/proyectos")}
+                        >
+                            <Folder size={16} />
+                            Proyectos
+                        </div>
+
+                        <div
+                            className="submenu-item"
+                            onClick={() => navigate("/proyectos/clientes")}
+                        >
+                            <Users size={16} />
+                            Clientes
+                        </div>
+
+                        <div
+                            className="submenu-item"
+                            onClick={() => navigate("/proyectos/catalogo")}
+                        >
+                            <CheckSquare size={16} />
+                            Catalogo Actividades
+                        </div>
+
+                        <div
+                            className="submenu-item"
+                            onClick={() => navigate("/proyectos/precios")}
+                        >
+                            <BarChart3 size={16} />
+                            Precios
+                        </div>
+                    </div>
+                )}
 
                 <div className="menu-item">
                     <Users size={18} />
