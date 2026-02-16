@@ -1,25 +1,357 @@
+/* ================================
+   VARIABLES BASE (ajusta si quieres)
+=================================== */
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --border: #e6e8ef;
+  --text: #0f172a;
+  --muted: #64748b;
+
+  --green: #1f8f57;
+  --green-2: #2bb673;
+  --red: #dc2626;
+
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --radius: 14px;
+}
+
+/* ================================
+   CONTENEDOR GENERAL
+=================================== */
+.proyectos-container {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 22px 24px;
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* ================================
+   HEADER
+=================================== */
+.header-proyectos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 0 18px 0;
+}
+
+.header-proyectos h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* BOTÓN NUEVO */
 .btn-crear {
-  background: #2563eb;
-  color: white;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
+  background: var(--green);
+  color: #fff;
+  border: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 10px 18px rgba(31, 143, 87, 0.18);
+  transition: transform 0.08s ease, background 0.2s ease;
 }
 
 .btn-crear:hover {
-  background: #1d4ed8;
+  background: #19784a;
 }
 
+.btn-crear:active {
+  transform: translateY(1px);
+}
+
+/* ================================
+   MENSAJES
+=================================== */
+.proyectos-container p {
+  margin: 10px 0;
+  color: var(--muted);
+}
+
+/* ================================
+   BLOQUE SUPERIOR: STATS + BUSCADOR (VISUAL)
+   (si luego quieres que existan en JSX, te lo agrego)
+=================================== */
+.proyectos-topbar {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+/* STATS */
+.proyectos-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(31, 143, 87, 0.12);
+  display: grid;
+  place-items: center;
+  color: var(--green);
+  font-weight: 900;
+}
+
+.stat-content span {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.stat-content strong {
+  font-size: 22px;
+  font-weight: 900;
+}
+
+/* BUSCADOR (visual) */
+.proyectos-search {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.proyectos-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.proyectos-search input::placeholder {
+  color: #94a3b8;
+}
+
+/* ================================
+   TABLA MODERNA
+=================================== */
+.proyectos-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+/* CABECERA */
+.proyectos-table thead th {
+  text-align: left;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
+/* FILAS COMO "CARD" */
+.proyectos-table tbody tr {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+}
+
+/* PARA QUE SE NOTE EL RADIO */
+.proyectos-table tbody td {
+  padding: 14px 12px;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+/* esquinas redondeadas (primera/última celda) */
+.proyectos-table tbody tr td:first-child {
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+  font-weight: 800;
+}
+
+.proyectos-table tbody tr td:last-child {
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+
+/* CHIP ESTADO (si deseas usarlo luego) */
+.estado-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.estado-chip.activo {
+  background: rgba(31, 143, 87, 0.12);
+  border-color: rgba(31, 143, 87, 0.25);
+  color: var(--green);
+}
+
+/* BOTÓN ELIMINAR */
 .btn-eliminar {
-  background: #dc2626;
+  background: var(--red);
   color: white;
   border: none;
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 9px 12px;
+  border-radius: 10px;
   cursor: pointer;
+  font-weight: 800;
+  transition: opacity 0.2s ease, transform 0.08s ease;
 }
 
 .btn-eliminar:hover {
-  background: #b91c1c;
+  opacity: 0.92;
+}
+
+.btn-eliminar:active {
+  transform: translateY(1px);
+}
+
+.btn-eliminar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================================
+   MODAL (BASE) (por si no lo tenías)
+=================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 999;
+}
+
+.modal {
+  width: min(720px, calc(100% - 24px));
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+  padding: 18px;
+}
+
+.modal h3 {
+  margin: 0 0 14px 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  font-size: 14px;
+  margin-bottom: 10px;
+  background: #fff;
+}
+
+.modal input:focus,
+.modal select:focus {
+  border-color: rgba(31, 143, 87, 0.55);
+  box-shadow: 0 0 0 4px rgba(31, 143, 87, 0.12);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.modal-buttons button {
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modal-buttons button:first-child {
+  background: var(--green);
+  color: white;
+}
+
+.modal-buttons button:last-child {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* ================================
+   RESPONSIVE
+=================================== */
+@media (max-width: 900px) {
+  .header-proyectos {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-crear {
+    width: 100%;
+  }
+
+  .proyectos-table thead {
+    display: none;
+  }
+
+  .proyectos-table,
+  .proyectos-table tbody,
+  .proyectos-table tr,
+  .proyectos-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .proyectos-table tbody tr {
+    margin-bottom: 12px;
+    border-radius: var(--radius);
+  }
+
+  .proyectos-table tbody td {
+    padding: 10px 12px;
+  }
+
+  .proyectos-table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    font-weight: 900;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
 }
