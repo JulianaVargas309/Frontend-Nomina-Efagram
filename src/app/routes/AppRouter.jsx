@@ -20,9 +20,16 @@ export default function AppRouter() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/" />} />
-      <Route path="/territorial/zonas" element={<ZonasPage />} />
+      <Route
+        path="/territorial/zonas"
+        element={
+          <PrivateRoute>
+            <ZonasPage />
+          </PrivateRoute>
+        }
+      />
 
+      <Route path="*" element={<Navigate to="/" />} />
 
     </Routes>
   );

@@ -41,7 +41,7 @@ export default function Sidebar() {
 
                 <div className="menu-title">General</div>
 
-                <div className="menu-item active">
+                <div className="menu-item active" onClick={() => navigate("/") }>
                     <LayoutDashboard size={18} />
                     <span>Dashboard</span>
                 </div>
