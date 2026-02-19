@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Eye, Pencil, Trash2, Plus, Search, MapPin, X } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, MapPin, X } from 'lucide-react';
 import NuevaZonaModal from './nueva-zona/NuevaZonaModal';
 
-// ── Modal de detalle (integrado aquí, sin archivo aparte) ──────────────────
 function ZonaDetalleModal({ isOpen, zona, onClose }) {
   if (!isOpen || !zona) return null;
 
@@ -18,26 +17,18 @@ function ZonaDetalleModal({ isOpen, zona, onClose }) {
     <>
       <div className="zdm-overlay" onClick={onClose} />
       <div className="zdm-panel" role="dialog" aria-modal="true">
-
-        <button className="zdm-close" onClick={onClose} aria-label="Cerrar">
-          <X size={15} />
-        </button>
-
+        <button className="zdm-close" onClick={onClose} aria-label="Cerrar"><X size={15} /></button>
         <div className="zdm-header">
           <h2 className="zdm-title">Detalle de Zona</h2>
           <p className="zdm-subtitle">Informacion de la zona territorial</p>
         </div>
-
         <div className="zdm-name-card">
-          <div className="zdm-pin-wrap">
-            <MapPin size={20} />
-          </div>
+          <div className="zdm-pin-wrap"><MapPin size={20} /></div>
           <div className="zdm-name-info">
             <span className="zdm-name">{zona?.nombre ?? '-'}</span>
             <span className="zdm-code">{zona?.codigo ?? '-'}</span>
           </div>
         </div>
-
         <div className="zdm-estado-box">
           <span className="zdm-estado-label">Estado</span>
           <span className={isActive ? 'zdm-badge active' : 'zdm-badge inactive'}>
@@ -49,26 +40,12 @@ function ZonaDetalleModal({ isOpen, zona, onClose }) {
   );
 }
 
-// ── Tabla principal ────────────────────────────────────────────────────────
-export default function ZonasTable({
-  zonas = [],
-  search = '',
-  setSearch,
-  onAdd,
-  onUpdate,
-  onDelete,
-}) {
+export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, onUpdate }) {
   const [openCreate, setOpenCreate]   = useState(false);
   const [editZona, setEditZona]       = useState(null);
   const [detalleZona, setDetalleZona] = useState(null);
 
   const getId = (z) => z?._id ?? z?.id;
-
-  const handleDelete = async (id) => {
-    const ok = window.confirm('¿Eliminar esta zona?');
-    if (!ok) return;
-    await onDelete?.(id);
-  };
 
   return (
     <div className="zonas-card">
@@ -97,18 +74,16 @@ export default function ZonasTable({
         <table className="zonas-table-grid">
           <thead>
             <tr>
-              <th className="th-code">Codigo</th>
-              <th className="th-name">Nombre</th>
-              <th className="th-status">Estado</th>
-              <th className="th-actions">Acciones</th>
+              <th style={{ width: '120px' }}>Codigo</th>
+              <th style={{ width: '200px' }}>Nombre</th>
+              <th style={{ width: '160px' }}>Estado</th>
+              <th style={{ width: '140px', textAlign: 'center' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {zonas.length === 0 ? (
               <tr>
-                <td colSpan={4} className="zonas-empty">
-                  No hay zonas para mostrar
-                </td>
+                <td colSpan={4} className="zonas-empty">No hay zonas para mostrar</td>
               </tr>
             ) : (
               zonas.map((z) => {
@@ -143,31 +118,15 @@ export default function ZonasTable({
                         {isActive ? '⊙ Activa' : '⊗ Inactiva'}
                       </span>
                     </td>
-                    <td className="td-actions">
-                      <button
-                        className="icon-btn"
-                        type="button"
-                        title="Ver detalle"
-                        onClick={() => setDetalleZona(z)}
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        className="icon-btn"
-                        type="button"
-                        title="Editar"
-                        onClick={() => setEditZona(z)}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        className="icon-btn danger"
-                        type="button"
-                        title="Eliminar"
-                        onClick={() => handleDelete(id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0 16px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <button className="icon-btn" type="button" title="Ver detalle" onClick={() => setDetalleZona(z)}>
+                          <Eye size={16} />
+                        </button>
+                        <button className="icon-btn" type="button" title="Editar" onClick={() => setEditZona(z)}>
+                          <Pencil size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -177,26 +136,16 @@ export default function ZonasTable({
         </table>
       </div>
 
-      {/* MODAL DETALLE */}
-      <ZonaDetalleModal
-        isOpen={!!detalleZona}
-        zona={detalleZona}
-        onClose={() => setDetalleZona(null)}
-      />
+      <ZonaDetalleModal isOpen={!!detalleZona} zona={detalleZona} onClose={() => setDetalleZona(null)} />
 
-      {/* MODAL CREAR */}
       <NuevaZonaModal
         isOpen={openCreate}
         title="Nueva zona"
         initialValues={{ codigo: '', nombre: '', estado: true }}
         onClose={() => setOpenCreate(false)}
-        onSubmit={async (values) => {
-          await onAdd?.(values);
-          setOpenCreate(false);
-        }}
+        onSubmit={async (values) => { await onAdd?.(values); setOpenCreate(false); }}
       />
 
-      {/* MODAL EDITAR */}
       <NuevaZonaModal
         isOpen={!!editZona}
         title="Editar zona"
@@ -206,11 +155,7 @@ export default function ZonasTable({
           activa: typeof editZona?.activa === 'boolean' ? editZona.activa : true,
         }}
         onClose={() => setEditZona(null)}
-        onSubmit={async (values) => {
-          const id = getId(editZona);
-          await onUpdate?.(id, values);
-          setEditZona(null);
-        }}
+        onSubmit={async (values) => { const id = getId(editZona); await onUpdate?.(id, values); setEditZona(null); }}
       />
     </div>
   );

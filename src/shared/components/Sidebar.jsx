@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     LayoutDashboard,
     BarChart3,
@@ -17,9 +17,18 @@ import {
 import "./sidebar.css";
 
 export default function Sidebar() {
-    const [openTerritorial, setOpenTerritorial] = useState(false);
-
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const isTerritorial = location.pathname.startsWith("/territorial");
+
+    const [openTerritorial, setOpenTerritorial] = useState(isTerritorial);
+
+    useEffect(() => {
+        if (isTerritorial) setOpenTerritorial(true);
+    }, [isTerritorial]);
+
+    const isActive = (path) => location.pathname === path;
 
     return (
         <aside className="sidebar">
@@ -41,7 +50,10 @@ export default function Sidebar() {
 
                 <div className="menu-title">General</div>
 
-                <div className="menu-item active" onClick={() => navigate("/") }>
+                <div
+                    className={`menu-item ${isActive("/") ? "active" : ""}`}
+                    onClick={() => navigate("/")}
+                >
                     <LayoutDashboard size={18} />
                     <span>Dashboard</span>
                 </div>
@@ -55,7 +67,7 @@ export default function Sidebar() {
                 </div>
 
                 <div
-                    className="menu-item"
+                    className={`menu-item ${isTerritorial ? "active" : ""}`}
                     onClick={() => setOpenTerritorial(!openTerritorial)}
                 >
                     <MapPin size={18} />
@@ -69,30 +81,31 @@ export default function Sidebar() {
                 {openTerritorial && (
                     <div className="submenu">
                         <div
-                            className="submenu-item"
+                            className={`submenu-item ${isActive("/territorial/zonas") ? "submenu-active" : ""}`}
                             onClick={() => navigate("/territorial/zonas")}
                         >
                             <MapPin size={16} />
                             Zonas
                         </div>
 
-                        <div className="submenu-item">
+                        <div
+                            className={`submenu-item ${isActive("/territorial/nucleos") ? "submenu-active" : ""}`}
+                            onClick={() => navigate("/territorial/nucleos")}
+                        >
                             <Layers size={16} />
                             Núcleos
                         </div>
 
-                        <div className="submenu-item">
+                        <div
+                            className={`submenu-item ${isActive("/territorial/fincas") ? "submenu-active" : ""}`}
+                            onClick={() => navigate("/territorial/fincas")}
+                        >
                             <Building size={16} />
                             Fincas
                         </div>
 
-                        <div className="submenu-item">
-                            <Grid size={16} />
-                            Lotes
-                        </div>
                     </div>
                 )}
-
 
                 <div className="menu-item">
                     <Play size={18} />

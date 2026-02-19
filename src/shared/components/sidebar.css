@@ -195,3 +195,14 @@
     transform: translateY(0);
   }
 }
+
+.submenu-active {
+    background: transparent !important;
+    color: #4abe8a !important;
+    font-weight: 600;
+}
+
+.submenu-active svg {
+    stroke: #4abe8a !important;
+    color: #4abe8a !important;
+}

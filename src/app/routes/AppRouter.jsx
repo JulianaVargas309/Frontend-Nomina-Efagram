@@ -3,6 +3,8 @@ import LoginPage from '../../features/auth/pages/LoginPage';
 import DashboardPage from '../../features/dashboard/pages/DashboardPage';
 import PrivateRoute from './PrivateRoute';
 import ZonasPage from "../../features/territorial/pages/ZonasPage";
+import NucleosPage from "../../features/territorial/pages/NucleosPage";
+import FincasPage from "../../features/territorial/pages/FincasPage";
 
 
 export default function AppRouter() {
@@ -25,6 +27,24 @@ export default function AppRouter() {
         element={
           <PrivateRoute>
             <ZonasPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/territorial/nucleos"
+        element={
+          <PrivateRoute>
+            <NucleosPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/territorial/fincas"
+        element={
+          <PrivateRoute>
+            <FincasPage />
           </PrivateRoute>
         }
       />
