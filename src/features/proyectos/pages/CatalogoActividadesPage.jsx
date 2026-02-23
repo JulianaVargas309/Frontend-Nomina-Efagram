@@ -10,26 +10,26 @@ import DashboardLayout from "../../../app/layouts/DashboardLayout";
 const getBadgeCategoria = (categoria = "") => {
   const map = {
     PREPARACION_TERRENO: "badge-preparacion",
-    SIEMBRA: "badge-siembra",
-    MANTENIMIENTO: "badge-mantenimiento",
-    CONTROL_MALEZA: "badge-control",
-    FERTILIZACION: "badge-fertilizacion",
-    PODAS: "badge-podas",
-    OTRO: "badge-default"
+    SIEMBRA:             "badge-siembra",
+    MANTENIMIENTO:       "badge-mantenimiento",
+    CONTROL_MALEZA:      "badge-control",
+    FERTILIZACION:       "badge-fertilizacion",
+    PODAS:               "badge-podas",
+    OTRO:                "badge-default"
   };
-
   return map[categoria] || "badge-default";
 };
 
 const CatalogoActividadesPage = () => {
-  const [actividades, setActividades] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [actividades,      setActividades]      = useState([]);
+  const [loading,          setLoading]          = useState(false);
+  const [busqueda,         setBusqueda]         = useState("");
+  const [filtroCategoria,  setFiltroCategoria]  = useState("Todas");
+  const [filtroEstado,     setFiltroEstado]     = useState("activas");
 
-  const [busqueda, setBusqueda] = useState("");
-  const [filtroCategoria, setFiltroCategoria] = useState("Todas");
-  const [filtroEstado, setFiltroEstado] = useState("activas");
-
-  const [modalOpen, setModalOpen] = useState(false);
+  // FIX: estado para controlar el modal (abrir/cerrar + actividad a editar)
+  const [modalOpen,       setModalOpen]       = useState(false);
+  const [actividadEditar, setActividadEditar] = useState(null); // null = crear, obj = editar
 
   // =============================
   // CARGAR DESDE BACKEND
@@ -37,18 +37,12 @@ const CatalogoActividadesPage = () => {
   const cargarActividades = async () => {
     try {
       setLoading(true);
-
       const params = {};
-
-      if (filtroEstado === "activas") params.activa = true;
+      if (filtroEstado === "activas")   params.activa = true;
       if (filtroEstado === "inactivas") params.activa = false;
-
-      if (filtroCategoria !== "Todas") {
-        params.categoria = filtroCategoria;
-      }
+      if (filtroCategoria !== "Todas")  params.categoria = filtroCategoria;
 
       const res = await getActividades(params);
-
       setActividades(res?.data?.data || []);
     } catch (error) {
       console.error("Error cargando actividades", error);
@@ -75,11 +69,29 @@ const CatalogoActividadesPage = () => {
   ];
 
   // =============================
+  // ABRIR MODAL
+  // =============================
+  // FIX: funciones separadas para crear y editar
+  const abrirCrear = () => {
+    setActividadEditar(null);
+    setModalOpen(true);
+  };
+
+  const abrirEditar = (actividad) => {
+    setActividadEditar(actividad);
+    setModalOpen(true);
+  };
+
+  const cerrarModal = () => {
+    setModalOpen(false);
+    setActividadEditar(null);
+  };
+
+  // =============================
   // ELIMINAR (DESACTIVAR)
   // =============================
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Seguro que deseas desactivar esta actividad?")) return;
-
     try {
       await deleteActividad(id);
       cargarActividades();
@@ -124,10 +136,10 @@ const CatalogoActividadesPage = () => {
             <h2 className="catalogo-panel-title">
               Catálogo de Actividades
             </h2>
-
+            {/* FIX: onClick ahora llama a abrirCrear */}
             <button
               className="btn-nueva-actividad"
-              onClick={() => setModalOpen(true)}
+              onClick={abrirCrear}
             >
               + Nueva Actividad
             </button>
@@ -135,7 +147,6 @@ const CatalogoActividadesPage = () => {
 
           {/* TOOLBAR */}
           <div className="catalogo-toolbar">
-
             <div className="search-wrapper">
               <span className="search-icon">🔍</span>
               <input
@@ -153,9 +164,7 @@ const CatalogoActividadesPage = () => {
               onChange={(e) => setFiltroCategoria(e.target.value)}
             >
               {categorias.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
+                <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
 
@@ -172,9 +181,7 @@ const CatalogoActividadesPage = () => {
 
           {/* TABLA */}
           {loading ? (
-            <div className="catalogo-loading">
-              Cargando actividades...
-            </div>
+            <div className="catalogo-loading">Cargando actividades...</div>
           ) : (
             <table className="tabla-actividades">
               <thead>
@@ -215,12 +222,18 @@ const CatalogoActividadesPage = () => {
                       </td>
                       <td>
                         <div className="acciones-cell">
-                          <button className="btn-accion editar">
+                          {/* FIX: onClick wired — antes no tenía handler */}
+                          <button
+                            className="btn-accion editar"
+                            onClick={() => abrirEditar(a)}
+                            title="Editar actividad"
+                          >
                             ✏️
                           </button>
                           <button
                             className="btn-accion eliminar"
                             onClick={() => handleEliminar(a._id)}
+                            title="Desactivar actividad"
                           >
                             🗑️
                           </button>
@@ -234,11 +247,15 @@ const CatalogoActividadesPage = () => {
           )}
         </div>
 
-        {/* MODAL */}
+        {/* MODAL — FIX: ahora recibe actividadEditar para modo edición */}
         <ActividadModal
           isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onSuccess={cargarActividades}
+          onClose={cerrarModal}
+          onSuccess={() => {
+            cerrarModal();
+            cargarActividades();
+          }}
+          actividadEditar={actividadEditar}
         />
       </div>
     </DashboardLayout>

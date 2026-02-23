@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+// FIX: import corregido — el archivo se llama clientesService.js (todo minúsculas)
 import { createCliente, updateCliente } from "../services/clientesService";
 import { X } from "lucide-react";
 
@@ -122,6 +123,7 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
     if (!form.codigo.trim())       errs.codigo       = "El código es obligatorio";
     if (!form.nit.trim())          errs.nit          = "El NIT es obligatorio";
     if (!form.razon_social.trim()) errs.razon_social = "La razón social es obligatoria";
+    // FIX: solo validar email si tiene valor (no vacío)
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errs.email = "Email inválido";
     if (form.contacto_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contacto_email))
