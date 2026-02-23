@@ -46,7 +46,7 @@ export default function Sidebar() {
 
                 <div className="menu-title">General</div>
 
-                <div 
+                <div
                     className="menu-item active"
                     onClick={() => navigate("/")}
                 >
@@ -56,14 +56,14 @@ export default function Sidebar() {
 
                 <div className="menu-title">Módulos</div>
 
-                <div 
+                <div
                     className="menu-item"
                     onClick={() => setOpenReportes(!openReportes)}
                 >
                     <BarChart3 size={18} />
                     <span>Reportes</span>
-                    <ChevronDown 
-                        size={16} 
+                    <ChevronDown
+                        size={16}
                         className={`arrow ${openReportes ? "rotate" : ""}`}
                     />
                 </div>
@@ -116,14 +116,14 @@ export default function Sidebar() {
                     </div>
                 )}
 
-                <div 
+                <div
                     className="menu-item"
                     onClick={() => setOpenEjecucion(!openEjecucion)}
                 >
                     <Play size={18} />
                     <span>Ejecución</span>
-                    <ChevronDown 
-                        size={16} 
+                    <ChevronDown
+                        size={16}
                         className={`arrow ${openEjecucion ? "rotate" : ""}`}
                     />
                 </div>
@@ -175,24 +175,18 @@ export default function Sidebar() {
                             Catálogo Actividades
                         </div>
 
-                        <div
-                            className="submenu-item"
-                            onClick={() => navigate("/precios")}
-                        >
-                            <BarChart3 size={16} />
-                            Precios
-                        </div>
+                        {/* ELIMINADO: ítem Precios */}
                     </div>
                 )}
 
-                <div 
+                <div
                     className="menu-item"
                     onClick={() => setOpenPersonal(!openPersonal)}
                 >
                     <Users size={18} />
                     <span>Personal / Nómina</span>
-                    <ChevronDown 
-                        size={16} 
+                    <ChevronDown
+                        size={16}
                         className={`arrow ${openPersonal ? "rotate" : ""}`}
                     />
                 </div>
@@ -206,14 +200,14 @@ export default function Sidebar() {
                     </div>
                 )}
 
-                <div 
+                <div
                     className="menu-item"
                     onClick={() => setOpenActividades(!openActividades)}
                 >
                     <CheckSquare size={18} />
                     <span>Actividades</span>
-                    <ChevronDown 
-                        size={16} 
+                    <ChevronDown
+                        size={16}
                         className={`arrow ${openActividades ? "rotate" : ""}`}
                     />
                 </div>

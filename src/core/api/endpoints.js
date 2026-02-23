@@ -18,7 +18,5 @@ export const endpoints = {
   actividades: {
     getAll: '/actividades',
   },
-  precios: {
-    getAll: '/precios',
-  },
+  // ELIMINADO: precios
 };

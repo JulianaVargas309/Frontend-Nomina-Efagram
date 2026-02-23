@@ -6,7 +6,7 @@ import ZonasPage from "../../features/territorial/pages/ZonasPage";
 import ProyectosPage from "../../features/proyectos/pages/ProyectosPage";
 import ClientesPage from "../../features/proyectos/pages/ClientesPage";
 import CatalogoActividadesPage from "../../features/proyectos/pages/CatalogoActividadesPage";
-import PreciosPage from "../../features/proyectos/pages/PreciosPage";
+// ELIMINADO: import PreciosPage
 
 export default function AppRouter() {
   return (
@@ -60,14 +60,7 @@ export default function AppRouter() {
         }
       />
 
-      <Route
-        path="/precios"
-        element={
-          <PrivateRoute>
-            <PreciosPage />
-          </PrivateRoute>
-        }
-      />
+      {/* ELIMINADO: ruta /precios */}
 
       {/* Ruta wildcard al final */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -35,8 +35,4 @@ export const getCatalogoActividades = () => {
   return httpClient.get(endpoints.actividades.getAll);
 };
 
-// ================= PRECIOS =================
-
-export const getPrecios = () => {
-  return httpClient.get(endpoints.precios.getAll);
-};
+// ELIMINADO: getPrecios
