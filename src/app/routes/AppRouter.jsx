@@ -1,68 +1,52 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from '../../features/auth/pages/LoginPage';
+import LoginPage     from '../../features/auth/pages/LoginPage';
 import DashboardPage from '../../features/dashboard/pages/DashboardPage';
-import PrivateRoute from './PrivateRoute';
-import ZonasPage from "../../features/territorial/pages/ZonasPage";
-import ProyectosPage from "../../features/proyectos/pages/ProyectosPage";
-import ClientesPage from "../../features/proyectos/pages/ClientesPage";
-import CatalogoActividadesPage from "../../features/proyectos/pages/CatalogoActividadesPage";
-// ELIMINADO: import PreciosPage
+import PrivateRoute  from './PrivateRoute';
+
+// Territorial
+import ZonasPage   from '../../features/territorial/pages/ZonasPage';
+import NucleosPage from '../../features/territorial/pages/NucleosPage';
+import FincasPage  from '../../features/territorial/pages/FincasPage';
+
+// Ejecución
+import RegistroDiarioPage    from '../../features/ejecucion/pages/RegistroDiarioPage';
+import NovedadesPage         from '../../features/ejecucion/pages/NovedadesPage';
+import CalendarioPage        from '../../features/ejecucion/pages/CalendarioPage';
+import SemanasOperativasPage from '../../features/ejecucion/pages/SemanasOperativasPage';
+
+// Proyectos
+import ProyectosPage          from '../../features/proyectos/pages/ProyectosPage';
+import ClientesPage           from '../../features/proyectos/pages/ClientesPage';
+import CatalogoActividadesPage from '../../features/proyectos/pages/CatalogoActividadesPage';
+// PreciosPage eliminado
 
 export default function AppRouter() {
   return (
     <Routes>
-      {/* Ruta pública */}
+      {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Rutas protegidas */}
-      <Route
-        path="/"
-        element={
-          <PrivateRoute>
-            <DashboardPage />
-          </PrivateRoute>
-        }
-      />
+      {/* Dashboard */}
+      <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
 
-      <Route
-        path="/territorial/zonas"
-        element={
-          <PrivateRoute>
-            <ZonasPage />
-          </PrivateRoute>
-        }
-      />
+      {/* ── Territorial ── */}
+      <Route path="/territorial/zonas"   element={<PrivateRoute><ZonasPage /></PrivateRoute>} />
+      <Route path="/territorial/nucleos" element={<PrivateRoute><NucleosPage /></PrivateRoute>} />
+      <Route path="/territorial/fincas"  element={<PrivateRoute><FincasPage /></PrivateRoute>} />
 
-      <Route
-        path="/proyectos"
-        element={
-          <PrivateRoute>
-            <ProyectosPage />
-          </PrivateRoute>
-        }
-      />
+      {/* ── Ejecución ── */}
+      <Route path="/ejecucion/registros-diarios"   element={<PrivateRoute><RegistroDiarioPage /></PrivateRoute>} />
+      <Route path="/ejecucion/novedades"           element={<PrivateRoute><NovedadesPage /></PrivateRoute>} />
+      <Route path="/ejecucion/calendario"          element={<PrivateRoute><CalendarioPage /></PrivateRoute>} />
+      <Route path="/ejecucion/semanas-operativas"  element={<PrivateRoute><SemanasOperativasPage /></PrivateRoute>} />
 
-      <Route
-        path="/clientes"
-        element={
-          <PrivateRoute>
-            <ClientesPage />
-          </PrivateRoute>
-        }
-      />
+      {/* ── Proyectos ── */}
+      <Route path="/proyectos"            element={<PrivateRoute><ProyectosPage /></PrivateRoute>} />
+      <Route path="/clientes"             element={<PrivateRoute><ClientesPage /></PrivateRoute>} />
+      <Route path="/catalogo-actividades" element={<PrivateRoute><CatalogoActividadesPage /></PrivateRoute>} />
+      {/* /precios eliminado */}
 
-      <Route
-        path="/catalogo-actividades"
-        element={
-          <PrivateRoute>
-            <CatalogoActividadesPage />
-          </PrivateRoute>
-        }
-      />
-
-      {/* ELIMINADO: ruta /precios */}
-
-      {/* Ruta wildcard al final */}
+      {/* Wildcard */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
