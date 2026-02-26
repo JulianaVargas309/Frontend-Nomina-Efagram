@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createProyecto, updateProyecto } from "../services/proyectosService";
 import { getPersonas } from "../../../personal/services/personalService";
+import { getZonas } from "../../territorial/services/zonas.service";
 import ActividadesIntervencion from "./ActividadesIntervencion";
 import {
   Folder, Calendar, User, Tag, TrendingUp,
-  FileText, Pencil, DollarSign
+  FileText, Pencil, DollarSign, MapPin
 } from "lucide-react";
 
 // ══════════════════════════════════════════════════════════
@@ -102,6 +103,7 @@ const ProyectoModal = ({
   const modoVer    = modo === "ver";
 
   const [personas,     setPersonas]     = useState([]);
+  const [zonas,        setZonas]        = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [loadingData,  setLoadingData]  = useState(false);
 
@@ -110,7 +112,7 @@ const ProyectoModal = ({
   const [intervenciones, setIntervenciones] = useState([]);
 
   const initialForm = useMemo(() => ({
-    codigo: "", nombre: "", responsable: "",
+    codigo: "", nombre: "", responsable: "", zona: "",
     fecha_inicio: "", fecha_fin_estimada: "",
     tipo_contrato: "FIJO_TODO_COSTO", avance: 0, descripcion: "",
   }), []);
@@ -126,6 +128,7 @@ const ProyectoModal = ({
         codigo:            proyecto.codigo               ?? "",
         nombre:            proyecto.nombre               ?? "",
         responsable:       proyecto.responsable?._id     ?? proyecto.responsable ?? "",
+        zona:              proyecto.zona?._id            ?? proyecto.zona ?? "",
         fecha_inicio:      toDateInput(proyecto.fecha_inicio),
         fecha_fin_estimada:toDateInput(proyecto.fecha_fin_estimada),
         tipo_contrato:     proyecto.tipo_contrato        ?? "FIJO_TODO_COSTO",
@@ -175,11 +178,14 @@ const ProyectoModal = ({
       const cargar = async () => {
         try {
           setLoadingData(true);
-          const pRes = await getPersonas();
+          const [pRes, zRes] = await Promise.all([getPersonas(), getZonas()]);
           const pd = pRes?.data?.data ?? pRes?.data ?? [];
           setPersonas(Array.isArray(pd) ? pd : []);
+          const zd = zRes?.data ?? zRes ?? [];
+          setZonas(Array.isArray(zd) ? zd : []);
         } catch {
           setPersonas([]);
+          setZonas([]);
         } finally {
           setLoadingData(false);
         }
@@ -231,6 +237,7 @@ const ProyectoModal = ({
       ...form,
       codigo: form.codigo.trim().toUpperCase(),
       nombre: form.nombre.trim(),
+      zona: form.zona || undefined,
       cliente: clienteId,
       actividades_por_intervencion: actividadesPorIntervencion,
     };
@@ -426,6 +433,7 @@ const ProyectoModal = ({
               </p>
               <InfoRow icon={User}     label="Cliente"            value={clienteNombre} />
               <InfoRow icon={User}     label="Responsable"        value={responsableNombre} />
+              <InfoRow icon={MapPin}   label="Zona"               value={proyecto.zona?.nombre ?? proyecto.zona ?? "Sin zona"} />
               <InfoRow icon={Tag}      label="Tipo de contrato"   value={CONTRATO_LABEL[proyecto.tipo_contrato] ?? proyecto.tipo_contrato ?? "—"} />
               <InfoRow icon={Calendar} label="Fecha de inicio"    value={fmtFecha(proyecto.fecha_inicio)} />
               <InfoRow icon={Calendar} label="Fecha fin estimada" value={fmtFecha(proyecto.fecha_fin_estimada)} />
@@ -654,6 +662,31 @@ const ProyectoModal = ({
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Zona */}
+        <div className="form-group">
+          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <MapPin size={13} /> Zona *
+          </label>
+          <select
+            name="zona"
+            value={form.zona}
+            onChange={handleChange}
+            disabled={loadingData}
+          >
+            <option value="">
+              {loadingData ? "Cargando..." : "— Seleccione una zona —"}
+            </option>
+            {zonas.map((z) => (
+              <option key={z._id} value={z._id}>
+                {z.nombre} {z.codigo ? `(${z.codigo})` : ""}
+              </option>
+            ))}
+          </select>
+          <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>
+            La zona determina los núcleos disponibles para los subproyectos.
+          </p>
         </div>
 
         {/* Fechas */}

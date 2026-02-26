@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getProyectos, deleteProyecto } from "../services/proyectosService";
 import "../../../assets/styles/proyectos.css";
 import ProyectoModal from "../components/ProyectoModal";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
-import { Eye, Pencil, Trash2, Folder } from "lucide-react";
+import { Eye, Pencil, Trash2, Folder, Package, GitBranch } from "lucide-react";
 
 // ── Helpers ──────────────────────────────────────────────
 const fmtFecha = (iso) =>
@@ -24,6 +25,7 @@ const INTERVENCION_LABEL = {
 
 // ── Componente principal ──────────────────────────────────
 const ProyectosPage = () => {
+  const navigate = useNavigate();
   const [proyectos,   setProyectos]   = useState([]);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState(null);
@@ -222,6 +224,26 @@ const ProyectosPage = () => {
                     {fmtFecha(proyecto.fecha_inicio)} — {fmtFecha(proyecto.fecha_fin_estimada)}
                   </span>
                   <div className="proy-acciones">
+
+                    {/* ✅ IR A ACTIVIDADES */}
+                    <button
+                      className="proy-btn-accion"
+                      title="Actividades del proyecto"
+                      onClick={() => navigate(`/proyectos/actividades?proyecto=${proyecto._id}`)}
+                      style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" }}
+                    >
+                      <Package size={15} />
+                    </button>
+
+                    {/* ✅ IR A SUBPROYECTOS */}
+                    <button
+                      className="proy-btn-accion"
+                      title="Subproyectos"
+                      onClick={() => navigate(`/proyectos/subproyectos?proyecto=${proyecto._id}`)}
+                      style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d" }}
+                    >
+                      <GitBranch size={15} />
+                    </button>
 
                     {/* ✅ VER DETALLE */}
                     <button

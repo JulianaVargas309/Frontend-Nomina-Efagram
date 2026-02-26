@@ -22,6 +22,8 @@ import FincasPage from '../../features/territorial/pages/FincasPage';
 
 import CatalogoIntervencionesPage from "../../features/proyectos/pages/CatalogoIntervencionesPage";
 import CatalogoProcesosPage from "../../features/proyectos/pages/CatalogoProcesosPage";
+import ActividadesProyectoPage from "../../features/proyectos/pages/ActividadesProyectoPage";
+import SubproyectosPage from "../../features/proyectos/pages/SubproyectosPage";
 
 export default function AppRouter() {
   return (
@@ -44,6 +46,8 @@ export default function AppRouter() {
       <Route path="/configuracion/ubicacion/zonas" element={<PrivateRoute><ZonasPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/nucleos" element={<PrivateRoute><NucleosPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/fincas" element={<PrivateRoute><FincasPage /></PrivateRoute>} />
+      <Route path="/proyectos/actividades" element={<PrivateRoute><ActividadesProyectoPage /></PrivateRoute>} />
+      <Route path="/proyectos/subproyectos" element={<PrivateRoute><SubproyectosPage /></PrivateRoute>} />
 
       <Route path="/clientes" element={<Navigate to="/configuracion/catalogo-clientes" replace />} />
       <Route path="/catalogo-actividades" element={<Navigate to="/configuracion/catalogo-actividades" replace />} />

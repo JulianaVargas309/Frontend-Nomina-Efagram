@@ -4,7 +4,7 @@ import {
     LayoutDashboard, BarChart3, Play, Folder,
     Users, CheckSquare, ChevronDown, Layers, Building,
     ClipboardList, AlertTriangle, Calendar, Clock,
-    Settings, MapPin, Wrench  // 👈 AGREGADO , Wrench
+    Settings, MapPin, Wrench, Package, GitBranch
 } from "lucide-react";
 import "./sidebar.css";
 
@@ -109,6 +109,12 @@ export default function Sidebar() {
                     <div className="submenu">
                         <div className={`submenu-item ${isActiveSub("/proyectos")}`} onClick={() => navigate("/proyectos")}>
                             <Folder size={16} />Proyectos
+                        </div>
+                        <div className={`submenu-item ${isActiveSub("/proyectos/actividades")}`} onClick={() => navigate("/proyectos/actividades")}>
+                            <Package size={16} />Actividades del Proyecto
+                        </div>
+                        <div className={`submenu-item ${isActiveSub("/proyectos/subproyectos")}`} onClick={() => navigate("/proyectos/subproyectos")}>
+                            <GitBranch size={16} />Subproyectos
                         </div>
                     </div>
                 )}
