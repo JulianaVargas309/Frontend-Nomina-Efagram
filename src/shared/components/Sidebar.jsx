@@ -4,7 +4,7 @@ import {
     LayoutDashboard, BarChart3, Play, Folder,
     Users, CheckSquare, ChevronDown, Layers, Building,
     ClipboardList, AlertTriangle, Calendar, Clock,
-    Settings, MapPin
+    Settings, MapPin, Wrench  // 👈 AGREGADO , Wrench
 } from "lucide-react";
 import "./sidebar.css";
 
@@ -12,38 +12,33 @@ export default function Sidebar() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // ── Detección de sección activa por ruta ─────────────────
-    const isEjecucion     = location.pathname.startsWith("/ejecucion");
-    const isProyectos     = location.pathname.startsWith("/proyectos");
+    const isEjecucion = location.pathname.startsWith("/ejecucion");
+    const isProyectos = location.pathname.startsWith("/proyectos");
     const isConfiguracion = location.pathname.startsWith("/configuracion");
 
-    // ── Estados de apertura manual ────────────────────────────
-    const [manualEjecucion,     setManualEjecucion]     = useState(null);
-    const [manualProyectos,     setManualProyectos]     = useState(null);
+    const [manualEjecucion, setManualEjecucion] = useState(null);
+    const [manualProyectos, setManualProyectos] = useState(null);
     const [manualConfiguracion, setManualConfiguracion] = useState(null);
-    const [openReportes,        setOpenReportes]        = useState(false);
+    const [openReportes, setOpenReportes] = useState(false);
 
-    // ── Sub-menús dentro de Configuración ─────────────────────
     const [openUbicacion, setOpenUbicacion] = useState(
         location.pathname.startsWith("/configuracion/ubicacion")
     );
 
-    // ── Apertura automática según ruta ────────────────────────
-    const openEjecucion     = manualEjecucion     !== null ? manualEjecucion     : isEjecucion;
-    const openProyectos     = manualProyectos     !== null ? manualProyectos     : isProyectos;
+    const openEjecucion = manualEjecucion !== null ? manualEjecucion : isEjecucion;
+    const openProyectos = manualProyectos !== null ? manualProyectos : isProyectos;
     const openConfiguracion = manualConfiguracion !== null ? manualConfiguracion : isConfiguracion;
 
-    const toggleEjecucion     = () => setManualEjecucion(!openEjecucion);
-    const toggleProyectos     = () => setManualProyectos(!openProyectos);
+    const toggleEjecucion = () => setManualEjecucion(!openEjecucion);
+    const toggleProyectos = () => setManualProyectos(!openProyectos);
     const toggleConfiguracion = () => setManualConfiguracion(!openConfiguracion);
 
-    const isActive    = (path) => location.pathname === path;
+    const isActive = (path) => location.pathname === path;
     const isActiveSub = (path) => location.pathname === path ? "submenu-active" : "";
 
     return (
         <aside className="sidebar">
 
-            {/* HEADER */}
             <div className="sidebar-header">
                 <div className="logo-icon"><span>🌿</span></div>
                 <div><h2>EFAGRAM S.A.S</h2><p>Sistema de Gestión</p></div>
@@ -118,11 +113,9 @@ export default function Sidebar() {
                     </div>
                 )}
 
-                {/* ══════════════════════════════════════════════
-                    CONFIGURACIÓN — siempre al final del menú
-                ══════════════════════════════════════════════ */}
                 <div className="menu-title">Sistema</div>
 
+                {/* ── CONFIGURACIÓN ── */}
                 <div
                     className={`menu-item ${isConfiguracion ? "active" : ""}`}
                     onClick={toggleConfiguracion}
@@ -134,7 +127,6 @@ export default function Sidebar() {
                 {openConfiguracion && (
                     <div className="submenu">
 
-                        {/* ── Catálogo Clientes ── */}
                         <div
                             className={`submenu-item ${isActiveSub("/configuracion/catalogo-clientes")}`}
                             onClick={() => navigate("/configuracion/catalogo-clientes")}
@@ -142,7 +134,6 @@ export default function Sidebar() {
                             <Users size={16} />Catálogo Clientes
                         </div>
 
-                        {/* ── Catálogo Actividades ── */}
                         <div
                             className={`submenu-item ${isActiveSub("/configuracion/catalogo-actividades")}`}
                             onClick={() => navigate("/configuracion/catalogo-actividades")}
@@ -150,7 +141,28 @@ export default function Sidebar() {
                             <CheckSquare size={16} />Catálogo Actividades
                         </div>
 
-                        {/* ── Ubicación (antes Territorial) ── */}
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-intervenciones")}`}
+                            onClick={() => navigate("/configuracion/catalogo-intervenciones")}
+                        >
+                            <Wrench size={16} />Catálogo Intervenciones
+                        </div>
+
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-procesos")}`}
+                            onClick={() => navigate("/configuracion/catalogo-procesos")}
+                        >
+                            <Layers size={16} />Catálogo Procesos
+                        </div>
+
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-personal")}`}
+                            onClick={() => navigate("/configuracion/catalogo-personal")}
+                        >
+                            <Users size={16} />Catálogo Personal
+                        </div>
+
+                        {/* ── Ubicación ── */}
                         <div
                             className="submenu-item submenu-group"
                             onClick={() => setOpenUbicacion(!openUbicacion)}
@@ -187,7 +199,6 @@ export default function Sidebar() {
 
             </div>
 
-            {/* FOOTER */}
             <div className="sidebar-footer">
                 <div className="user-avatar">J</div>
                 <div><strong>Julianavida1309</strong><span>Administrador</span></div>
