@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../../app/layouts/DashboardLayout';
+import IntervencionesStats from '../components/IntervencionesStats';
 import IntervencionesTable from '../components/IntervencionesTable';
 import {
   getIntervenciones,
@@ -8,6 +9,7 @@ import {
   deleteIntervencion,
 } from '../services/intervencionesService';
 import '../../territorial/territorial.css';
+import '../intervenciones.css';
 
 export default function CatalogoIntervencionesPage() {
   const [intervenciones, setIntervenciones] = useState([]);
@@ -26,7 +28,10 @@ export default function CatalogoIntervencionesPage() {
     try {
       setLoading(true);
       const res = await getIntervenciones();
-      setIntervenciones(normalizeList(res));
+      console.log('RES RAW:', res);
+      const list = normalizeList(res);
+      console.log('LIST normalizada:', list);
+      setIntervenciones(list);
       setError(null);
     } catch (e) {
       console.error(e);
@@ -47,9 +52,8 @@ export default function CatalogoIntervencionesPage() {
     return intervenciones.filter((i) => {
       const codigo = String(i?.codigo ?? '').toLowerCase();
       const nombre = String(i?.nombre ?? '').toLowerCase();
-      // ✅ CORREGIDO: proceso es un objeto, acceder a su nombre
-      const proceso = String(i?.proceso?.nombre ?? '').toLowerCase();
-      return codigo.includes(q) || nombre.includes(q) || proceso.includes(q);
+      const procesos = String(i?.procesos ?? '').toLowerCase();
+      return codigo.includes(q) || nombre.includes(q) || procesos.includes(q);
     });
   }, [intervenciones, search]);
 
@@ -57,7 +61,7 @@ export default function CatalogoIntervencionesPage() {
 
   const handleAdd = async (payload) => {
     const created = await createIntervencion(payload);
-    const obj = created?.data?.data ?? created?.data ?? created;
+    const obj = created?.data ?? created;
     if (obj && (obj._id || obj.id)) {
       setIntervenciones((prev) => [obj, ...prev]);
     } else {
@@ -67,7 +71,7 @@ export default function CatalogoIntervencionesPage() {
 
   const handleUpdate = async (id, payload) => {
     const updated = await updateIntervencion(id, payload);
-    const obj = updated?.data?.data ?? updated?.data ?? updated;
+    const obj = updated?.data ?? updated;
     if (obj && (obj._id || obj.id)) {
       setIntervenciones((prev) => prev.map((i) => (getId(i) === id ? obj : i)));
     } else {
@@ -83,6 +87,9 @@ export default function CatalogoIntervencionesPage() {
   return (
     <DashboardLayout>
       <div className="territorial-wrapper">
+        
+        <IntervencionesStats intervenciones={intervenciones} />
+
         {loading ? (
           <div className="territorial-loading">Cargando…</div>
         ) : error ? (

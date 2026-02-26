@@ -5,7 +5,7 @@ import NuevaIntervencionModal from './NuevaIntervencionModal';
 function IntervencionDetalleModal({ isOpen, intervencion, onClose }) {
   if (!isOpen || !intervencion) return null;
 
-  const isActive = intervencion?.activo === true;
+  const isActive = Boolean(intervencion?.activo);
 
   return (
     <>
@@ -32,13 +32,9 @@ function IntervencionDetalleModal({ isOpen, intervencion, onClose }) {
           <div className="zdm-estado-box" style={{ marginBottom: '10px' }}>
             <span className="zdm-estado-label">Proceso</span>
             <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-              {intervencion?.proceso?.nombre ?? '-'}
-            </span>
-          </div>
-          <div className="zdm-estado-box" style={{ marginBottom: '10px' }}>
-            <span className="zdm-estado-label">Código proceso</span>
-            <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-              {intervencion?.proceso?.codigo ?? '-'}
+              {intervencion?.proceso?.nombre
+                ? `${intervencion.proceso.codigo} – ${intervencion.proceso.nombre}`
+                : '-'}
             </span>
           </div>
         </div>
@@ -70,32 +66,36 @@ export default function IntervencionesTable({
   onAdd,
   onUpdate
 }) {
-  const [openCreate, setOpenCreate] = useState(false);
-  const [editIntervencion, setEditIntervencion] = useState(null);
+  const [openCreate,          setOpenCreate]          = useState(false);
+  const [editIntervencion,    setEditIntervencion]    = useState(null);
   const [detalleIntervencion, setDetalleIntervencion] = useState(null);
 
   const getId = (i) => i?._id ?? i?.id;
 
   return (
     <div className="zonas-card">
+      {/* HEADER */}
       <div className="zonas-card-header">
         <h2 className="zonas-card-title">Catálogo de Intervenciones</h2>
-        <div className="zonas-card-actions">
-          <div className="zonas-search">
-            <Search size={16} />
-            <input
-              value={search}
-              onChange={(e) => setSearch?.(e.target.value)}
-              placeholder="Buscar intervención..."
-            />
-          </div>
-          <button className="btn-primary" onClick={() => setOpenCreate(true)}>
-            <Plus size={16} />
-            Nueva Intervención
-          </button>
-        </div>
       </div>
 
+      {/* BARRA DE BÚSQUEDA + BOTÓN */}
+      <div style={{ display: 'flex', gap: '12px', padding: '0 0 16px 0', alignItems: 'center' }}>
+        <div className="zonas-search" style={{ flex: 1 }}>
+          <Search size={16} />
+          <input
+            value={search}
+            onChange={(e) => setSearch?.(e.target.value)}
+            placeholder="Buscar intervención..."
+          />
+        </div>
+        <button className="btn-primary" onClick={() => setOpenCreate(true)}>
+          <Plus size={16} />
+          Nueva Intervención
+        </button>
+      </div>
+
+      {/* TABLA */}
       <div className="zonas-table-scroll">
         <table className="zonas-table-grid">
           <thead>
@@ -116,8 +116,8 @@ export default function IntervencionesTable({
               </tr>
             ) : (
               intervenciones.map((i) => {
-                const id = getId(i);
-                const isActive = i?.activo === true;
+                const id       = getId(i);
+                const isActive = Boolean(i?.activo);
 
                 return (
                   <tr key={id}>
@@ -133,7 +133,6 @@ export default function IntervencionesTable({
                       </div>
                     </td>
                     <td style={{ fontSize: '13px', color: '#6b7280' }}>
-                      {/* ✅ CORREGIDO: proceso es objeto populado */}
                       {i?.proceso?.nombre ?? '-'}
                     </td>
                     <td>
@@ -178,13 +177,7 @@ export default function IntervencionesTable({
       <NuevaIntervencionModal
         isOpen={openCreate}
         title="Nueva intervención"
-        initialValues={{
-          codigo: '',
-          nombre: '',
-          proceso: '',
-          activo: true,
-          descripcion: ''
-        }}
+        initialValues={{ codigo: '', nombre: '', proceso: '', activo: true, descripcion: '' }}
         onClose={() => setOpenCreate(false)}
         onSubmit={async (values) => {
           await onAdd?.(values);
@@ -196,17 +189,15 @@ export default function IntervencionesTable({
         isOpen={!!editIntervencion}
         title="Editar intervención"
         initialValues={{
-          codigo: editIntervencion?.codigo ?? '',
-          nombre: editIntervencion?.nombre ?? '',
-          // ✅ CORREGIDO: extraer el _id del objeto proceso populado
-          proceso: editIntervencion?.proceso?._id ?? editIntervencion?.proceso ?? '',
-          activo: editIntervencion?.activo ?? true,
+          codigo:      editIntervencion?.codigo      ?? '',
+          nombre:      editIntervencion?.nombre      ?? '',
+          proceso:     editIntervencion?.proceso     ?? '',
+          activo:      editIntervencion?.activo      ?? true,
           descripcion: editIntervencion?.descripcion ?? '',
         }}
         onClose={() => setEditIntervencion(null)}
         onSubmit={async (values) => {
-          const id = getId(editIntervencion);
-          await onUpdate?.(id, values);
+          await onUpdate?.(getId(editIntervencion), values);
           setEditIntervencion(null);
         }}
       />

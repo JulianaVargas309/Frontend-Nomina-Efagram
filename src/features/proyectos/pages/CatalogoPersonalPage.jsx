@@ -1,31 +1,107 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
+import DashboardLayout from '../../../app/layouts/DashboardLayout';
+import PersonalStats from '../components/PersonalStats';
+import PersonalTable from '../components/PersonalTable';
+import {
+  getPersonal,
+  createPersona,
+  updatePersona,
+  deletePersona,
+} from '../services/personalService';
+import '../../territorial/territorial.css';
 
 export default function CatalogoPersonalPage() {
-  const [personal, setPersonal] = useState([
-    { id: 1, nombre: "Juan Pérez", cargo: "Supervisor" },
-    { id: 2, nombre: "María Gómez", cargo: "Técnico" },
-  ]);
+  const [personal,  setPersonal]  = useState([]);
+  const [search,    setSearch]    = useState('');
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(null);
+
+  const normalizeList = (res) => {
+    if (Array.isArray(res))             return res;
+    if (Array.isArray(res?.data))       return res.data;
+    if (Array.isArray(res?.data?.data)) return res.data.data;
+    return [];
+  };
+
+  const fetchPersonal = async () => {
+    try {
+      setLoading(true);
+      const res = await getPersonal();
+      setPersonal(normalizeList(res));
+      setError(null);
+    } catch (e) {
+      console.error(e);
+      setError('No se pudo cargar el personal');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPersonal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filteredPersonal = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return personal;
+    return personal.filter((p) => {
+      const doc    = String(p?.num_doc ?? '').toLowerCase();
+      const nombre = `${p?.nombres ?? ''} ${p?.apellidos ?? ''}`.toLowerCase();
+      const cargo  = String(p?.cargo ?? '').toLowerCase();
+      return doc.includes(q) || nombre.includes(q) || cargo.includes(q);
+    });
+  }, [personal, search]);
+
+  const getId = (p) => p?._id ?? p?.id;
+
+  const handleAdd = async (payload) => {
+    const created = await createPersona(payload);
+    const obj = created?.data ?? created;
+    if (obj && (obj._id || obj.id)) {
+      setPersonal((prev) => [obj, ...prev]);
+    } else {
+      await fetchPersonal();
+    }
+  };
+
+  const handleUpdate = async (id, payload) => {
+    const updated = await updatePersona(id, payload);
+    const obj = updated?.data ?? updated;
+    if (obj && (obj._id || obj.id)) {
+      setPersonal((prev) => prev.map((p) => (getId(p) === id ? obj : p)));
+    } else {
+      await fetchPersonal();
+    }
+  };
+
+  const handleDelete = async (id) => {
+    await deletePersona(id);
+    // El backend solo desactiva (no elimina), refetch para ver el estado actualizado
+    await fetchPersonal();
+  };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Catálogo de Personal</h1>
+    <DashboardLayout>
+      <div className="territorial-wrapper">
 
-      <table className="w-full border">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="p-2 border">Nombre</th>
-            <th className="p-2 border">Cargo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {personal.map((p) => (
-            <tr key={p.id}>
-              <td className="p-2 border">{p.nombre}</td>
-              <td className="p-2 border">{p.cargo}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        <PersonalStats personal={personal} />
+
+        {loading ? (
+          <div className="territorial-loading">Cargando…</div>
+        ) : error ? (
+          <div className="territorial-error">{error}</div>
+        ) : (
+          <PersonalTable
+            personal={filteredPersonal}
+            search={search}
+            setSearch={setSearch}
+            onAdd={handleAdd}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
+    </DashboardLayout>
   );
 }

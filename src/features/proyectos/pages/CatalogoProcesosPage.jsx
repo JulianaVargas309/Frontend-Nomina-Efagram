@@ -1,94 +1,105 @@
-import { useEffect, useState } from "react";
-import { getProcesos } from "../services/procesosService";
+import { useEffect, useMemo, useState } from 'react';
+import DashboardLayout from '../../../app/layouts/DashboardLayout';
+import ProcesosStats from '../components/ProcesosStats';
+import ProcesosTable from '../components/ProcesosTable';
+import {
+  getProcesos,
+  createProceso,
+  updateProceso,
+  deleteProceso,
+} from '../services/procesosService';
+import '../../territorial/territorial.css';
 
-function CatalogoProcesosPage() {
+export default function CatalogoProcesosPage() {
   const [procesos, setProcesos] = useState([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const normalizeList = (res) => {
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.data?.data)) return res.data.data;
+    return [];
+  };
+
+  const fetchProcesos = async () => {
+    try {
+      setLoading(true);
+      const res = await getProcesos();
+      setProcesos(normalizeList(res));
+      setError(null);
+    } catch (e) {
+      console.error(e);
+      setError('No se pudieron cargar los procesos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const cargarProcesos = async () => {
-      try {
-        const data = await getProcesos();
-
-        if (Array.isArray(data)) {
-          setProcesos(data);
-        } else if (Array.isArray(data.data)) {
-          setProcesos(data.data);
-        } else {
-          setProcesos([]);
-        }
-      } catch (err) {
-        console.error("Error cargando procesos", err);
-        setError("No se pudieron cargar los procesos");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    cargarProcesos();
+    fetchProcesos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const filteredProcesos = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return procesos;
+    return procesos.filter((p) => {
+      const codigo = String(p?.codigo ?? '').toLowerCase();
+      const nombre = String(p?.nombre ?? '').toLowerCase();
+      return codigo.includes(q) || nombre.includes(q);
+    });
+  }, [procesos, search]);
+
+  const getId = (p) => p?._id ?? p?.id;
+
+  const handleAdd = async (payload) => {
+    const created = await createProceso(payload);
+    const obj = created?.data ?? created;
+    if (obj && (obj._id || obj.id)) {
+      setProcesos((prev) => [obj, ...prev]);
+    } else {
+      await fetchProcesos();
+    }
+  };
+
+  const handleUpdate = async (id, payload) => {
+    const updated = await updateProceso(id, payload);
+    const obj = updated?.data ?? updated;
+    if (obj && (obj._id || obj.id)) {
+      setProcesos((prev) => prev.map((p) => (getId(p) === id ? obj : p)));
+    } else {
+      await fetchProcesos();
+    }
+  };
+
+  const handleDelete = async (id) => {
+    await deleteProceso(id);
+    setProcesos((prev) => prev.filter((p) => getId(p) !== id));
+  };
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Catálogo de Procesos</h2>
+    <DashboardLayout>
+      <div className="territorial-wrapper">
+        
+        <ProcesosStats procesos={procesos} />
 
-      {loading && <p>Cargando procesos...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {!loading && !error && procesos.length === 0 && (
-        <p>No hay procesos registrados</p>
-      )}
-
-      {!loading && !error && procesos.length > 0 && (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Código</th>
-              <th style={thStyle}>Nombre</th>
-              <th style={thStyle}>Descripción</th>
-              <th style={thStyle}>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {procesos.map((proceso) => (
-              <tr key={proceso._id || proceso.id}>
-                <td style={tdStyle}>{proceso.codigo}</td>
-                <td style={tdStyle}>{proceso.nombre}</td>
-                <td style={tdStyle}>{proceso.descripcion || "—"}</td>
-                <td style={tdStyle}>
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      borderRadius: "12px",
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                      backgroundColor: proceso.activo ? "#d4edda" : "#f8d7da",
-                      color: proceso.activo ? "#155724" : "#721c24",
-                    }}
-                  >
-                    {proceso.activo ? "Activo" : "Inactivo"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+        {loading ? (
+          <div className="territorial-loading">Cargando…</div>
+        ) : error ? (
+          <div className="territorial-error">{error}</div>
+        ) : (
+          <ProcesosTable
+            procesos={filteredProcesos}
+            search={search}
+            setSearch={setSearch}
+            onAdd={handleAdd}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
+    </DashboardLayout>
   );
 }
-
-const thStyle = {
-  border: "1px solid #ddd",
-  padding: "8px",
-  textAlign: "left",
-  backgroundColor: "#f4f4f4",
-};
-
-const tdStyle = {
-  border: "1px solid #ddd",
-  padding: "8px",
-};
-
-export default CatalogoProcesosPage;

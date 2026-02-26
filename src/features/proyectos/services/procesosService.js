@@ -1,11 +1,13 @@
 import httpClient from "../../../core/api/httpClient";
 
-export const getProcesos = async () => {
-  try {
-    const response = await httpClient.get("/procesos");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener procesos:", error);
-    throw error;
-  }
-};
+export const getProcesos = () =>
+  httpClient.get("/procesos");
+
+export const createProceso = (data) =>
+  httpClient.post("/procesos", data);
+
+export const updateProceso = (id, data) =>
+  httpClient.put(`/procesos/${id}`, data);
+
+export const deleteProceso = (id) =>
+  httpClient.delete(`/procesos/${id}`);

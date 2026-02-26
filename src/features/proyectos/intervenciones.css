@@ -1,0 +1,44 @@
+/* ======================================================
+   MODAL COMPACTO - Para Intervenciones y Procesos
+====================================================== */
+
+.modal-compact {
+  max-width: 520px !important;
+}
+
+.modal-body-compact {
+  gap: 12px !important;
+  padding: 16px 24px 20px !important;
+}
+
+.modal-body-compact .field {
+  gap: 5px !important;
+}
+
+.modal-body-compact .field span {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.modal-body-compact .field input,
+.modal-body-compact .field select {
+  padding: 10px 12px !important;
+  font-size: 13.5px !important;
+}
+
+.modal-body-compact .modal-actions {
+  margin-top: 8px !important;
+}
+
+.modal-header {
+  padding: 20px 24px 14px !important;
+}
+
+.modal-title {
+  font-size: 17px !important;
+}
+
+.modal-subtitle {
+  font-size: 12.5px !important;
+  margin-top: 2px !important;
+}
