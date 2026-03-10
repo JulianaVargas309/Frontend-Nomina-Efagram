@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 // ══════════════════════════════════════════════════════════
-// HELPERS
+// HELPERS (TODO IGUAL)
 // ══════════════════════════════════════════════════════════
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : "");
 
@@ -106,9 +106,6 @@ const ProyectoModal = ({
   const [zonas,        setZonas]        = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [loadingData,  setLoadingData]  = useState(false);
-
-  // Nueva estructura: lista de bloques de intervención
-  // Cada bloque: { _uid, tipo, cliente_id, supervisor_id, actividades:[] }
   const [intervenciones, setIntervenciones] = useState([]);
 
   const initialForm = useMemo(() => ({
@@ -136,15 +133,10 @@ const ProyectoModal = ({
         descripcion:       proyecto.descripcion          ?? "",
       });
 
-      // Reconstruir intervenciones desde el formato guardado
-      // El backend guarda actividades_por_intervencion como objeto {tipo: [acts]}
-      // Las migramos a la nueva estructura de bloques
       const bloquesMigrados = [];
       const api = proyecto.actividades_por_intervencion ?? {};
       ["mantenimiento", "no_programadas", "establecimiento"].forEach((tipo) => {
         (api[tipo] ?? []).forEach((act) => {
-          // Agrupar por supervisor si viene guardado, si no: un bloque por tipo
-          // Para proyectos ya guardados con el viejo formato: un bloque por tipo
           let bloque = bloquesMigrados.find(
             (b) => b.tipo === tipo && !b._migrated_closed
           );
@@ -202,12 +194,7 @@ const ProyectoModal = ({
     }));
   };
 
-  // ── Convertir intervenciones al formato que espera el backend ──
   const buildPayload = () => {
-    // El backend sigue esperando actividades_por_intervencion como objeto por tipo
-    // Pero ahora además guardamos el cliente de cada bloque
-    // Estrategia: usar el primer cliente encontrado como cliente del proyecto
-    // y guardar actividades normalizadas por tipo (agrupando todos los bloques del mismo tipo)
     const actividadesPorIntervencion = {
       mantenimiento:  [],
       no_programadas: [],
@@ -226,7 +213,6 @@ const ProyectoModal = ({
           cantidad: Number(act.cantidad) || 0,
           unidad: act.unidad || "UNIDAD",
           estado: "Pendiente",
-          // metadata extra
           supervisor_id: bloque.supervisor_id || undefined,
           cliente_id_bloque: bloque.cliente_id || undefined,
         });
@@ -272,8 +258,6 @@ const ProyectoModal = ({
         alert("Proyecto creado correctamente");
       }
 
-      // ── Sincronizar actividades al Sistema B (ActividadProyecto) ──
-      // Solo en creación, o si hay actividades nuevas en edición
       if (proyectoId) {
         for (const bloque of intervenciones) {
           for (const act of bloque.actividades) {
@@ -292,7 +276,6 @@ const ProyectoModal = ({
                 })
               );
             } catch (e) {
-              // Si ya existe (edición), ignorar el error de duplicado
               if (!e?.response?.data?.message?.includes("duplicate")) {
                 console.warn("No se pudo sincronizar actividad:", act.nombre, e?.response?.data?.message);
               }
@@ -313,7 +296,7 @@ const ProyectoModal = ({
   if (!isOpen) return null;
 
   // ══════════════════════════════════════════════════════
-  // MODO VER
+  // MODO VER - CON SCROLL ARREGLADO
   // ══════════════════════════════════════════════════════
   if (modoVer && proyecto) {
     const estado      = proyecto.estado?.toUpperCase();
@@ -350,13 +333,12 @@ const ProyectoModal = ({
             border: "1px solid #e6e8ef",
             borderRadius: 18,
             boxShadow: "0 24px 64px rgba(15,23,42,0.22)",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
+            maxHeight: "90vh", // 🔴 CLAVE: Límite de altura
+            display: "flex", // 🔴 CLAVE: Flex layout
+            flexDirection: "column", // 🔴 CLAVE: Columna
           }}
         >
-          {/* HEADER VER */}
+          {/* HEADER - FIJO */}
           <div
             style={{
               padding: "22px 24px 18px",
@@ -364,6 +346,7 @@ const ProyectoModal = ({
               display: "flex",
               alignItems: "flex-start",
               gap: 14,
+              flexShrink: 0, // 🔴 NO SE COMPRIME
             }}
           >
             <div
@@ -407,8 +390,18 @@ const ProyectoModal = ({
             </button>
           </div>
 
-          {/* BODY VER */}
-          <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* BODY - CON SCROLL */}
+          <div
+            style={{
+              flex: 1, // 🔴 CLAVE: Toma espacio disponible
+              overflowY: "auto", // 🔴 CLAVE: SCROLL AQUÍ
+              overflowX: "hidden",
+              padding: "20px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
 
             {/* Avance */}
             <div
@@ -578,11 +571,15 @@ const ProyectoModal = ({
             )}
           </div>
 
-          {/* FOOTER VER */}
+          {/* FOOTER - FIJO */}
           <div
             style={{
-              padding: "16px 24px", borderTop: "1px solid #f0f2f5",
-              display: "flex", justifyContent: "flex-end", gap: 10,
+              padding: "16px 24px",
+              borderTop: "1px solid #f0f2f5",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 10,
+              flexShrink: 0, // 🔴 NO SE COMPRIME
             }}
           >
             <button
@@ -614,17 +611,26 @@ const ProyectoModal = ({
   }
 
   // ══════════════════════════════════════════════════════
-  // MODO CREAR / EDITAR
+  // MODO CREAR / EDITAR - CON SCROLL ARREGLADO
   // ══════════════════════════════════════════════════════
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-proyecto" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal modal-proyecto"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxHeight: "90vh", // 🔴 CLAVE
+          display: "flex", // 🔴 CLAVE
+          flexDirection: "column", // 🔴 CLAVE
+        }}
+      >
 
-        {/* Header */}
+        {/* HEADER - FIJO */}
         <div
           style={{
             display: "flex", alignItems: "center",
             justifyContent: "space-between", marginBottom: 20,
+            flexShrink: 0, // 🔴 NO SE COMPRIME
           }}
         >
           <div>
@@ -648,146 +654,165 @@ const ProyectoModal = ({
           </button>
         </div>
 
-        {/* Código */}
-        <div className="form-group">
-          <label>Código *</label>
-          <input
-            name="codigo"
-            value={form.codigo}
-            onChange={handleChange}
-            placeholder="Ej: PRY-001"
-            style={{ textTransform: "uppercase" }}
-            disabled={modoEditar}
-          />
-          {modoEditar && (
-            <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>
-              El código no puede modificarse después de la creación.
-            </p>
-          )}
-        </div>
+        {/* BODY - CON SCROLL */}
+        <div
+          style={{
+            flex: 1, // 🔴 CLAVE: Toma espacio
+            overflowY: "auto", // 🔴 CLAVE: SCROLL AQUÍ
+            overflowX: "hidden",
+          }}
+        >
+          <div style={{ paddingRight: "8px" }}>
 
-        {/* Nombre */}
-        <div className="form-group">
-          <label>Nombre del proyecto *</label>
-          <input
-            name="nombre"
-            value={form.nombre}
-            onChange={handleChange}
-            placeholder="Nombre del proyecto"
-          />
-        </div>
+            {/* Código */}
+            <div className="form-group">
+              <label>Código *</label>
+              <input
+                name="codigo"
+                value={form.codigo}
+                onChange={handleChange}
+                placeholder="Ej: PRY-001"
+                style={{ textTransform: "uppercase" }}
+                disabled={modoEditar}
+              />
+              {modoEditar && (
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>
+                  El código no puede modificarse después de la creación.
+                </p>
+              )}
+            </div>
 
-        {/* Responsable */}
-        <div className="form-group">
-          <label>Responsable del proyecto</label>
-          <select
-            name="responsable"
-            value={form.responsable}
-            onChange={handleChange}
-            disabled={loadingData}
-          >
-            <option value="">
-              {loadingData ? "Cargando..." : "Seleccione responsable (opcional)"}
-            </option>
-            {personas.map((p) => (
-              <option key={p._id} value={p._id}>
-                {`${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.nombre || "Persona"}
-              </option>
-            ))}
-          </select>
-        </div>
+            {/* Nombre */}
+            <div className="form-group">
+              <label>Nombre del proyecto *</label>
+              <input
+                name="nombre"
+                value={form.nombre}
+                onChange={handleChange}
+                placeholder="Nombre del proyecto"
+              />
+            </div>
 
-        {/* Zona */}
-        <div className="form-group">
-          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <MapPin size={13} /> Zona *
-          </label>
-          <select
-            name="zona"
-            value={form.zona}
-            onChange={handleChange}
-            disabled={loadingData}
-          >
-            <option value="">
-              {loadingData ? "Cargando..." : "— Seleccione una zona —"}
-            </option>
-            {zonas.map((z) => (
-              <option key={z._id} value={z._id}>
-                {z.nombre} {z.codigo ? `(${z.codigo})` : ""}
-              </option>
-            ))}
-          </select>
-          <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>
-            La zona determina los núcleos disponibles para los subproyectos.
-          </p>
-        </div>
+            {/* Responsable */}
+            <div className="form-group">
+              <label>Responsable del proyecto</label>
+              <select
+                name="responsable"
+                value={form.responsable}
+                onChange={handleChange}
+                disabled={loadingData}
+              >
+                <option value="">
+                  {loadingData ? "Cargando..." : "Seleccione responsable (opcional)"}
+                </option>
+                {personas.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {`${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.nombre || "Persona"}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Fechas */}
-        <div className="modal-grid">
-          <div className="form-group">
-            <label>Fecha Inicio</label>
-            <input
-              type="date"
-              name="fecha_inicio"
-              value={form.fecha_inicio}
-              onChange={handleChange}
+            {/* Zona */}
+            <div className="form-group">
+              <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <MapPin size={13} /> Zona *
+              </label>
+              <select
+                name="zona"
+                value={form.zona}
+                onChange={handleChange}
+                disabled={loadingData}
+              >
+                <option value="">
+                  {loadingData ? "Cargando..." : "— Seleccione una zona —"}
+                </option>
+                {zonas.map((z) => (
+                  <option key={z._id} value={z._id}>
+                    {z.nombre} {z.codigo ? `(${z.codigo})` : ""}
+                  </option>
+                ))}
+              </select>
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>
+                La zona determina los núcleos disponibles para los subproyectos.
+              </p>
+            </div>
+
+            {/* Fechas */}
+            <div className="modal-grid">
+              <div className="form-group">
+                <label>Fecha Inicio</label>
+                <input
+                  type="date"
+                  name="fecha_inicio"
+                  value={form.fecha_inicio}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Fecha Fin Estimada</label>
+                <input
+                  type="date"
+                  name="fecha_fin_estimada"
+                  value={form.fecha_fin_estimada}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* Tipo de contrato */}
+            <div className="form-group">
+              <label>Tipo de Contrato</label>
+              <select name="tipo_contrato" value={form.tipo_contrato} onChange={handleChange}>
+                <option value="FIJO_TODO_COSTO">Fijo todo costo</option>
+                <option value="ADMINISTRACION">Administración</option>
+                <option value="VARIABLE">Variable</option>
+                <option value="CONTRATO_ESPECIAL">Contrato especial</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </div>
+
+            {/* INTERVENCIONES */}
+            <ActividadesIntervencion
+              intervenciones={intervenciones}
+              setIntervenciones={setIntervenciones}
             />
+
+            {/* Descripción */}
+            <div className="form-group">
+              <label>Descripción</label>
+              <textarea
+                name="descripcion"
+                value={form.descripcion}
+                onChange={handleChange}
+                placeholder="Descripción opcional..."
+              />
+            </div>
+
+            {/* Avance */}
+            <div className="form-group">
+              <label>Avance: {form.avance}%</label>
+              <input
+                type="range"
+                name="avance"
+                min="0"
+                max="100"
+                value={form.avance}
+                onChange={handleChange}
+              />
+            </div>
+
           </div>
-          <div className="form-group">
-            <label>Fecha Fin Estimada</label>
-            <input
-              type="date"
-              name="fecha_fin_estimada"
-              value={form.fecha_fin_estimada}
-              onChange={handleChange}
-            />
-          </div>
         </div>
 
-        {/* Tipo de contrato */}
-        <div className="form-group">
-          <label>Tipo de Contrato</label>
-          <select name="tipo_contrato" value={form.tipo_contrato} onChange={handleChange}>
-            <option value="FIJO_TODO_COSTO">Fijo todo costo</option>
-            <option value="ADMINISTRACION">Administración</option>
-            <option value="VARIABLE">Variable</option>
-            <option value="CONTRATO_ESPECIAL">Contrato especial</option>
-            <option value="OTRO">Otro</option>
-          </select>
-        </div>
-
-        {/* ── INTERVENCIONES (incluye cliente por bloque) ── */}
-        <ActividadesIntervencion
-          intervenciones={intervenciones}
-          setIntervenciones={setIntervenciones}
-        />
-
-        {/* Descripción */}
-        <div className="form-group">
-          <label>Descripción</label>
-          <textarea
-            name="descripcion"
-            value={form.descripcion}
-            onChange={handleChange}
-            placeholder="Descripción opcional..."
-          />
-        </div>
-
-        {/* Avance */}
-        <div className="form-group">
-          <label>Avance: {form.avance}%</label>
-          <input
-            type="range"
-            name="avance"
-            min="0"
-            max="100"
-            value={form.avance}
-            onChange={handleChange}
-          />
-        </div>
-
-        {/* Botones */}
-        <div className="modal-buttons">
+        {/* FOOTER - FIJO */}
+        <div
+          className="modal-buttons"
+          style={{
+            flexShrink: 0, // 🔴 NO SE COMPRIME
+            marginTop: 20,
+          }}
+        >
           <button
             onClick={onClose}
             disabled={loading}

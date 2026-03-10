@@ -175,6 +175,7 @@ export default function IntervencionesTable({
       />
 
       <NuevaIntervencionModal
+        key={openCreate ? 'create' : 'create-closed'}
         isOpen={openCreate}
         title="Nueva intervención"
         initialValues={{ codigo: '', nombre: '', proceso: '', activo: true, descripcion: '' }}
@@ -186,6 +187,7 @@ export default function IntervencionesTable({
       />
 
       <NuevaIntervencionModal
+        key={editIntervencion ? (editIntervencion._id ?? editIntervencion.id ?? 'edit') : 'edit-closed'}
         isOpen={!!editIntervencion}
         title="Editar intervención"
         initialValues={{

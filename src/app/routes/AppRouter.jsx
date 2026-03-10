@@ -24,7 +24,7 @@ import CatalogoIntervencionesPage from "../../features/proyectos/pages/CatalogoI
 import CatalogoProcesosPage from "../../features/proyectos/pages/CatalogoProcesosPage";
 import SubproyectosPage from "../../features/proyectos/pages/SubproyectosPage";
 
-// Contratos
+// Contratos (AHORA DENTRO DE PROYECTOS)
 import ContratosPage from '../../features/contratos/pages/ContratosPage';
 
 export default function AppRouter() {
@@ -38,7 +38,10 @@ export default function AppRouter() {
       <Route path="/ejecucion/calendario" element={<PrivateRoute><CalendarioPage /></PrivateRoute>} />
       <Route path="/ejecucion/semanas-operativas" element={<PrivateRoute><SemanasOperativasPage /></PrivateRoute>} />
 
+      {/* ─── PROYECTOS CON SUBMENÚ ─── */}
       <Route path="/proyectos" element={<PrivateRoute><ProyectosPage /></PrivateRoute>} />
+      <Route path="/proyectos/subproyectos" element={<PrivateRoute><SubproyectosPage /></PrivateRoute>} />
+      <Route path="/proyectos/contratos" element={<PrivateRoute><ContratosPage /></PrivateRoute>} />
 
       <Route path="/configuracion/catalogo-clientes" element={<PrivateRoute><ClientesPage /></PrivateRoute>} />
       <Route path="/configuracion/catalogo-actividades" element={<PrivateRoute><CatalogoActividadesPage /></PrivateRoute>} />
@@ -48,15 +51,14 @@ export default function AppRouter() {
       <Route path="/configuracion/ubicacion/zonas" element={<PrivateRoute><ZonasPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/nucleos" element={<PrivateRoute><NucleosPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/fincas" element={<PrivateRoute><FincasPage /></PrivateRoute>} />
-      <Route path="/proyectos/subproyectos" element={<PrivateRoute><SubproyectosPage /></PrivateRoute>} />
 
-      <Route path="/contratos" element={<PrivateRoute><ContratosPage /></PrivateRoute>} />
-
+      {/* ─── REDIRECCIONES PARA COMPATIBILIDAD ─── */}
       <Route path="/clientes" element={<Navigate to="/configuracion/catalogo-clientes" replace />} />
       <Route path="/catalogo-actividades" element={<Navigate to="/configuracion/catalogo-actividades" replace />} />
       <Route path="/territorial/zonas" element={<Navigate to="/configuracion/ubicacion/zonas" replace />} />
       <Route path="/territorial/nucleos" element={<Navigate to="/configuracion/ubicacion/nucleos" replace />} />
       <Route path="/territorial/fincas" element={<Navigate to="/configuracion/ubicacion/fincas" replace />} />
+      <Route path="/contratos" element={<Navigate to="/proyectos/contratos" replace />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

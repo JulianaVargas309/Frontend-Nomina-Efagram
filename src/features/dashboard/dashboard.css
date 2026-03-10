@@ -1,3 +1,4 @@
+/* ─── LAYOUT GENERAL ─── */
 .dashboard-layout {
   display: flex;
   height: 100vh;
@@ -40,4 +41,208 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+}
+
+/* ─── DASHBOARD PAGE ─── */
+.dashboard-grid {
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ─── STATS ROW ─── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e8edf2;
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: default;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.10);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon--green  { background: #e6f4ec; color: #16a34a; }
+.stat-icon--blue   { background: #e8f0fe; color: #1a73e8; }
+.stat-icon--amber  { background: #fff8e1; color: #d97706; }
+.stat-icon--purple { background: #f3e8ff; color: #7c3aed; }
+
+.stat-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-title {
+  font-size: 12px;
+  color: #8a94a6;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.stat-number-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.stat-change {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #e6f4ec;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+/* ─── COLUMNAS INFERIORES ─── */
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+
+/* ─── CARD BOX COMPARTIDA ─── */
+.card-box {
+  background: #ffffff;
+  border: 1px solid #e8edf2;
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+}
+
+.card-box h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 18px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+/* ─── QUICK ACTIONS ─── */
+.quick-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 6px;
+}
+
+.quick-item:last-child {
+  margin-bottom: 0;
+}
+
+.quick-item:hover {
+  background: #e6f4ec;
+  color: #16a34a;
+}
+
+.quick-item svg {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+/* ─── ACTIVITY LIST ─── */
+.activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid #f5f7fa;
+  font-size: 14px;
+  color: #374151;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.activity-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #e6f4ec;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1200px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-grid {
+    padding: 20px 16px;
+  }
 }

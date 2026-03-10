@@ -113,18 +113,13 @@ export default function Sidebar() {
                         <div className={`submenu-item ${isActiveSub("/proyectos/subproyectos")}`} onClick={() => navigate("/proyectos/subproyectos")}>
                             <GitBranch size={16} />Subproyectos
                         </div>
+                        <div className={`submenu-item ${isActiveSub("/proyectos/contratos")}`} onClick={() => navigate("/proyectos/contratos")}>
+                            <FileText size={16} />Contratos
+                        </div>
                     </div>
                 )}
 
                 <div className="menu-title">Sistema</div>
-
-                {/* ── CONTRATOS ── */}
-                <div
-                    className={`menu-item ${isActive("/contratos") ? "active" : ""}`}
-                    onClick={() => navigate("/contratos")}
-                >
-                    <FileText size={18} /><span>Contratos</span>
-                </div>
 
                 {/* ── CONFIGURACIÓN ── */}
                 <div

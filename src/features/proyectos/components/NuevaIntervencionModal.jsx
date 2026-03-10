@@ -2,56 +2,60 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { getProcesos } from '../services/procesosService';
 
-export default function NuevaIntervencionModal({ isOpen, title = 'Nueva Intervención', initialValues, onClose, onSubmit }) {
-  const [codigo,      setCodigo]      = useState('');
-  const [nombre,      setNombre]      = useState('');
-  const [proceso,     setProceso]     = useState('');   // ObjectId del proceso
-  const [activo,      setActivo]      = useState(true);
-  const [descripcion, setDescripcion] = useState('');
+// ─────────────────────────────────────────────────────────────────────────────
+// Este componente NO usa useEffect para poblar el formulario.
+// El padre debe pasarle una `key` dinámica para que React lo desmonte/monte
+// al cambiar, reiniciando el estado del formulario automáticamente.
+// El único useEffect que queda es para cargar el catálogo de procesos (fetch),
+// que sí es un efecto legítimo y no llama setState de forma problemática.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function resolveProcesoId(proc) {
+  if (!proc) return '';
+  if (typeof proc === 'string') return proc;
+  return proc._id ?? proc.id ?? '';
+}
+
+function resolveActivo(raw) {
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'number')  return raw === 1;
+  if (typeof raw === 'string') {
+    const v = raw.toLowerCase().trim();
+    return v === 'activo' || v === 'activa' || v === 'active' || v === 'true' || v === '1';
+  }
+  return true;
+}
+
+export default function NuevaIntervencionModal({
+  isOpen,
+  title = 'Nueva Intervención',
+  initialValues,
+  onClose,
+  onSubmit,
+}) {
+  // Estado inicializado directamente desde props — sin useEffect de formulario
+  const [codigo,      setCodigo]      = useState(initialValues?.codigo      ?? '');
+  const [nombre,      setNombre]      = useState(initialValues?.nombre      ?? '');
+  const [proceso,     setProceso]     = useState(resolveProcesoId(initialValues?.proceso));
+  const [activo,      setActivo]      = useState(resolveActivo(initialValues?.activo ?? initialValues?.estado));
+  const [descripcion, setDescripcion] = useState(initialValues?.descripcion ?? '');
   const [saving,      setSaving]      = useState(false);
   const [error,       setError]       = useState(null);
-  const [procesos,    setProcesos]    = useState([]);   // lista para el select
 
-  // Cargar lista de procesos activos
+  // Este useEffect es legítimo: fetch de datos externos, no modifica estado del form
+  const [procesos, setProcesos] = useState([]);
   useEffect(() => {
     if (!isOpen) return;
     getProcesos()
       .then((res) => {
         let list = [];
-        if (Array.isArray(res)) list = res;
-        else if (Array.isArray(res?.data)) list = res.data;
+        if (Array.isArray(res))                  list = res;
+        else if (Array.isArray(res?.data))       list = res.data;
         else if (Array.isArray(res?.data?.data)) list = res.data.data;
-        // Solo procesos activos
         setProcesos(list.filter((p) => p.activo !== false));
       })
       .catch(() => setProcesos([]));
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setCodigo(initialValues?.codigo ?? '');
-    setNombre(initialValues?.nombre ?? '');
-
-    // initialValues.proceso puede ser un ObjectId string o un objeto poblado
-    const proc = initialValues?.proceso;
-    if (typeof proc === 'string')      setProceso(proc);
-    else if (proc?._id)                setProceso(proc._id);
-    else if (proc?.id)                 setProceso(proc.id);
-    else                               setProceso('');
-
-    // El backend usa 'activo', el modal puede recibir activo o estado
-    const rawActivo = initialValues?.activo ?? initialValues?.estado;
-    if (typeof rawActivo === 'boolean')     setActivo(rawActivo);
-    else if (typeof rawActivo === 'number') setActivo(rawActivo === 1);
-    else if (typeof rawActivo === 'string') {
-      const v = rawActivo.toLowerCase().trim();
-      setActivo(v === 'activo' || v === 'activa' || v === 'active' || v === 'true' || v === '1');
-    } else setActivo(true);
-
-    setDescripcion(initialValues?.descripcion ?? '');
-    setError(null);
-    setSaving(false);
-  }, [isOpen, initialValues]);
 
   if (!isOpen) return null;
 
@@ -64,7 +68,7 @@ export default function NuevaIntervencionModal({ isOpen, title = 'Nueva Interven
     const payload = {
       codigo:      String(codigo).trim(),
       nombre:      String(nombre).trim(),
-      proceso:     proceso,          // ObjectId
+      proceso,
       activo:      Boolean(activo),
       descripcion: String(descripcion).trim(),
     };
@@ -85,29 +89,48 @@ export default function NuevaIntervencionModal({ isOpen, title = 'Nueva Interven
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <form
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={handleSubmit}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="modal-header">
           <div>
             <h3 className="modal-title">{title}</h3>
             <p className="modal-subtitle">Completa los datos de la intervención</p>
           </div>
-          <button className="modal-close-btn" type="button" onClick={onClose}><X size={18} /></button>
+          <button className="modal-close-btn" type="button" onClick={onClose}>
+            <X size={18} />
+          </button>
         </div>
 
-        <form className="modal-body" onSubmit={handleSubmit}>
+        <div className="modal-body">
           <label className="field">
             <span>Código *</span>
-            <input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ej: INT-001" autoFocus />
+            <input
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+              placeholder="Ej: INT-001"
+              autoFocus
+              required
+            />
           </label>
 
           <label className="field">
             <span>Nombre *</span>
-            <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Establecimiento" />
+            <input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Ej: Establecimiento"
+              required
+            />
           </label>
 
           <label className="field">
             <span>Proceso *</span>
-            <select value={proceso} onChange={(e) => setProceso(e.target.value)}>
+            <select value={proceso} onChange={(e) => setProceso(e.target.value)} required>
               <option value="">— Selecciona un proceso —</option>
               {procesos.map((p) => (
                 <option key={p._id ?? p.id} value={p._id ?? p.id}>
@@ -119,7 +142,10 @@ export default function NuevaIntervencionModal({ isOpen, title = 'Nueva Interven
 
           <label className="field">
             <span>Estado</span>
-            <select value={activo ? 'true' : 'false'} onChange={(e) => setActivo(e.target.value === 'true')}>
+            <select
+              value={activo ? 'true' : 'false'}
+              onChange={(e) => setActivo(e.target.value === 'true')}
+            >
               <option value="true">Activo</option>
               <option value="false">Inactivo</option>
             </select>
@@ -131,21 +157,35 @@ export default function NuevaIntervencionModal({ isOpen, title = 'Nueva Interven
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Descripción opcional"
-              rows="3"
-              style={{ padding:'12px 14px', border:'1px solid #e5e7eb', borderRadius:'10px', fontSize:'14px', color:'#111827', background:'#fff', outline:'none', width:'100%', boxSizing:'border-box', fontFamily:'inherit', resize:'vertical' }}
+              rows="4"
+              style={{
+                padding: '12px 14px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '10px',
+                fontSize: '14px',
+                color: '#111827',
+                background: '#fff',
+                outline: 'none',
+                width: '100%',
+                boxSizing: 'border-box',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
             />
           </label>
 
           {error && <div className="form-error">{error}</div>}
+        </div>
 
-          <div className="modal-actions">
-            <button className="btn-modal-cancel" type="button" onClick={onClose}>Cancelar</button>
-            <button className="btn-modal-submit" type="submit" disabled={saving}>
-              {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="modal-actions">
+          <button className="btn-modal-cancel" type="button" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn-modal-submit" type="submit" disabled={saving}>
+            {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

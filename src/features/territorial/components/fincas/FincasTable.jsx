@@ -215,6 +215,7 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
       <FincaDetalleModal isOpen={!!detalleFinca} finca={detalleFinca} onClose={() => setDetalleFinca(null)} />
 
       <NuevaFincaModal
+        key={openCreate ? 'create' : 'create-closed'}
         isOpen={openCreate}
         title="Nueva Finca"
         initialValues={{ codigo: '', nombre: '', nucleo: '', area: '', estado: true }}
@@ -224,6 +225,7 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
       />
 
       <NuevaFincaModal
+        key={editFinca ? (editFinca._id ?? editFinca.id ?? 'edit') : 'edit-closed'}
         isOpen={!!editFinca}
         title="Editar Finca"
         initialValues={{

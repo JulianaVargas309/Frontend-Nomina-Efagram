@@ -1,5 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Este componente NO usa useEffect para poblar el formulario.
+// El padre debe pasarle una `key` dinámica (ej: key={editFinca?._id ?? 'create'})
+// para que React lo desmonte/monte al cambiar, reiniciando el estado solo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function resolveEstado(initialValues) {
+  const raw = initialValues?.activa ?? initialValues?.estado;
+  if (typeof raw === 'boolean') return raw;
+  return true;
+}
 
 export default function NuevaFincaModal({
   isOpen,
@@ -9,25 +21,18 @@ export default function NuevaFincaModal({
   onClose,
   onSubmit,
 }) {
-  const [codigo, setCodigo]   = useState('');
-  const [nombre, setNombre]   = useState('');
-  const [nucleo, setNucleo]   = useState('');
-  const [area, setArea]       = useState('');
-  const [estado, setEstado]   = useState(true);
-  const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setCodigo(initialValues?.codigo ?? '');
-    setNombre(initialValues?.nombre ?? '');
-    setNucleo(initialValues?.nucleo ?? initialValues?.nucleoId ?? '');
-    setArea(initialValues?.area ?? initialValues?.areaTotal ?? initialValues?.hectareas ?? '');
-    const estadoValue = initialValues?.activa ?? initialValues?.estado;
-    setEstado(typeof estadoValue === 'boolean' ? estadoValue : true);
-    setError(null);
-    setSaving(false);
-  }, [isOpen, initialValues]);
+  // Estado inicializado directamente desde props — sin useEffect
+  const [codigo, setCodigo] = useState(initialValues?.codigo  ?? '');
+  const [nombre, setNombre] = useState(initialValues?.nombre  ?? '');
+  const [nucleo, setNucleo] = useState(
+    initialValues?.nucleo ?? initialValues?.nucleoId ?? ''
+  );
+  const [area,   setArea]   = useState(
+    initialValues?.area ?? initialValues?.areaTotal ?? initialValues?.hectareas ?? ''
+  );
+  const [estado, setEstado] = useState(resolveEstado(initialValues));
+  const [saving, setSaving] = useState(false);
+  const [error,  setError]  = useState(null);
 
   if (!isOpen) return null;
 
@@ -42,8 +47,8 @@ export default function NuevaFincaModal({
       nombre: String(nombre).trim(),
       activa: Boolean(estado),
     };
-    if (nucleo) payload.nucleo = nucleo;
-    if (area !== '') payload.area = parseFloat(area);
+    if (nucleo)      payload.nucleo = nucleo;
+    if (area !== '') payload.area   = parseFloat(area);
 
     if (!payload.codigo || !payload.nombre) {
       setError('Código y nombre son obligatorios');
@@ -62,8 +67,13 @@ export default function NuevaFincaModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-
+      <form
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={handleSubmit}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="modal-header">
           <div>
             <h3 className="modal-title">{title}</h3>
@@ -74,7 +84,7 @@ export default function NuevaFincaModal({
           </button>
         </div>
 
-        <form className="modal-body" onSubmit={handleSubmit}>
+        <div className="modal-body">
           <label className="field">
             <span>Código</span>
             <input
@@ -101,7 +111,11 @@ export default function NuevaFincaModal({
                 <option value="">-- Sin núcleo --</option>
                 {nucleos.map((n) => {
                   const id = n?._id ?? n?.id;
-                  return <option key={id} value={id}>{n?.nombre ?? id}</option>;
+                  return (
+                    <option key={id} value={id}>
+                      {n?.nombre ?? id}
+                    </option>
+                  );
                 })}
               </select>
             </label>
@@ -121,22 +135,27 @@ export default function NuevaFincaModal({
 
           <label className="field">
             <span>Estado</span>
-            <select value={estado ? 'true' : 'false'} onChange={(e) => setEstado(e.target.value === 'true')}>
+            <select
+              value={estado ? 'true' : 'false'}
+              onChange={(e) => setEstado(e.target.value === 'true')}
+            >
               <option value="true">Activa</option>
               <option value="false">Inactiva</option>
             </select>
           </label>
 
           {error && <div className="form-error">{error}</div>}
+        </div>
 
-          <div className="modal-actions">
-            <button className="btn-modal-cancel" type="button" onClick={onClose}>Cancelar</button>
-            <button className="btn-modal-submit" type="submit" disabled={saving}>
-              {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="modal-actions">
+          <button className="btn-modal-cancel" type="button" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn-modal-submit" type="submit" disabled={saving}>
+            {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
