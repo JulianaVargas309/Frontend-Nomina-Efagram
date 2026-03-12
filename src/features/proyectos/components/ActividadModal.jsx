@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { createActividad, updateActividad } from "../services/actividadesService";
 
 // ── Constantes ────────────────────────────────────────────
@@ -33,7 +34,6 @@ const FORM_INICIAL = {
   descripcion:                 "",
 };
 
-// ── Estilos inline reutilizables ──────────────────────────
 const inputStyle = (hasError = false) => ({
   width: "100%",
   padding: "9px 12px",
@@ -78,11 +78,6 @@ const labelStyle = {
 
 // ══════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
-// Props:
-//   isOpen          {boolean}
-//   onClose         {function}
-//   onSuccess       {function}
-//   actividadEditar {object|null} — null = crear, objeto = editar
 // ══════════════════════════════════════════════════════════
 const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) => {
   const isEdit = Boolean(actividadEditar);
@@ -91,7 +86,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState({});
 
-  // ── Cargar datos al abrir ──────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
 
@@ -114,14 +108,12 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
     setErrors({});
   }, [isOpen, actividadEditar]);
 
-  // ── Handler de cambios ─────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
-  // ── Validación frontend ────────────────────────────────
   const validate = () => {
     const errs = {};
     if (!form.codigo.trim()) errs.codigo = "El código es obligatorio";
@@ -131,7 +123,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
     return errs;
   };
 
-  // ── Enviar formulario ──────────────────────────────────
   const handleSubmit = async () => {
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
@@ -140,22 +131,19 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
       setLoading(true);
 
       const payload = {
-        nombre:      form.nombre.trim(),
-        categoria:   form.categoria,
+        nombre:        form.nombre.trim(),
+        categoria:     form.categoria,
         unidad_medida: form.unidad_medida,
-        activa:      form.activa === "true",
-        descripcion: form.descripcion.trim(),
+        activa:        form.activa === "true",
+        descripcion:   form.descripcion.trim(),
         ...(form.rendimiento_diario_estimado !== ""
           ? { rendimiento_diario_estimado: Number(form.rendimiento_diario_estimado) }
           : {}),
       };
 
       if (isEdit) {
-        // FIX: en edición NO se envía codigo para evitar conflicto con
-        // la validación del backend (el campo es de solo lectura)
         await updateActividad(actividadEditar._id, payload);
       } else {
-        // En creación sí incluimos el codigo
         await createActividad({
           ...payload,
           codigo: form.codigo.trim().toUpperCase(),
@@ -225,25 +213,43 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
               Catálogo de actividades del sistema
             </p>
           </div>
+
+          {/* ✅ FIX: Botón X con ícono lucide visible */}
           <button
             onClick={onClose}
             title="Cerrar"
             style={{
-              background: "none", border: "1px solid #e5e7eb",
-              borderRadius: 7, width: 32, height: 32,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", flexShrink: 0,
-              fontSize: 18, color: "#6b7280", lineHeight: 1,
+              background: "#f3f4f6",
+              border: "1.5px solid #e5e7eb",
+              borderRadius: 8,
+              width: 34,
+              height: 34,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+              color: "#374151",
+              transition: "background 0.15s, color 0.15s",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = "#fee2e2";
+              e.currentTarget.style.color = "#dc2626";
+              e.currentTarget.style.borderColor = "#fca5a5";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "#f3f4f6";
+              e.currentTarget.style.color = "#374151";
+              e.currentTarget.style.borderColor = "#e5e7eb";
             }}
           >
-            ×
+            <X size={16} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* ── BODY ── */}
         <div style={{ padding: "20px 24px" }}>
 
-          {/* Error general del servidor */}
           {errors._general && (
             <div style={{
               background: "#fef2f2", border: "1px solid #fecaca",
@@ -254,7 +260,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
             </div>
           )}
 
-          {/* ── FILA 1: Código + Nombre ── */}
+          {/* FILA 1: Código + Nombre */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px", marginBottom: 16 }}>
             <div>
               <label style={labelStyle}>
@@ -265,7 +271,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
                 value={form.codigo}
                 onChange={handleChange}
                 placeholder="Ej: ACT-001"
-                // FIX: readOnly en edición (visible pero no editable), no disabled
                 readOnly={isEdit}
                 style={isEdit ? readOnlyInputStyle : inputStyle(!!errors.codigo)}
                 title={isEdit ? "El código no puede modificarse" : ""}
@@ -292,7 +297,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
             </div>
           </div>
 
-          {/* ── FILA 2: Categoría + Unidad + Estado ── */}
+          {/* FILA 2: Categoría + Unidad + Estado */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 12px", marginBottom: 16 }}>
             <div>
               <label style={labelStyle}>Categoria</label>
@@ -314,7 +319,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
 
             <div>
               <label style={labelStyle}>Estado</label>
-              {/* FIX: reemplaza el checkbox por un dropdown para coincidir con la imagen */}
               <select name="activa" value={form.activa} onChange={handleChange} style={selectStyle}>
                 <option value="true">Activa</option>
                 <option value="false">Inactiva</option>
@@ -322,7 +326,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
             </div>
           </div>
 
-          {/* ── FILA 3: Precio Base / Rendimiento ── */}
+          {/* FILA 3: Precio Base */}
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Precio Base ($)</label>
             <input
@@ -342,7 +346,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
             )}
           </div>
 
-          {/* ── FILA 4: Descripción ── */}
+          {/* FILA 4: Descripción */}
           <div>
             <label style={labelStyle}>Descripcion</label>
             <textarea

@@ -4,7 +4,7 @@ import {
     LayoutDashboard, BarChart3, Play, Folder,
     Users, CheckSquare, ChevronDown, Layers, Building,
     ClipboardList, AlertTriangle, Calendar, Clock,
-    Settings, MapPin, Wrench, GitBranch, FileText
+    Settings, MapPin, Wrench, GitBranch, FileText, Activity
 } from "lucide-react";
 import "./sidebar.css";
 
@@ -14,6 +14,7 @@ export default function Sidebar() {
 
     const isEjecucion = location.pathname.startsWith("/ejecucion");
     const isProyectos = location.pathname.startsWith("/proyectos");
+    const isProgramacion = location.pathname.startsWith("/programacion");
     const isConfiguracion = location.pathname.startsWith("/configuracion");
 
     const [manualEjecucion, setManualEjecucion] = useState(null);
@@ -96,6 +97,14 @@ export default function Sidebar() {
                         </div>
                     </div>
                 )}
+
+                {/* ── PROGRAMACIÓN (NUEVO) ── */}
+                <div
+                    className={`menu-item ${isProgramacion ? "active" : ""}`}
+                    onClick={() => navigate("/programacion")}
+                >
+                    <Activity size={18} /><span>Programación</span>
+                </div>
 
                 {/* ── PROYECTOS ── */}
                 <div
