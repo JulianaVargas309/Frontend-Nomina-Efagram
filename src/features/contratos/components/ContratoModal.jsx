@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   FileText, MapPin, Layers, Wrench, Users,
   Search, X, Plus, Calendar, GitBranch, DollarSign,
-  AlertCircle, UserCheck, UserX, ChevronDown,
+  AlertCircle, UserCheck, UserX, ChevronDown, ChevronUp, Trash2,
 } from 'lucide-react';
 import {
   getFincas,
@@ -21,13 +21,20 @@ const normalizeList = (res) => {
   if (Array.isArray(res?.data?.data)) return res.data.data;
   return [];
 };
-
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : '');
+const fmt = (n) => Number(n).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const fmt = (n) =>
-  Number(n).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// ── Cuadrilla vacía base ──────────────────────────────────────────
+const nuevaCuadrillaVacia = (idx) => ({
+  _key:      Date.now() + idx,   // clave única para React
+  nombre:    '',
+  codigo:    '',
+  supervisor: null,
+  miembros:  [],
+  expandida: true,
+});
 
-// ── Barra de progreso de cantidad disponible ──────────────────────
+// ── Barra progreso ────────────────────────────────────────────────
 const BarraCantidad = ({ disponible, total }) => {
   const pct   = total > 0 ? Math.min(100, Math.round(((total - disponible) / total) * 100)) : 0;
   const color = disponible <= 0 ? '#dc2626' : disponible / total < 0.2 ? '#e67e22' : '#1f8f57';
@@ -44,7 +51,6 @@ const BarraCantidad = ({ disponible, total }) => {
   );
 };
 
-// ── InfoRow para modo ver ─────────────────────────────────────────
 const InfoRow = ({ icon, label, children }) => {
   const Icon = icon;
   return (
@@ -61,44 +67,37 @@ const InfoRow = ({ icon, label, children }) => {
 // ══════════════════════════════════════════════════════════════════
 export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = null, modo = 'crear' }) {
 
-  // ── Catálogos ──
   const [fincas,       setFincas]       = useState([]);
   const [lotes,        setLotes]        = useState([]);
   const [subproyectos, setSubproyectos] = useState([]);
 
-  // ── Formulario principal ──
   const [form, setForm] = useState({
     codigo: '', subproyecto: '', finca: '', lotes: [],
     fecha_inicio: '', fecha_fin: '', observaciones: '', estado: 'ACTIVO',
   });
 
-  // ── Actividades disponibles del subproyecto ──
   const [actividadesDisponibles, setActividadesDisponibles] = useState([]);
   const [loadingActividades,     setLoadingActividades]     = useState(false);
   const [actividadesSel,         setActividadesSel]         = useState([]);
 
-  // ── Cuadrilla: datos que se crearán ──
-  const [cuadrillaNombre,  setCuadrillaNombre]  = useState('');
-  const [cuadrillaCodigo,  setCuadrillaCodigo]  = useState('');
-  // miembros seleccionados: array de objetos persona completos
-  const [miembrosSeleccionados, setMiembrosSeleccionados] = useState([]);
-  // supervisor seleccionado: objeto persona
-  const [supervisorSel, setSupervisorSel] = useState(null);
+  // ── Lista de cuadrillas a crear: array de objetos cuadrilla ──
+  const [cuadrillas, setCuadrillas] = useState([nuevaCuadrillaVacia(0)]);
 
-  // ── Lista de personas ──
-  const [todasPersonas,    setTodasPersonas]    = useState([]);  // lista completa activas
-  const [loadingPersonas,  setLoadingPersonas]  = useState(false);
-  const [busquedaPersona,  setBusquedaPersona]  = useState('');  // filtro local
+  // ── Cuadrillas existentes (modo editar) ──
+  const [cuadrillasExistentes, setCuadrillasExistentes] = useState([]);
 
-  // ── Para editar: cuadrilla existente (solo lectura) ──
-  const [cuadrillaExistente, setCuadrillaExistente] = useState(null);
+  // ── Personas ──
+  const [todasPersonas,   setTodasPersonas]   = useState([]);
+  const [loadingPersonas, setLoadingPersonas] = useState(false);
 
-  // ── Control modal ──
+  // ── Buscador por cuadrilla (un estado de búsqueda por índice) ──
+  const [busquedas, setBusquedas] = useState({});
+
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState(null);
-  const [tab,    setTab]    = useState('datos'); // 'datos' | 'actividades' | 'cuadrilla'
+  const [tab,    setTab]    = useState('datos');
 
-  // ── Cargar catálogos al abrir ─────────────────────────────────
+  // ── Cargar catálogos ──────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
@@ -106,26 +105,26 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         const [fRes, sRes] = await Promise.all([getFincas(), getSubproyectos()]);
         setFincas(normalizeList(fRes));
         setSubproyectos(normalizeList(sRes));
-      } catch (e) { console.error('Error cargando catálogos:', e); }
+      } catch (e) { console.error(e); }
     })();
   }, [isOpen]);
 
-  // ── Cargar TODAS las personas activas al abrir tab cuadrilla ──
-  const cargarTodasPersonas = useCallback(async () => {
-    if (todasPersonas.length > 0) return; // ya cargadas
+  // ── Cargar personas al abrir tab cuadrilla ────────────────────
+  const cargarPersonas = useCallback(async () => {
+    if (todasPersonas.length > 0) return;
     try {
       setLoadingPersonas(true);
       const res = await httpClient.get('/personas', { params: { estado: 'ACTIVO' } });
       setTodasPersonas(normalizeList(res?.data));
-    } catch (e) { console.error('Error cargando personas:', e); }
+    } catch (e) { console.error(e); }
     finally { setLoadingPersonas(false); }
   }, [todasPersonas.length]);
 
   useEffect(() => {
-    if (tab === 'cuadrilla') cargarTodasPersonas();
-  }, [tab, cargarTodasPersonas]);
+    if (tab === 'cuadrilla') cargarPersonas();
+  }, [tab, cargarPersonas]);
 
-  // ── Pre-llenar al editar / ver ────────────────────────────────
+  // ── Pre-llenar en editar/ver ──────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     if (contrato && (modo === 'editar' || modo === 'ver')) {
@@ -133,7 +132,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       const subId   = contrato.subproyecto?._id ?? contrato.subproyecto ?? '';
 
       setForm({
-        codigo:        contrato.codigo        ?? '',
+        codigo:        contrato.codigo ?? '',
         subproyecto:   subId,
         finca:         fincaId,
         lotes:         (contrato.lotes ?? []).map(l => l._id ?? l),
@@ -143,8 +142,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         estado:        contrato.estado ?? 'ACTIVO',
       });
 
-      // Actividades previas
-      const actsPrevias = (contrato.actividades ?? []).map(a => ({
+      setActividadesSel((contrato.actividades ?? []).map(a => ({
         asignacion_id:      a.asignacion_subproyecto?._id ?? a.asignacion_subproyecto ?? null,
         actividad_id:       a.actividad?._id ?? a.actividad ?? '',
         nombre:             a.actividad?.nombre ?? '—',
@@ -152,16 +150,12 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         cantidad_disponible: null,
         cantidad:           String(a.cantidad ?? ''),
         precio_unitario:    String(a.precio_unitario ?? ''),
-      }));
-      setActividadesSel(actsPrevias);
+      })));
 
-      // Cuadrilla existente solo lectura
-      if (contrato.cuadrilla && typeof contrato.cuadrilla === 'object') {
-        setCuadrillaExistente(contrato.cuadrilla);
-      }
+      setCuadrillasExistentes(contrato.cuadrillas ?? []);
 
       if (fincaId) fetchLotes(fincaId);
-      if (subId) cargarActividadesDisponibles(subId, contrato._id ?? contrato.id);
+      if (subId)   cargarActividadesDisponibles(subId, contrato._id ?? contrato.id);
     } else {
       resetForm();
     }
@@ -174,18 +168,14 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     setLotes([]);
     setActividadesDisponibles([]);
     setActividadesSel([]);
-    setCuadrillaNombre('');
-    setCuadrillaCodigo('');
-    setMiembrosSeleccionados([]);
-    setSupervisorSel(null);
-    setCuadrillaExistente(null);
-    setBusquedaPersona('');
+    setCuadrillas([nuevaCuadrillaVacia(0)]);
+    setCuadrillasExistentes([]);
+    setBusquedas({});
     setTodasPersonas([]);
     setError(null);
     setTab('datos');
   };
 
-  // ── Lotes ─────────────────────────────────────────────────────
   const fetchLotes = useCallback(async (fincaId) => {
     if (!fincaId) { setLotes([]); return; }
     try {
@@ -198,22 +188,16 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     setForm(p => ({ ...p, finca: fincaId, lotes: [] }));
     fetchLotes(fincaId);
   };
+  const toggleLote = (id) =>
+    setForm(p => ({ ...p, lotes: p.lotes.includes(id) ? p.lotes.filter(l => l !== id) : [...p.lotes, id] }));
 
-  const toggleLote = (id) => {
-    setForm(p => ({
-      ...p,
-      lotes: p.lotes.includes(id) ? p.lotes.filter(l => l !== id) : [...p.lotes, id],
-    }));
-  };
-
-  // ── Subproyecto → cargar actividades disponibles ──────────────
   const cargarActividadesDisponibles = async (subId, excludeId = null) => {
     if (!subId) { setActividadesDisponibles([]); return; }
     try {
       setLoadingActividades(true);
       const res = await getActividadesDisponiblesSubproyecto(subId, excludeId);
       setActividadesDisponibles(normalizeList(res));
-    } catch (e) { console.error(e); setActividadesDisponibles([]); }
+    } catch { setActividadesDisponibles([]); }
     finally { setLoadingActividades(false); }
   };
 
@@ -231,67 +215,91 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       asignacion_id:      disp.asignacion_id,
       actividad_id:       actId,
       nombre:             disp.actividad?.nombre ?? '—',
-      unidad:             disp.unidad ?? disp.actividad?.unidad_medida ?? '',
+      unidad:             disp.unidad ?? '',
       cantidad_disponible: disp.cantidad_disponible,
       cantidad:           '',
       precio_unitario:    String(disp.precio_unitario_referencia ?? ''),
     }]);
   };
-
-  const quitarActividad = (idx) =>
-    setActividadesSel(prev => prev.filter((_, i) => i !== idx));
-
+  const quitarActividad = (idx) => setActividadesSel(p => p.filter((_, i) => i !== idx));
   const actualizarCampoActividad = (idx, campo, valor) =>
-    setActividadesSel(prev => prev.map((a, i) => i === idx ? { ...a, [campo]: valor } : a));
-
+    setActividadesSel(p => p.map((a, i) => i === idx ? { ...a, [campo]: valor } : a));
   const errorCantidad = (item) => {
     const cant = Number(item.cantidad);
     if (!item.cantidad || cant <= 0) return 'Requerida';
-    if (item.cantidad_disponible !== null && cant > item.cantidad_disponible)
-      return `Máx: ${fmt(item.cantidad_disponible)}`;
+    if (item.cantidad_disponible !== null && cant > item.cantidad_disponible) return `Máx: ${fmt(item.cantidad_disponible)}`;
     return null;
   };
 
-  // ── Cuadrilla: personas filtradas según búsqueda ──────────────
-  const personasFiltradas = busquedaPersona.trim().length === 0
-    ? todasPersonas
-    : todasPersonas.filter(p => {
-        const q = busquedaPersona.trim().toLowerCase();
-        const nombre = `${p.nombres ?? ''} ${p.apellidos ?? ''}`.toLowerCase();
-        const doc    = (p.num_doc ?? '').toLowerCase();
-        return nombre.includes(q) || doc.includes(q);
-      });
+  // ── Helpers cuadrillas ────────────────────────────────────────
+  const actualizarCuadrilla = (idx, campo, valor) =>
+    setCuadrillas(prev => prev.map((c, i) => i === idx ? { ...c, [campo]: valor } : c));
 
-  // Personas que aún no están en la cuadrilla ni son supervisor
-  const personasDisponibles = personasFiltradas.filter(p => {
-    const pid = p._id ?? p.id;
-    const yaEsMiembro    = miembrosSeleccionados.some(m => (m._id ?? m.id) === pid);
-    const yaEsSupervisor = supervisorSel && (supervisorSel._id ?? supervisorSel.id) === pid;
-    return !yaEsMiembro && !yaEsSupervisor;
-  });
+  const agregarNuevaCuadrilla = () =>
+    setCuadrillas(prev => [...prev, nuevaCuadrillaVacia(prev.length)]);
 
-  const agregarMiembro = (persona) => {
-    setMiembrosSeleccionados(prev => [...prev, persona]);
+  const eliminarCuadrilla = (idx) => {
+    if (cuadrillas.length === 1) return; // mínimo 1
+    setCuadrillas(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const quitarMiembro = (pid) => {
-    setMiembrosSeleccionados(prev => prev.filter(m => (m._id ?? m.id) !== pid));
-  };
+  const toggleExpandida = (idx) =>
+    actualizarCuadrilla(idx, 'expandida', !cuadrillas[idx].expandida);
 
-  const seleccionarSupervisor = (persona) => {
-    // Si ya estaba como miembro, lo sacamos
+  const seleccionarSupervisor = (cuadrillaIdx, persona) => {
     const pid = persona._id ?? persona.id;
-    setMiembrosSeleccionados(prev => prev.filter(m => (m._id ?? m.id) !== pid));
-    setSupervisorSel(persona);
+    setCuadrillas(prev => prev.map((c, i) => {
+      if (i !== cuadrillaIdx) return c;
+      return {
+        ...c,
+        supervisor: persona,
+        // Quitarlo de miembros si ya estaba
+        miembros: c.miembros.filter(m => (m._id ?? m.id) !== pid),
+      };
+    }));
   };
 
-  const quitarSupervisor = () => setSupervisorSel(null);
+  const quitarSupervisor = (cuadrillaIdx) =>
+    actualizarCuadrilla(cuadrillaIdx, 'supervisor', null);
+
+  const agregarMiembro = (cuadrillaIdx, persona) => {
+    setCuadrillas(prev => prev.map((c, i) => {
+      if (i !== cuadrillaIdx) return c;
+      const pid = persona._id ?? persona.id;
+      if (c.miembros.some(m => (m._id ?? m.id) === pid)) return c;
+      return { ...c, miembros: [...c.miembros, persona] };
+    }));
+  };
+
+  const quitarMiembro = (cuadrillaIdx, pid) =>
+    setCuadrillas(prev => prev.map((c, i) =>
+      i !== cuadrillaIdx ? c : { ...c, miembros: c.miembros.filter(m => (m._id ?? m.id) !== pid) }
+    ));
+
+  // Personas disponibles para una cuadrilla específica
+  // (excluye supervisor y miembros de TODAS las cuadrillas para evitar duplicados)
+  const getPersonasDisponibles = (cuadrillaIdx) => {
+    const busqueda = (busquedas[cuadrillaIdx] ?? '').trim().toLowerCase();
+    const todosOcupados = new Set();
+    cuadrillas.forEach(c => {
+      if (c.supervisor) todosOcupados.add(c.supervisor._id ?? c.supervisor.id);
+      c.miembros.forEach(m => todosOcupados.add(m._id ?? m.id));
+    });
+
+    return todasPersonas.filter(p => {
+      const pid = p._id ?? p.id;
+      if (todosOcupados.has(pid)) return false;
+      if (!busqueda) return true;
+      const nombre = `${p.nombres ?? ''} ${p.apellidos ?? ''}`.toLowerCase();
+      const doc    = (p.num_doc ?? '').toLowerCase();
+      return nombre.includes(busqueda) || doc.includes(busqueda);
+    });
+  };
 
   // ── Guardar ───────────────────────────────────────────────────
   const handleSave = async () => {
     setError(null);
 
-    // Validaciones básicas
     if (!form.codigo.trim())         return setError('El código del contrato es obligatorio');
     if (!form.subproyecto)           return setError('Selecciona un subproyecto');
     if (!form.finca)                 return setError('Selecciona una finca');
@@ -299,7 +307,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     if (actividadesSel.length === 0) return setError('Agrega al menos una actividad');
     if (!form.fecha_inicio)          return setError('La fecha de inicio es obligatoria');
 
-    // Validar actividades
     for (const a of actividadesSel) {
       const err = errorCantidad(a);
       if (err && err !== 'Requerida') return setError(`${a.nombre}: ${err}`);
@@ -307,34 +314,42 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       if (a.precio_unitario === '' || Number(a.precio_unitario) < 0) return setError(`Ingresa un precio válido para "${a.nombre}"`);
     }
 
-    // Validar cuadrilla (solo en crear)
-    let cuadrillaId = contrato?.cuadrilla?._id ?? contrato?.cuadrilla ?? null;
+    // Validar cuadrillas solo en crear
+    let cuadrillaIds = (contrato?.cuadrillas ?? []).map(c => c._id ?? c);
 
     if (modo === 'crear') {
-      if (!cuadrillaNombre.trim()) return setError('El nombre de la cuadrilla es obligatorio');
-      if (!cuadrillaCodigo.trim()) return setError('El código de la cuadrilla es obligatorio');
-      if (!supervisorSel)          return setError('Debes seleccionar un supervisor para la cuadrilla');
-      if (miembrosSeleccionados.length === 0) return setError('Agrega al menos un trabajador a la cuadrilla');
+      for (let i = 0; i < cuadrillas.length; i++) {
+        const c = cuadrillas[i];
+        if (!c.nombre.trim()) return setError(`Cuadrilla ${i + 1}: el nombre es obligatorio`);
+        if (!c.codigo.trim()) return setError(`Cuadrilla ${i + 1}: el código es obligatorio`);
+        if (!c.supervisor)    return setError(`Cuadrilla ${i + 1}: debes seleccionar un supervisor`);
+        if (c.miembros.length === 0) return setError(`Cuadrilla ${i + 1}: agrega al menos un trabajador`);
+      }
+
+      try {
+        setSaving(true);
+        // Crear todas las cuadrillas en paralelo
+        const resultados = await Promise.all(
+          cuadrillas.map(c =>
+            httpClient.post('/cuadrillas', {
+              codigo:    c.codigo.trim().toUpperCase(),
+              nombre:    c.nombre.trim(),
+              supervisor: c.supervisor._id ?? c.supervisor.id,
+              miembros:  c.miembros.map(m => m._id ?? m.id),
+            })
+          )
+        );
+        cuadrillaIds = resultados.map(r => r?.data?.data?._id ?? r?.data?._id);
+
+        if (cuadrillaIds.some(id => !id)) throw new Error('No se pudo obtener el ID de una cuadrilla creada');
+      } catch (e) {
+        setError(e?.response?.data?.message ?? e?.message ?? 'Error al crear las cuadrillas');
+        setSaving(false);
+        return;
+      }
     }
 
     try {
-      setSaving(true);
-
-      // Paso 1: crear cuadrilla si es modo crear
-      if (modo === 'crear') {
-        const cuadrillaRes = await httpClient.post('/cuadrillas', {
-          codigo:      cuadrillaCodigo.trim().toUpperCase(),
-          nombre:      cuadrillaNombre.trim(),
-          supervisor:  supervisorSel._id ?? supervisorSel.id,
-          miembros:    miembrosSeleccionados.map(m => m._id ?? m.id),
-          observaciones: '',
-        });
-        cuadrillaId = cuadrillaRes?.data?.data?._id ?? cuadrillaRes?.data?._id;
-
-        if (!cuadrillaId) throw new Error('No se pudo obtener el ID de la cuadrilla creada');
-      }
-
-      // Paso 2: crear/editar el contrato
       const payload = {
         codigo:       form.codigo.trim().toUpperCase(),
         subproyecto:  form.subproyecto,
@@ -345,7 +360,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
           cantidad:        Number(a.cantidad),
           precio_unitario: Number(a.precio_unitario),
         })),
-        cuadrilla:     cuadrillaId,
+        cuadrillas:    cuadrillaIds,
         fecha_inicio:  form.fecha_inicio,
         fecha_fin:     form.fecha_fin || null,
         observaciones: form.observaciones.trim(),
@@ -370,17 +385,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   if (!isOpen) return null;
 
   const esVer    = modo === 'ver';
-  const valorTotal = actividadesSel.reduce(
-    (s, a) => s + (Number(a.cantidad) || 0) * (Number(a.precio_unitario) || 0), 0
-  );
+  const valorTotal = actividadesSel.reduce((s, a) => s + (Number(a.cantidad)||0) * (Number(a.precio_unitario)||0), 0);
 
   // ══ MODO VER ══════════════════════════════════════════════════
   if (esVer) {
     const c = contrato;
-    const miembrosVer = (c.cuadrilla?.miembros ?? [])
-      .filter(m => m.activo)
-      .map(m => m.persona ?? m);
-
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-contrato" onClick={e => e.stopPropagation()}>
@@ -389,46 +398,49 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             <button className="modal-close-btn" onClick={onClose}>×</button>
           </div>
           <div className="modal-body">
-            <InfoRow icon={FileText}   label="Código">{c.codigo}</InfoRow>
-            <InfoRow icon={GitBranch}  label="Subproyecto">
+            <InfoRow icon={FileText}  label="Código">{c.codigo}</InfoRow>
+            <InfoRow icon={GitBranch} label="Subproyecto">
               {c.subproyecto?.nombre ?? '—'} <span style={{ color:'#94a3b8', fontSize:12 }}>({c.subproyecto?.codigo})</span>
             </InfoRow>
-            <InfoRow icon={MapPin}     label="Finca">
+            <InfoRow icon={MapPin}    label="Finca">
               {c.finca?.nombre ?? '—'} <span style={{ color:'#94a3b8', fontSize:12 }}>({c.finca?.codigo})</span>
             </InfoRow>
-            <InfoRow icon={Layers}     label="Lotes">
+            <InfoRow icon={Layers}    label="Lotes">
               <div className="chips-wrap">
-                {(c.lotes ?? []).map(l => <span key={l._id ?? l} className="chip">{l.nombre ?? l.codigo ?? l}</span>)}
+                {(c.lotes ?? []).map(l => <span key={l._id??l} className="chip">{l.nombre??l.codigo??l}</span>)}
               </div>
             </InfoRow>
-            <InfoRow icon={Wrench}     label="Actividades">
+            <InfoRow icon={Wrench}    label="Actividades">
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {(c.actividades ?? []).map((a, i) => (
                   <div key={i} style={{ background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:8, padding:'8px 12px' }}>
                     <p style={{ margin:0, fontWeight:700, fontSize:13 }}>{a.actividad?.nombre ?? '—'}</p>
                     <p style={{ margin:'2px 0 0', fontSize:12, color:'#64748b' }}>
-                      Cant: <strong>{fmt(a.cantidad)} {a.actividad?.unidad_medida ?? ''}</strong>
-                      &nbsp;·&nbsp;Precio: <strong>${fmt(a.precio_unitario)}</strong>
-                      &nbsp;·&nbsp;Total: <strong>${fmt((a.cantidad??0)*(a.precio_unitario??0))}</strong>
+                      Cant: <strong>{fmt(a.cantidad)}</strong> · Precio: <strong>${fmt(a.precio_unitario)}</strong> · Total: <strong>${fmt((a.cantidad??0)*(a.precio_unitario??0))}</strong>
                     </p>
                   </div>
                 ))}
                 <p style={{ margin:'4px 0 0', fontSize:13, fontWeight:700, color:'#1f8f57', textAlign:'right' }}>
-                  Valor total: ${fmt(c.actividades?.reduce((s,a)=>s+(a.cantidad??0)*(a.precio_unitario??0),0)??0)}
+                  Valor total: ${fmt((c.actividades??[]).reduce((s,a)=>s+(a.cantidad??0)*(a.precio_unitario??0),0))}
                 </p>
               </div>
             </InfoRow>
-            <InfoRow icon={Users}      label={`Cuadrilla · ${miembrosVer.length} miembros`}>
-              <p style={{ margin:0, fontWeight:600 }}>{c.cuadrilla?.nombre ?? '—'}</p>
-              {miembrosVer.length > 0 && (
-                <div style={{ marginTop:8, display:'flex', flexWrap:'wrap', gap:4 }}>
-                  {miembrosVer.map(p => (
-                    <span key={p._id??p} className="chip">{p.nombres} {p.apellidos}</span>
-                  ))}
-                </div>
-              )}
+            <InfoRow icon={Users}     label={`Cuadrillas (${(c.cuadrillas??[]).length})`}>
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {(c.cuadrillas ?? []).map((cua, i) => {
+                  const miembros = (cua.miembros ?? []).filter(m => m.activo).map(m => m.persona ?? m);
+                  return (
+                    <div key={cua._id ?? i} style={{ background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:8, padding:'8px 12px' }}>
+                      <p style={{ margin:0, fontWeight:700, fontSize:13 }}>{cua.nombre} <span style={{ color:'#94a3b8', fontSize:11 }}>({cua.codigo})</span></p>
+                      <div style={{ marginTop:6, display:'flex', flexWrap:'wrap', gap:4 }}>
+                        {miembros.map(p => <span key={p._id??p} className="chip">{p.nombres} {p.apellidos}</span>)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </InfoRow>
-            <InfoRow icon={Calendar}   label="Vigencia">
+            <InfoRow icon={Calendar}  label="Vigencia">
               {c.fecha_inicio ? new Date(c.fecha_inicio).toLocaleDateString('es-CO') : '—'}
               {c.fecha_fin ? ` → ${new Date(c.fecha_fin).toLocaleDateString('es-CO')}` : ''}
             </InfoRow>
@@ -442,17 +454,17 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   }
 
   // ══ MODO CREAR / EDITAR ════════════════════════════════════════
+  const totalMiembros = cuadrillas.reduce((s, c) => s + c.miembros.length, 0);
   const TABS = [
     { key: 'datos',       label: '📋 Datos' },
     { key: 'actividades', label: `🔧 Actividades${actividadesSel.length > 0 ? ` (${actividadesSel.length})` : ''}` },
-    { key: 'cuadrilla',   label: `👥 Cuadrilla${miembrosSeleccionados.length > 0 ? ` (${miembrosSeleccionados.length})` : ''}` },
+    { key: 'cuadrilla',   label: `👥 Cuadrillas${modo === 'crear' && totalMiembros > 0 ? ` (${cuadrillas.length})` : ''}` },
   ];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-contrato" onClick={e => e.stopPropagation()} style={{ maxWidth: 820, width: '100%' }}>
+      <div className="modal-contrato" onClick={e => e.stopPropagation()} style={{ maxWidth: 860, width: '100%' }}>
 
-        {/* Header */}
         <div className="modal-contrato-header">
           <h3>{modo === 'editar' ? '✏️ Editar Contrato' : '➕ Nuevo Contrato'}</h3>
           <button className="modal-close-btn" onClick={onClose}>×</button>
@@ -470,29 +482,24 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
           ))}
         </div>
 
-        {/* Body */}
         <div className="modal-body">
           {error && <div className="contratos-error" style={{ marginBottom:12 }}>{error}</div>}
 
           {/* ══ TAB DATOS ══════════════════════════════════════════ */}
           {tab === 'datos' && (
             <>
-              {/* Subproyecto */}
               <div className="form-section">
                 <p className="form-section-title">🗂️ Subproyecto *</p>
                 <div className="form-field">
                   <select value={form.subproyecto} onChange={e => handleSubproyectoChange(e.target.value)}>
                     <option value="">— Selecciona un subproyecto —</option>
                     {subproyectos.map(s => (
-                      <option key={s._id??s.id} value={s._id??s.id}>
-                        {s.codigo} · {s.nombre}
-                      </option>
+                      <option key={s._id??s.id} value={s._id??s.id}>{s.codigo} · {s.nombre}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Datos básicos */}
               <div className="form-section">
                 <p className="form-section-title">📋 Datos básicos</p>
                 <div className="form-row">
@@ -523,27 +530,24 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                 </div>
               </div>
 
-              {/* Ubicación */}
               <div className="form-section">
                 <p className="form-section-title">📍 Ubicación</p>
                 <div className="form-field">
                   <label>Finca *</label>
                   <select value={form.finca} onChange={e => handleFincaChange(e.target.value)}>
                     <option value="">— Selecciona una finca —</option>
-                    {fincas.map(f => (
-                      <option key={f._id??f.id} value={f._id??f.id}>{f.nombre} ({f.codigo})</option>
-                    ))}
+                    {fincas.map(f => <option key={f._id??f.id} value={f._id??f.id}>{f.nombre} ({f.codigo})</option>)}
                   </select>
                 </div>
                 {form.finca && (
                   <div className="form-field" style={{ marginTop:12 }}>
                     <label>Lotes * — {form.lotes.length} seleccionado(s)</label>
                     {lotes.length === 0
-                      ? <p style={{ margin:0, fontSize:13, color:'#94a3b8' }}>Esta finca no tiene lotes activos.</p>
+                      ? <p style={{ margin:0, fontSize:13, color:'#94a3b8' }}>Sin lotes activos.</p>
                       : (
                         <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                           {lotes.map(l => {
-                            const lid = l._id ?? l.id;
+                            const lid = l._id??l.id;
                             const sel = form.lotes.includes(lid);
                             return (
                               <label key={lid} className={`actividad-checkbox ${sel ? 'selected' : ''}`} style={{ minWidth:'unset', padding:'7px 12px' }}>
@@ -559,7 +563,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                 )}
               </div>
 
-              {/* Observaciones */}
               <div className="form-section">
                 <div className="form-field">
                   <label>Observaciones</label>
@@ -582,14 +585,13 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                 <div style={{ textAlign:'center', padding:32, color:'#64748b' }}>Cargando actividades...</div>
               ) : (
                 <>
-                  {/* Disponibles */}
                   <div>
                     <p style={{ margin:'0 0 10px', fontSize:13, fontWeight:700, color:'#475569', textTransform:'uppercase', letterSpacing:'0.4px' }}>
-                      Actividades disponibles en el subproyecto
+                      Actividades disponibles
                     </p>
                     {actividadesDisponibles.length === 0 ? (
                       <div style={{ padding:16, background:'#fef9c3', border:'1px solid #fde68a', borderRadius:10, fontSize:13, color:'#92400e', display:'flex', alignItems:'center', gap:8 }}>
-                        <AlertCircle size={15} /> El subproyecto no tiene actividades disponibles.
+                        <AlertCircle size={15} /> Sin actividades disponibles en este subproyecto.
                       </div>
                     ) : (
                       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -605,10 +607,9 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                             }}>
                               <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10 }}>
                                 <div style={{ flex:1 }}>
-                                  <p style={{ margin:0, fontSize:13, fontWeight:700, color:'#0f172a' }}>{disp.actividad?.nombre ?? '—'}</p>
+                                  <p style={{ margin:0, fontSize:13, fontWeight:700 }}>{disp.actividad?.nombre ?? '—'}</p>
                                   <p style={{ margin:'2px 0 4px', fontSize:12, color:'#64748b' }}>
-                                    {disp.actividad?.codigo} · {disp.unidad}
-                                    &nbsp;·&nbsp;Precio ref: <strong>${fmt(disp.precio_unitario_referencia)}</strong>
+                                    {disp.actividad?.codigo} · {disp.unidad} · Precio ref: <strong>${fmt(disp.precio_unitario_referencia)}</strong>
                                   </p>
                                   <BarraCantidad disponible={disp.cantidad_disponible} total={disp.cantidad_asignada_subproyecto} />
                                 </div>
@@ -632,13 +633,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                     )}
                   </div>
 
-                  {/* Seleccionadas con cantidad y precio */}
                   {actividadesSel.length > 0 && (
                     <div>
                       <p style={{ margin:'0 0 10px', fontSize:13, fontWeight:700, color:'#0f172a', textTransform:'uppercase', letterSpacing:'0.4px' }}>
-                        📝 Cantidades y precios del contrato
+                        📝 Cantidades y precios
                       </p>
-                      {/* Cabecera */}
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 150px 150px 90px 32px', gap:8, padding:'8px 14px', background:'#f8fafc', borderRadius:'10px 10px 0 0', border:'1px solid #e2e8f0', borderBottom:'none', fontSize:11, fontWeight:700, color:'#64748b', textTransform:'uppercase' }}>
                         <span>Actividad</span><span>Cantidad</span><span>Precio unitario</span><span>Total</span><span></span>
                       </div>
@@ -654,7 +653,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                               background: errCant && errCant !== 'Requerida' ? '#fff5f5' : '#fff',
                             }}>
                               <div>
-                                <p style={{ margin:0, fontSize:13, fontWeight:600, color:'#0f172a' }}>{a.nombre}</p>
+                                <p style={{ margin:0, fontSize:13, fontWeight:600 }}>{a.nombre}</p>
                                 <p style={{ margin:0, fontSize:11, color:'#94a3b8' }}>
                                   {a.cantidad_disponible !== null ? `Disponible: ${fmt(a.cantidad_disponible)} ${a.unidad}` : a.unidad}
                                 </p>
@@ -686,13 +685,10 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                           );
                         })}
                       </div>
-                      {/* Total */}
                       <div style={{ display:'flex', justifyContent:'flex-end', marginTop:10 }}>
                         <div style={{ background:'#f0faf4', border:'1.5px solid #1f8f57', borderRadius:10, padding:'8px 18px', display:'flex', alignItems:'center', gap:8 }}>
                           <DollarSign size={15} color="#1f8f57" />
-                          <span style={{ fontSize:13, fontWeight:700, color:'#1f8f57' }}>
-                            Valor total: ${fmt(valorTotal)}
-                          </span>
+                          <span style={{ fontSize:13, fontWeight:700, color:'#1f8f57' }}>Valor total: ${fmt(valorTotal)}</span>
                         </div>
                       </div>
                     </div>
@@ -702,158 +698,195 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             </div>
           )}
 
-          {/* ══ TAB CUADRILLA ══════════════════════════════════════ */}
+          {/* ══ TAB CUADRILLAS ═════════════════════════════════════ */}
           {tab === 'cuadrilla' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
-              {/* Si es editar, mostrar cuadrilla actual como lectura */}
-              {modo === 'editar' && cuadrillaExistente && (
+              {/* Modo editar: mostrar cuadrillas existentes */}
+              {modo === 'editar' && cuadrillasExistentes.length > 0 && (
                 <div style={{ background:'#f0faf4', border:'1.5px solid #1f8f57', borderRadius:12, padding:'14px 16px' }}>
-                  <p style={{ margin:'0 0 6px', fontSize:13, fontWeight:700, color:'#1f8f57' }}>✅ Cuadrilla asignada actualmente</p>
-                  <p style={{ margin:0, fontSize:14, fontWeight:700, color:'#0f172a' }}>{cuadrillaExistente.nombre}</p>
-                  <p style={{ margin:'2px 0 0', fontSize:12, color:'#64748b' }}>
-                    {(cuadrillaExistente.miembros ?? []).filter(m => m.activo).length} miembro(s) activo(s)
-                  </p>
+                  <p style={{ margin:'0 0 8px', fontSize:13, fontWeight:700, color:'#1f8f57' }}>✅ Cuadrillas asignadas actualmente</p>
+                  {cuadrillasExistentes.map((cua, i) => (
+                    <div key={cua._id ?? i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                      <p style={{ margin:0, fontSize:13, fontWeight:700 }}>{cua.nombre ?? `Cuadrilla ${i+1}`}</p>
+                      <p style={{ margin:0, fontSize:12, color:'#64748b' }}>
+                        {(cua.miembros ?? []).filter(m => m.activo).length} miembro(s)
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
 
+              {/* Modo crear: constructor de cuadrillas */}
               {modo === 'crear' && (
                 <>
-                  {/* Nombre y código de la cuadrilla */}
-                  <div className="form-section" style={{ margin:0 }}>
-                    <p className="form-section-title">📋 Datos de la cuadrilla</p>
-                    <div className="form-row">
-                      <div className="form-field">
-                        <label>Nombre de la cuadrilla *</label>
-                        <input placeholder="Ej: Cuadrilla Norte"
-                          value={cuadrillaNombre}
-                          onChange={e => setCuadrillaNombre(e.target.value)} />
-                      </div>
-                      <div className="form-field">
-                        <label>Código *</label>
-                        <input placeholder="Ej: CUA-001"
-                          value={cuadrillaCodigo}
-                          onChange={e => setCuadrillaCodigo(e.target.value.toUpperCase())} />
-                      </div>
-                    </div>
-                  </div>
+                  {cuadrillas.map((cua, cuaIdx) => {
+                    const personasDisp = getPersonasDisponibles(cuaIdx);
+                    const busqueda     = busquedas[cuaIdx] ?? '';
 
-                  {/* Supervisor seleccionado */}
-                  {supervisorSel && (
-                    <div style={{ background:'#eff6ff', border:'1.5px solid #3b82f6', borderRadius:10, padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                      <div>
-                        <p style={{ margin:0, fontSize:12, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'0.4px' }}>⭐ Supervisor</p>
-                        <p style={{ margin:'2px 0 0', fontSize:14, fontWeight:700, color:'#0f172a' }}>
-                          {supervisorSel.nombres} {supervisorSel.apellidos}
-                        </p>
-                        <p style={{ margin:0, fontSize:12, color:'#64748b' }}>{supervisorSel.tipo_doc} {supervisorSel.num_doc}</p>
-                      </div>
-                      <button onClick={quitarSupervisor} style={{ background:'rgba(220,38,38,0.1)', border:'1px solid rgba(220,38,38,0.3)', color:'#dc2626', width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                        <X size={14} />
-                      </button>
-                    </div>
-                  )}
+                    return (
+                      <div key={cua._key} style={{ border:'1.5px solid #e2e8f0', borderRadius:14, overflow:'hidden' }}>
 
-                  {/* Miembros seleccionados */}
-                  {miembrosSeleccionados.length > 0 && (
-                    <div>
-                      <p style={{ margin:'0 0 8px', fontSize:13, fontWeight:700, color:'#475569' }}>
-                        👷 Trabajadores en la cuadrilla ({miembrosSeleccionados.length})
-                      </p>
-                      <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                        {miembrosSeleccionados.map(p => {
-                          const pid = p._id ?? p.id;
-                          return (
-                            <div key={pid} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:8, padding:'8px 12px' }}>
-                              <div>
-                                <p style={{ margin:0, fontSize:13, fontWeight:600, color:'#0f172a' }}>{p.nombres} {p.apellidos}</p>
-                                <p style={{ margin:0, fontSize:11, color:'#94a3b8' }}>{p.tipo_doc} {p.num_doc} {p.cargo ? `· ${p.cargo}` : ''}</p>
-                              </div>
-                              <button onClick={() => quitarMiembro(pid)} style={{ background:'none', border:'none', cursor:'pointer', color:'#ef4444', display:'flex', alignItems:'center' }}>
-                                <UserX size={16} />
+                        {/* Header de la cuadrilla */}
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#f8fafc', borderBottom: cua.expandida ? '1px solid #e2e8f0' : 'none', cursor:'pointer' }}
+                          onClick={() => toggleExpandida(cuaIdx)}>
+                          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                            <span style={{ fontSize:16 }}>👥</span>
+                            <div>
+                              <p style={{ margin:0, fontSize:13, fontWeight:700, color:'#0f172a' }}>
+                                {cua.nombre.trim() || `Cuadrilla ${cuaIdx + 1}`}
+                              </p>
+                              <p style={{ margin:0, fontSize:11, color:'#94a3b8' }}>
+                                {cua.supervisor ? `Supervisor: ${cua.supervisor.nombres} ${cua.supervisor.apellidos}` : 'Sin supervisor'} · {cua.miembros.length} miembro(s)
+                              </p>
+                            </div>
+                          </div>
+                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            {cuadrillas.length > 1 && (
+                              <button
+                                onClick={e => { e.stopPropagation(); eliminarCuadrilla(cuaIdx); }}
+                                style={{ background:'#fee2e2', border:'none', color:'#dc2626', width:28, height:28, borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}
+                              >
+                                <Trash2 size={13} />
                               </button>
+                            )}
+                            {cua.expandida ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}
+                          </div>
+                        </div>
+
+                        {/* Cuerpo expandido */}
+                        {cua.expandida && (
+                          <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:14 }}>
+
+                            {/* Nombre y código */}
+                            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                              <div className="form-field" style={{ margin:0 }}>
+                                <label>Nombre *</label>
+                                <input placeholder="Ej: Cuadrilla Norte"
+                                  value={cua.nombre}
+                                  onChange={e => actualizarCuadrilla(cuaIdx, 'nombre', e.target.value)} />
+                              </div>
+                              <div className="form-field" style={{ margin:0 }}>
+                                <label>Código *</label>
+                                <input placeholder="Ej: CUA-001"
+                                  value={cua.codigo}
+                                  onChange={e => actualizarCuadrilla(cuaIdx, 'codigo', e.target.value.toUpperCase())} />
+                              </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Buscador + lista de personas */}
-                  <div>
-                    <p style={{ margin:'0 0 10px', fontSize:13, fontWeight:700, color:'#475569', textTransform:'uppercase', letterSpacing:'0.4px' }}>
-                      Personas disponibles
-                    </p>
+                            {/* Supervisor seleccionado */}
+                            {cua.supervisor && (
+                              <div style={{ background:'#eff6ff', border:'1.5px solid #3b82f6', borderRadius:10, padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                                <div>
+                                  <p style={{ margin:0, fontSize:11, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase' }}>⭐ Supervisor</p>
+                                  <p style={{ margin:'2px 0 0', fontSize:13, fontWeight:700 }}>{cua.supervisor.nombres} {cua.supervisor.apellidos}</p>
+                                  <p style={{ margin:0, fontSize:11, color:'#64748b' }}>{cua.supervisor.tipo_doc} {cua.supervisor.num_doc}</p>
+                                </div>
+                                <button onClick={() => quitarSupervisor(cuaIdx)} style={{ background:'rgba(220,38,38,0.1)', border:'1px solid rgba(220,38,38,0.3)', color:'#dc2626', width:30, height:30, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                                  <X size={13} />
+                                </button>
+                              </div>
+                            )}
 
-                    {/* Buscador */}
-                    <div style={{ position:'relative', marginBottom:12 }}>
-                      <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#94a3b8' }} />
-                      <input
-                        placeholder="Buscar por nombre o cédula..."
-                        value={busquedaPersona}
-                        onChange={e => setBusquedaPersona(e.target.value)}
-                        style={{ width:'100%', padding:'9px 12px 9px 36px', border:'1.5px solid #e6e8ef', borderRadius:10, fontSize:13, outline:'none', boxSizing:'border-box' }}
-                      />
-                    </div>
-
-                    {loadingPersonas ? (
-                      <div style={{ textAlign:'center', padding:24, color:'#64748b' }}>Cargando personas...</div>
-                    ) : personasDisponibles.length === 0 ? (
-                      <div style={{ textAlign:'center', padding:20, color:'#94a3b8', fontSize:13 }}>
-                        {busquedaPersona ? 'Sin resultados para esa búsqueda' : 'Todas las personas ya fueron agregadas'}
-                      </div>
-                    ) : (
-                      <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:320, overflowY:'auto' }}>
-                        {personasDisponibles.map(p => {
-                          const pid = p._id ?? p.id;
-                          return (
-                            <div key={pid} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#fff', border:'1px solid #e2e8f0', borderRadius:8, padding:'10px 12px' }}>
+                            {/* Miembros seleccionados */}
+                            {cua.miembros.length > 0 && (
                               <div>
-                                <p style={{ margin:0, fontSize:13, fontWeight:600, color:'#0f172a' }}>
-                                  {p.nombres} {p.apellidos}
+                                <p style={{ margin:'0 0 6px', fontSize:12, fontWeight:700, color:'#475569', textTransform:'uppercase' }}>
+                                  Trabajadores ({cua.miembros.length})
                                 </p>
-                                <p style={{ margin:0, fontSize:11, color:'#94a3b8' }}>
-                                  {p.tipo_doc} {p.num_doc} {p.cargo ? `· ${p.cargo}` : ''}
-                                </p>
+                                <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                                  {cua.miembros.map(p => {
+                                    const pid = p._id ?? p.id;
+                                    return (
+                                      <div key={pid} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:8, padding:'7px 12px' }}>
+                                        <div>
+                                          <p style={{ margin:0, fontSize:13, fontWeight:600 }}>{p.nombres} {p.apellidos}</p>
+                                          <p style={{ margin:0, fontSize:11, color:'#94a3b8' }}>{p.tipo_doc} {p.num_doc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
+                                        </div>
+                                        <button onClick={() => quitarMiembro(cuaIdx, pid)} style={{ background:'none', border:'none', cursor:'pointer', color:'#ef4444' }}>
+                                          <UserX size={15} />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                                {/* Botón supervisor */}
-                                <button
-                                  title="Asignar como supervisor"
-                                  onClick={() => seleccionarSupervisor(p)}
-                                  style={{ background:'#eff6ff', border:'1.5px solid #3b82f6', color:'#1d4ed8', padding:'5px 10px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}
-                                >
-                                  <UserCheck size={12} /> Supervisor
-                                </button>
-                                {/* Botón agregar miembro */}
-                                <button
-                                  title="Agregar a la cuadrilla"
-                                  onClick={() => agregarMiembro(p)}
-                                  style={{ background:'#f0faf4', border:'1.5px solid #1f8f57', color:'#1f8f57', padding:'5px 10px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}
-                                >
-                                  <Plus size={12} /> Agregar
-                                </button>
+                            )}
+
+                            {/* Buscador de personas */}
+                            <div>
+                              <p style={{ margin:'0 0 8px', fontSize:12, fontWeight:700, color:'#475569', textTransform:'uppercase' }}>
+                                Agregar personas
+                              </p>
+                              <div style={{ position:'relative', marginBottom:10 }}>
+                                <Search size={14} style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', color:'#94a3b8' }} />
+                                <input
+                                  placeholder="Buscar por nombre o cédula..."
+                                  value={busqueda}
+                                  onChange={e => setBusquedas(prev => ({ ...prev, [cuaIdx]: e.target.value }))}
+                                  style={{ width:'100%', padding:'8px 12px 8px 34px', border:'1.5px solid #e6e8ef', borderRadius:9, fontSize:13, outline:'none', boxSizing:'border-box' }}
+                                />
                               </div>
+
+                              {loadingPersonas ? (
+                                <div style={{ textAlign:'center', padding:20, color:'#64748b', fontSize:13 }}>Cargando personas...</div>
+                              ) : personasDisp.length === 0 ? (
+                                <div style={{ textAlign:'center', padding:16, color:'#94a3b8', fontSize:13 }}>
+                                  {busqueda ? 'Sin resultados' : 'Todas las personas ya fueron asignadas'}
+                                </div>
+                              ) : (
+                                <div style={{ display:'flex', flexDirection:'column', gap:5, maxHeight:240, overflowY:'auto' }}>
+                                  {personasDisp.map(p => {
+                                    const pid = p._id ?? p.id;
+                                    return (
+                                      <div key={pid} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#fff', border:'1px solid #e2e8f0', borderRadius:8, padding:'9px 12px' }}>
+                                        <div>
+                                          <p style={{ margin:0, fontSize:13, fontWeight:600 }}>{p.nombres} {p.apellidos}</p>
+                                          <p style={{ margin:0, fontSize:11, color:'#94a3b8' }}>{p.tipo_doc} {p.num_doc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
+                                        </div>
+                                        <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                                          <button onClick={() => seleccionarSupervisor(cuaIdx, p)}
+                                            style={{ background:'#eff6ff', border:'1.5px solid #3b82f6', color:'#1d4ed8', padding:'5px 10px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
+                                            <UserCheck size={12} /> Supervisor
+                                          </button>
+                                          <button onClick={() => agregarMiembro(cuaIdx, p)}
+                                            style={{ background:'#f0faf4', border:'1.5px solid #1f8f57', color:'#1f8f57', padding:'5px 10px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
+                                            <Plus size={12} /> Agregar
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
-                          );
-                        })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
+
+                  {/* Botón agregar nueva cuadrilla */}
+                  <button onClick={agregarNuevaCuadrilla} style={{
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                    padding:'12px', border:'2px dashed #1f8f57', borderRadius:12,
+                    background:'transparent', color:'#1f8f57', fontSize:13, fontWeight:700,
+                    cursor:'pointer', width:'100%',
+                  }}>
+                    <Plus size={16} /> Agregar otra cuadrilla
+                  </button>
                 </>
               )}
             </div>
           )}
         </div>
 
-        {/* Footer */}
         <div className="modal-footer">
           <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
           <button className="btn-guardar" onClick={handleSave} disabled={saving}>
             {saving ? 'Guardando...' : modo === 'editar' ? 'Guardar cambios' : 'Crear contrato'}
           </button>
         </div>
-
       </div>
     </div>
   );
