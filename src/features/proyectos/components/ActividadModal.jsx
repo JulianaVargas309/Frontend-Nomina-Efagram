@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { 
+  X, 
+  Sparkles, 
+  Hash, 
+  Type, 
+  FolderTree, 
+  Ruler, 
+  ToggleLeft, 
+  DollarSign, 
+  FileText 
+} from "lucide-react";
 import { createActividad, updateActividad } from "../services/actividadesService";
 
 // ── Constantes ────────────────────────────────────────────
@@ -69,11 +79,13 @@ const selectStyle = {
 };
 
 const labelStyle = {
-  display: "block",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
   fontSize: 13,
   fontWeight: 600,
   color: "#374151",
-  marginBottom: 5,
+  marginBottom: 6,
 };
 
 // ══════════════════════════════════════════════════════════
@@ -204,16 +216,30 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
           alignItems: "flex-start",
           justifyContent: "space-between",
         }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#111827" }}>
-              {isEdit ? "Editar Actividad" : "Nueva Actividad"}
-            </h3>
-            <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
-              Catálogo de actividades del sistema
-            </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Icono del header - líneas MUY delgadas */}
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              background: "rgba(139, 92, 246, 0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <Sparkles size={20} color="#8b5cf6" strokeWidth={1} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#111827" }}>
+                {isEdit ? "Editar Actividad" : "Nueva Actividad"}
+              </h3>
+              <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
+                Catálogo de actividades del sistema
+              </p>
+            </div>
           </div>
 
-          {/* ✅ FIX: Botón X con ícono lucide visible */}
           <button
             onClick={onClose}
             title="Cerrar"
@@ -242,7 +268,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
               e.currentTarget.style.borderColor = "#e5e7eb";
             }}
           >
-            <X size={16} strokeWidth={2.5} />
+            <X size={16} strokeWidth={1.5} />
           </button>
         </div>
 
@@ -263,6 +289,17 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px", marginBottom: 16 }}>
             <div>
               <label style={labelStyle}>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "rgba(59, 130, 246, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <Hash size={16} color="#3b82f6" strokeWidth={1} />
+                </div>
                 Codigo{!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
               </label>
               <input
@@ -281,6 +318,17 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
 
             <div>
               <label style={labelStyle}>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "rgba(16, 185, 129, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <Type size={16} color="#10b981" strokeWidth={1} />
+                </div>
                 Nombre <span style={{ color: "#dc2626" }}>*</span>
               </label>
               <input
@@ -299,7 +347,20 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
           {/* FILA 2: Categoría + Unidad + Estado */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 12px", marginBottom: 16 }}>
             <div>
-              <label style={labelStyle}>Categoria</label>
+              <label style={labelStyle}>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "rgba(245, 158, 11, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <FolderTree size={16} color="#f59e0b" strokeWidth={1} />
+                </div>
+                Categoria
+              </label>
               <select name="categoria" value={form.categoria} onChange={handleChange} style={selectStyle}>
                 {CATEGORIAS.map(c => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -308,7 +369,20 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
             </div>
 
             <div>
-              <label style={labelStyle}>Unidad</label>
+              <label style={labelStyle}>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "rgba(139, 92, 246, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <Ruler size={16} color="#8b5cf6" strokeWidth={1} />
+                </div>
+                Unidad
+              </label>
               <select name="unidad_medida" value={form.unidad_medida} onChange={handleChange} style={selectStyle}>
                 {UNIDADES.map(u => (
                   <option key={u.value} value={u.value}>{u.label}</option>
@@ -317,7 +391,20 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
             </div>
 
             <div>
-              <label style={labelStyle}>Estado</label>
+              <label style={labelStyle}>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: form.activa === "true" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <ToggleLeft size={16} color={form.activa === "true" ? "#10b981" : "#ef4444"} strokeWidth={1} />
+                </div>
+                Estado
+              </label>
               <select name="activa" value={form.activa} onChange={handleChange} style={selectStyle}>
                 <option value="true">Activa</option>
                 <option value="false">Inactiva</option>
@@ -327,7 +414,20 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
 
           {/* FILA 3: Precio Base */}
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Precio Base ($)</label>
+            <label style={labelStyle}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "rgba(34, 197, 94, 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <DollarSign size={16} color="#22c55e" strokeWidth={1} />
+              </div>
+              Precio Base ($)
+            </label>
             <input
               type="number"
               step="0.01"
@@ -347,7 +447,20 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
 
           {/* FILA 4: Descripción */}
           <div>
-            <label style={labelStyle}>Descripcion</label>
+            <label style={labelStyle}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "rgba(99, 102, 241, 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <FileText size={16} color="#6366f1" strokeWidth={1} />
+              </div>
+              Descripcion
+            </label>
             <textarea
               name="descripcion"
               value={form.descripcion}
