@@ -1,18 +1,52 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { X } from 'lucide-react';
 import httpClient from '../../../core/api/httpClient';
 
 const CARGOS = ['Operario', 'Supervisor', 'Auxiliar', 'Capataz', 'Jefe de Campo'];
 const TIPOS_CONTRATO = ['INDEFINIDO', 'FIJO', 'OBRA_LABOR', 'APRENDIZ', 'TEMPORAL'];
 
-// axios envuelve en .data, el backend envuelve en { success, data: [...] }
 const normalizeList = (axiosRes) => {
-  const body = axiosRes?.data ?? axiosRes;          // desenvuelve axios
-  if (Array.isArray(body))            return body;
-  if (Array.isArray(body?.data))      return body.data;   // { success, data: [] }
+  const body = axiosRes?.data ?? axiosRes;
+  if (Array.isArray(body))       return body;
+  if (Array.isArray(body?.data)) return body.data;
   return [];
 };
 
+// ── Todo el estado del formulario + UI en un solo objeto ──────────────────
+const INITIAL_STATE = {
+  numDoc:          '',
+  nombres:         '',
+  segundoNombre:   '',
+  apellidos:       '',
+  segundoApellido: '',
+  cargo:           '',
+  tipoContrato: 'OBRA_LABOR',
+  fechaIngreso: '',
+  fincaId:      '',
+  procesoId:    '',
+  supervisorId: '',
+  estado:       'ACTIVO',
+  saving:       false,
+  error:        null,
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value };
+    case 'RESET':
+      // Resetea el formulario completo de una sola vez, sin renders en cascada
+      return { ...INITIAL_STATE, ...action.values };
+    case 'SET_SAVING':
+      return { ...state, saving: action.value };
+    case 'SET_ERROR':
+      return { ...state, error: action.value };
+    default:
+      return state;
+  }
+}
+
+// ── Componente ────────────────────────────────────────────────────────────
 export default function NuevoPersonalModal({
   isOpen,
   title = 'Nuevo Personal',
@@ -20,29 +54,15 @@ export default function NuevoPersonalModal({
   onClose,
   onSubmit,
 }) {
-  // Datos personales
-  const [numDoc,       setNumDoc]       = useState('');
-  const [nombres,      setNombres]      = useState('');
-  const [apellidos,    setApellidos]    = useState('');
-  const [telefono,     setTelefono]     = useState('');
-  const [email,        setEmail]        = useState('');
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  // Datos laborales
-  const [cargo,        setCargo]        = useState('');
-  const [tipoContrato, setTipoContrato] = useState('OBRA_LABOR');
-  const [fechaIngreso, setFechaIngreso] = useState('');
-  const [fincaId,      setFincaId]      = useState('');
-  const [procesoId,    setProcesoId]    = useState('');
-  const [supervisorId, setSupervisorId] = useState('');
-  const [estado,       setEstado]       = useState('ACTIVO');
-
-  // Listas para selects
   const [fincas,       setFincas]       = useState([]);
   const [procesos,     setProcesos]     = useState([]);
   const [supervisores, setSupervisores] = useState([]);
 
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState(null);
+  // Helper para inputs/selects
+  const setField = (field) => (e) =>
+    dispatch({ type: 'SET_FIELD', field, value: e.target.value });
 
   // Cargar selects al abrir
   useEffect(() => {
@@ -54,41 +74,42 @@ export default function NuevoPersonalModal({
     ]).then(([fRes, pRes, sRes]) => {
       setFincas(normalizeList(fRes?.data ?? fRes));
       setProcesos(normalizeList(pRes?.data ?? pRes));
-      // Supervisores: personas con cargo Supervisor
-      const todasPersonas = normalizeList(sRes?.data ?? sRes);
-      setSupervisores(todasPersonas.filter(
+      const todas = normalizeList(sRes?.data ?? sRes);
+      setSupervisores(todas.filter(
         (p) => p?.cargo?.toLowerCase().includes('supervisor') && p?.estado === 'ACTIVO'
       ));
     });
   }, [isOpen]);
 
-  // Rellenar al editar
+  // Rellenar al editar — UN solo dispatch, cero renders en cascada
   useEffect(() => {
     if (!isOpen) return;
 
-    setNumDoc(initialValues?.num_doc ?? '');
-    setNombres(initialValues?.nombres ?? '');
-    setApellidos(initialValues?.apellidos ?? '');
-    setTelefono(initialValues?.telefono ?? '');
-    setEmail(initialValues?.email ?? '');
-    setCargo(initialValues?.cargo ?? '');
-    setTipoContrato(initialValues?.tipo_contrato ?? 'OBRA_LABOR');
-    setFechaIngreso(
-      initialValues?.fecha_ingreso
-        ? initialValues.fecha_ingreso.substring(0, 10)
-        : ''
-    );
-    // finca puede ser objeto poblado o string id
-    const f = initialValues?.finca;
-    setFincaId(typeof f === 'string' ? f : (f?._id ?? f?.id ?? ''));
-    const pr = initialValues?.proceso;
-    setProcesoId(typeof pr === 'string' ? pr : (pr?._id ?? pr?.id ?? ''));
+    const f   = initialValues?.finca;
+    const pr  = initialValues?.proceso;
     const sup = initialValues?.supervisor;
-    setSupervisorId(typeof sup === 'string' ? sup : (sup?._id ?? sup?.id ?? ''));
-    setEstado(initialValues?.estado ?? 'ACTIVO');
 
-    setError(null);
-    setSaving(false);
+    dispatch({
+      type: 'RESET',
+      values: {
+        numDoc:          initialValues?.num_doc        ?? '',
+        nombres:         initialValues?.nombres          ?? '',
+        segundoNombre:   initialValues?.segundo_nombre   ?? '',
+        apellidos:       initialValues?.apellidos        ?? '',
+        segundoApellido: initialValues?.segundo_apellido ?? '',
+        cargo:        initialValues?.cargo         ?? '',
+        tipoContrato: initialValues?.tipo_contrato ?? 'OBRA_LABOR',
+        fechaIngreso: initialValues?.fecha_ingreso
+          ? initialValues.fecha_ingreso.substring(0, 10)
+          : '',
+        fincaId:      typeof f   === 'string' ? f   : (f?._id   ?? f?.id   ?? ''),
+        procesoId:    typeof pr  === 'string' ? pr  : (pr?._id  ?? pr?.id  ?? ''),
+        supervisorId: typeof sup === 'string' ? sup : (sup?._id ?? sup?.id ?? ''),
+        estado:       initialValues?.estado ?? 'ACTIVO',
+        saving:       false,
+        error:        null,
+      },
+    });
   }, [isOpen, initialValues]);
 
   if (!isOpen) return null;
@@ -97,35 +118,35 @@ export default function NuevoPersonalModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    dispatch({ type: 'SET_ERROR', value: null });
 
-    if (!numDoc.trim() || !nombres.trim() || !apellidos.trim() || !cargo) {
-      setError('Documento, nombres, apellidos y cargo son obligatorios');
+    if (!state.numDoc.trim() || !state.nombres.trim() || !state.apellidos.trim()) {
+      dispatch({ type: 'SET_ERROR', value: 'Cédula, primer nombre y primer apellido son obligatorios' });
       return;
     }
 
     const payload = {
-      tipo_doc:      'CC',
-      num_doc:       numDoc.trim(),
-      nombres:       nombres.trim(),
-      apellidos:     apellidos.trim(),
-      telefono:      telefono.trim() || undefined,
-      email:         email.trim() || undefined,
-      cargo,
-      tipo_contrato: tipoContrato,
-      fecha_ingreso: fechaIngreso || undefined,
-      finca:         fincaId     || undefined,
-      proceso:       procesoId   || undefined,
-      supervisor:    supervisorId|| undefined,
-      estado,
+      tipo_doc:         'CC',
+      num_doc:          state.numDoc.trim(),
+      nombres:          state.nombres.trim(),
+      segundo_nombre:   state.segundoNombre.trim()   || undefined,
+      apellidos:        state.apellidos.trim(),
+      segundo_apellido: state.segundoApellido.trim() || undefined,
+      cargo:            state.cargo,
+      tipo_contrato: state.tipoContrato,
+      fecha_ingreso: state.fechaIngreso  || undefined,
+      finca:         state.fincaId       || undefined,
+      proceso:       state.procesoId     || undefined,
+      supervisor:    state.supervisorId  || undefined,
+      estado:        state.estado,
     };
 
     try {
-      setSaving(true);
+      dispatch({ type: 'SET_SAVING', value: true });
       await onSubmit?.(payload);
     } catch (err) {
-      setError(err?.response?.data?.message || 'No se pudo guardar');
-      setSaving(false);
+      dispatch({ type: 'SET_ERROR', value: err?.response?.data?.message || 'No se pudo guardar' });
+      dispatch({ type: 'SET_SAVING', value: false });
     }
   };
 
@@ -151,12 +172,12 @@ export default function NuevoPersonalModal({
 
         <form className="modal-body" onSubmit={handleSubmit}>
 
-          {/* Número de documento */}
+          {/* Cédula */}
           <label className="field">
             <span>Cédula *</span>
             <input
-              value={numDoc}
-              onChange={(e) => setNumDoc(e.target.value)}
+              value={state.numDoc}
+              onChange={setField('numDoc')}
               placeholder="Ej: 1061234567"
               autoFocus
             />
@@ -165,39 +186,38 @@ export default function NuevoPersonalModal({
           {/* Nombres y apellidos */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <label className="field">
-              <span>Nombres *</span>
-              <input value={nombres} onChange={(e) => setNombres(e.target.value)} placeholder="Ej: Juan Carlos" />
+              <span>Primer Nombre *</span>
+              <input value={state.nombres} onChange={setField('nombres')} placeholder="Ej: Juan" />
             </label>
             <label className="field">
-              <span>Apellidos *</span>
-              <input value={apellidos} onChange={(e) => setApellidos(e.target.value)} placeholder="Ej: Pérez Gómez" />
+              <span>Segundo Nombre</span>
+              <input value={state.segundoNombre} onChange={setField('segundoNombre')} placeholder="Ej: Carlos" />
             </label>
           </div>
 
-          {/* Teléfono y email */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <label className="field">
-              <span>Teléfono</span>
-              <input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Ej: 3201234567" />
+              <span>Primer Apellido *</span>
+              <input value={state.apellidos} onChange={setField('apellidos')} placeholder="Ej: Pérez" />
             </label>
             <label className="field">
-              <span>Email</span>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" type="email" />
+              <span>Segundo Apellido</span>
+              <input value={state.segundoApellido} onChange={setField('segundoApellido')} placeholder="Ej: Gómez" />
             </label>
           </div>
 
           {/* Cargo y tipo contrato */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <label className="field">
-              <span>Cargo *</span>
-              <select value={cargo} onChange={(e) => setCargo(e.target.value)}>
+              <span>Cargo</span>
+              <select value={state.cargo} onChange={setField('cargo')}>
                 <option value="">— Selecciona cargo —</option>
                 {CARGOS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </label>
             <label className="field">
               <span>Tipo Contrato</span>
-              <select value={tipoContrato} onChange={(e) => setTipoContrato(e.target.value)}>
+              <select value={state.tipoContrato} onChange={setField('tipoContrato')}>
                 {TIPOS_CONTRATO.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </label>
@@ -207,11 +227,11 @@ export default function NuevoPersonalModal({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <label className="field">
               <span>Fecha Ingreso</span>
-              <input type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)} />
+              <input type="date" value={state.fechaIngreso} onChange={setField('fechaIngreso')} />
             </label>
             <label className="field">
               <span>Estado</span>
-              <select value={estado} onChange={(e) => setEstado(e.target.value)}>
+              <select value={state.estado} onChange={setField('estado')}>
                 <option value="ACTIVO">Activo</option>
                 <option value="INACTIVO">Inactivo</option>
                 <option value="SUSPENDIDO">Suspendido</option>
@@ -222,7 +242,7 @@ export default function NuevoPersonalModal({
           {/* Finca */}
           <label className="field">
             <span>Finca</span>
-            <select value={fincaId} onChange={(e) => setFincaId(e.target.value)}>
+            <select value={state.fincaId} onChange={setField('fincaId')}>
               <option value="">— Sin finca asignada —</option>
               {fincas.map((f) => (
                 <option key={f._id ?? f.id} value={f._id ?? f.id}>
@@ -235,7 +255,7 @@ export default function NuevoPersonalModal({
           {/* Proceso */}
           <label className="field">
             <span>Proceso</span>
-            <select value={procesoId} onChange={(e) => setProcesoId(e.target.value)}>
+            <select value={state.procesoId} onChange={setField('procesoId')}>
               <option value="">— Sin proceso asignado —</option>
               {procesos.map((p) => (
                 <option key={p._id ?? p.id} value={p._id ?? p.id}>
@@ -248,7 +268,7 @@ export default function NuevoPersonalModal({
           {/* Supervisor */}
           <label className="field">
             <span>Supervisor</span>
-            <select value={supervisorId} onChange={(e) => setSupervisorId(e.target.value)}>
+            <select value={state.supervisorId} onChange={setField('supervisorId')}>
               <option value="">— Sin supervisor —</option>
               {supervisores.map((s) => (
                 <option key={s._id ?? s.id} value={s._id ?? s.id}>
@@ -258,14 +278,14 @@ export default function NuevoPersonalModal({
             </select>
           </label>
 
-          {error && <div className="form-error">{error}</div>}
+          {state.error && <div className="form-error">{state.error}</div>}
 
           <div className="modal-actions">
             <button className="btn-modal-cancel" type="button" onClick={onClose}>
               Cancelar
             </button>
-            <button className="btn-modal-submit" type="submit" disabled={saving}>
-              {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+            <button className="btn-modal-submit" type="submit" disabled={state.saving}>
+              {state.saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
             </button>
           </div>
         </form>

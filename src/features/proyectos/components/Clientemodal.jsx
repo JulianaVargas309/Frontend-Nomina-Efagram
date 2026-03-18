@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { createCliente, updateCliente } from "../services/Clientesservice";
 
-
-// ── Estilos inline reutilizables ──────────────────────────
+// ── Estilos ───────────────────────────────────────────────────────────────────
 const inputStyle = (hasError = false) => ({
   width: "100%",
   padding: "9px 12px",
@@ -15,6 +14,13 @@ const inputStyle = (hasError = false) => ({
   boxSizing: "border-box",
   fontFamily: "inherit",
 });
+
+const readOnlyStyle = {
+  ...inputStyle(),
+  background: "#f1f5f9",
+  color: "#64748b",
+  cursor: "not-allowed",
+};
 
 const selectStyle = {
   width: "100%",
@@ -38,105 +44,76 @@ const labelStyle = {
   marginBottom: 5,
 };
 
-const FORM_INICIAL = {
-  codigo: "",
-  nit: "",
-  razon_social: "",
-  nombre_comercial: "",
-  telefono: "",
-  email: "",
-  direccion: "",
-  ciudad: "",
-  contacto_nombre: "",
-  contacto_telefono: "",
-  contacto_email: "",
-  observaciones: "",
-  activo: "true",
+// ── Estado ────────────────────────────────────────────────────────────────────
+const INITIAL_STATE = {
+  codigo:  "",
+  nombre:  "",
+  activo:  "true",
+  loading: false,
+  errors:  {},
 };
 
-// ══════════════════════════════════════════════════════════
-// COMPONENTE PRINCIPAL
-// Props:
-//   isOpen   {boolean}
-//   onClose  {function}
-//   onSuccess{function}
-//   cliente  {object|null} — null = crear, objeto = editar
-// ══════════════════════════════════════════════════════════
+function reducer(state, action) {
+  switch (action.type) {
+    case "SET_FIELD":
+      return {
+        ...state,
+        [action.field]: action.value,
+        errors: { ...state.errors, [action.field]: null },
+      };
+    case "RESET":
+      return { ...INITIAL_STATE, ...action.values };
+    case "SET_LOADING":
+      return { ...state, loading: action.value };
+    case "SET_ERRORS":
+      return { ...state, errors: action.value, loading: false };
+    default:
+      return state;
+  }
+}
+
+// ── Componente ────────────────────────────────────────────────────────────────
 const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
   const isEdit = Boolean(cliente);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  const [form,    setForm]    = useState(FORM_INICIAL);
-  const [loading, setLoading] = useState(false);
-  const [errors,  setErrors]  = useState({});
-
-  // ── Cargar datos al abrir ──────────────────────────────
+  // UN solo dispatch — sin renders en cascada
   useEffect(() => {
     if (!isOpen) return;
-
-    if (isEdit && cliente) {
-      setForm({
-        codigo:           cliente.codigo           ?? "",
-        nit:              cliente.nit              ?? "",
-        razon_social:     cliente.razon_social     ?? "",
-        nombre_comercial: cliente.nombre_comercial ?? "",
-        telefono:         cliente.telefono         ?? "",
-        email:            cliente.email            ?? "",
-        direccion:        cliente.direccion         ?? "",
-        ciudad:           cliente.ciudad           ?? "",
-        contacto_nombre:  cliente.contacto_nombre  ?? "",
-        contacto_telefono:cliente.contacto_telefono?? "",
-        contacto_email:   cliente.contacto_email   ?? "",
-        observaciones:    cliente.observaciones    ?? "",
-        activo:           String(cliente.activo ?? true),
-      });
-    } else {
-      setForm(FORM_INICIAL);
-    }
-
-    setErrors({});
+    dispatch({
+      type: "RESET",
+      values: isEdit && cliente
+        ? {
+            codigo: cliente.codigo      ?? "",
+            nombre: cliente.razon_social ?? cliente.nombre ?? "",
+            activo: String(cliente.activo ?? true),
+          }
+        : {},
+    });
   }, [isOpen, cliente]);
 
-  // ── Handler de cambios ─────────────────────────────────
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
-  };
+  if (!isOpen) return null;
 
-  // ── Validación frontend ────────────────────────────────
-  const validate = () => {
-    const errs = {};
-    if (!form.codigo.trim())       errs.codigo       = "El código es obligatorio";
-    if (!form.nit.trim())          errs.nit          = "El NIT es obligatorio";
-    if (!form.razon_social.trim()) errs.razon_social = "La razón social es obligatoria";
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      errs.email = "Email inválido";
-    if (form.contacto_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contacto_email))
-      errs.contacto_email = "Email de contacto inválido";
-    return errs;
-  };
+  const setField = (field) => (e) =>
+    dispatch({ type: "SET_FIELD", field, value: e.target.value });
 
-  // ── Enviar formulario ──────────────────────────────────
   const handleSubmit = async () => {
-    const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    const errs = {};
+    if (!state.codigo.trim()) errs.codigo = "El código es obligatorio";
+    if (!state.nombre.trim()) errs.nombre = "El nombre es obligatorio";
+    if (Object.keys(errs).length > 0) {
+      dispatch({ type: "SET_ERRORS", value: errs });
+      return;
+    }
 
     try {
-      setLoading(true);
+      dispatch({ type: "SET_LOADING", value: true });
 
       const payload = {
-        nit:              form.nit.trim(),
-        razon_social:     form.razon_social.trim(),
-        nombre_comercial: form.nombre_comercial.trim() || undefined,
-        telefono:         form.telefono.trim()         || undefined,
-        email:            form.email.trim()            || undefined,
-        direccion:        form.direccion.trim()        || undefined,
-        ciudad:           form.ciudad.trim()           || undefined,
-        contacto_nombre:  form.contacto_nombre.trim()  || undefined,
-        contacto_telefono:form.contacto_telefono.trim()|| undefined,
-        contacto_email:   form.contacto_email.trim()   || undefined,
-        observaciones:    form.observaciones.trim()    || undefined,
-        activo:           form.activo === "true",
+        // El backend requiere razon_social y nit — los derivamos del nombre y código
+        razon_social: state.nombre.trim(),
+        nit:          state.codigo.trim(),   // usamos el código como NIT
+        activo:       state.activo === "true",
       };
 
       if (isEdit) {
@@ -144,7 +121,7 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
       } else {
         await createCliente({
           ...payload,
-          codigo: form.codigo.trim().toUpperCase(),
+          codigo: state.codigo.trim().toUpperCase(),
         });
       }
 
@@ -160,16 +137,12 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
         "Error guardando el cliente";
 
       if (err?.response?.status === 409) {
-        setErrors({ codigo: "Este código o NIT ya está en uso" });
+        dispatch({ type: "SET_ERRORS", value: { codigo: "Este código ya está en uso" } });
       } else {
-        setErrors({ _general: serverMsg });
+        dispatch({ type: "SET_ERRORS", value: { _general: serverMsg } });
       }
-    } finally {
-      setLoading(false);
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div
@@ -182,9 +155,9 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
       }}
     >
       <div
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(600px, calc(100% - 24px))",
+          width: "min(440px, calc(100% - 24px))",
           background: "#fff",
           borderRadius: 14,
           boxShadow: "0 20px 60px rgba(15,23,42,0.2)",
@@ -194,7 +167,7 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
           overflowY: "auto",
         }}
       >
-        {/* ── HEADER ── */}
+        {/* HEADER */}
         <div style={{
           padding: "20px 24px 16px",
           borderBottom: "1px solid #e5e7eb",
@@ -207,7 +180,7 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
               {isEdit ? "Editar Cliente" : "Nuevo Cliente"}
             </h3>
             <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
-              {isEdit ? "Actualiza los datos del cliente" : "Completa los datos para registrar un nuevo cliente"}
+              {isEdit ? "Actualiza los datos del cliente" : "Completa los datos del cliente"}
             </p>
           </div>
           <button
@@ -217,231 +190,76 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
               background: "none", border: "1px solid #e5e7eb",
               borderRadius: 7, width: 32, height: 32,
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", flexShrink: 0,
-              fontSize: 18, color: "#6b7280", lineHeight: 1,
+              cursor: "pointer", fontSize: 18, color: "#6b7280", lineHeight: 1,
             }}
           >
             ×
           </button>
         </div>
 
-        {/* ── BODY ── */}
-        <div style={{ padding: "20px 24px" }}>
+        {/* BODY */}
+        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
 
-          {/* Error general */}
-          {errors._general && (
+          {state.errors._general && (
             <div style={{
               background: "#fef2f2", border: "1px solid #fecaca",
               borderRadius: 8, padding: "10px 14px",
-              fontSize: 13, color: "#dc2626", marginBottom: 16,
+              fontSize: 13, color: "#dc2626",
             }}>
-              {errors._general}
+              {state.errors._general}
             </div>
           )}
 
-          {/* ── FILA 1: Código + NIT ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px", marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>
-                Código{!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
-              </label>
-              <input
-                name="codigo"
-                value={form.codigo}
-                onChange={handleChange}
-                placeholder="Ej: CLI-001"
-                readOnly={isEdit}
-                style={isEdit
-                  ? { ...inputStyle(), background: "#f1f5f9", color: "#64748b", cursor: "not-allowed" }
-                  : inputStyle(!!errors.codigo)
-                }
-                title={isEdit ? "El código no puede modificarse" : ""}
-              />
-              {errors.codigo && (
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>{errors.codigo}</p>
-              )}
-            </div>
-
-            <div>
-              <label style={labelStyle}>
-                NIT <span style={{ color: "#dc2626" }}>*</span>
-              </label>
-              <input
-                name="nit"
-                value={form.nit}
-                onChange={handleChange}
-                placeholder="Ej: 900123456-7"
-                style={inputStyle(!!errors.nit)}
-              />
-              {errors.nit && (
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>{errors.nit}</p>
-              )}
-            </div>
-          </div>
-
-          {/* ── FILA 2: Razón Social + Nombre Comercial ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px", marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>
-                Razón Social <span style={{ color: "#dc2626" }}>*</span>
-              </label>
-              <input
-                name="razon_social"
-                value={form.razon_social}
-                onChange={handleChange}
-                placeholder="Nombre legal de la empresa"
-                style={inputStyle(!!errors.razon_social)}
-              />
-              {errors.razon_social && (
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>{errors.razon_social}</p>
-              )}
-            </div>
-
-            <div>
-              <label style={labelStyle}>Nombre Comercial</label>
-              <input
-                name="nombre_comercial"
-                value={form.nombre_comercial}
-                onChange={handleChange}
-                placeholder="Nombre comercial (opcional)"
-                style={inputStyle()}
-              />
-            </div>
-          </div>
-
-          {/* ── FILA 3: Teléfono + Email + Estado ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 12px", marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>Teléfono</label>
-              <input
-                name="telefono"
-                value={form.telefono}
-                onChange={handleChange}
-                placeholder="Ej: 3001234567"
-                style={inputStyle()}
-              />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Email</label>
-              <input
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="correo@empresa.com"
-                style={inputStyle(!!errors.email)}
-              />
-              {errors.email && (
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>{errors.email}</p>
-              )}
-            </div>
-
-            <div>
-              <label style={labelStyle}>Estado</label>
-              <select name="activo" value={form.activo} onChange={handleChange} style={selectStyle}>
-                <option value="true">Activo</option>
-                <option value="false">Inactivo</option>
-              </select>
-            </div>
-          </div>
-
-          {/* ── FILA 4: Dirección + Ciudad ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "0 16px", marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>Dirección</label>
-              <input
-                name="direccion"
-                value={form.direccion}
-                onChange={handleChange}
-                placeholder="Dirección de la empresa"
-                style={inputStyle()}
-              />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Ciudad</label>
-              <input
-                name="ciudad"
-                value={form.ciudad}
-                onChange={handleChange}
-                placeholder="Ciudad"
-                style={inputStyle()}
-              />
-            </div>
-          </div>
-
-          {/* ── SECCIÓN CONTACTO ── */}
-          <p style={{ margin: "4px 0 12px", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-            Contacto Principal
-          </p>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 12px", marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>Nombre</label>
-              <input
-                name="contacto_nombre"
-                value={form.contacto_nombre}
-                onChange={handleChange}
-                placeholder="Nombre del contacto"
-                style={inputStyle()}
-              />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Teléfono</label>
-              <input
-                name="contacto_telefono"
-                value={form.contacto_telefono}
-                onChange={handleChange}
-                placeholder="Teléfono del contacto"
-                style={inputStyle()}
-              />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Email</label>
-              <input
-                name="contacto_email"
-                type="email"
-                value={form.contacto_email}
-                onChange={handleChange}
-                placeholder="email@contacto.com"
-                style={inputStyle(!!errors.contacto_email)}
-              />
-              {errors.contacto_email && (
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>{errors.contacto_email}</p>
-              )}
-            </div>
-          </div>
-
-          {/* ── Observaciones ── */}
+          {/* Código */}
           <div>
-            <label style={labelStyle}>Observaciones</label>
-            <textarea
-              name="observaciones"
-              value={form.observaciones}
-              onChange={handleChange}
-              placeholder="Observaciones adicionales..."
-              rows={3}
-              style={{
-                width: "100%",
-                padding: "9px 12px",
-                border: "1.5px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-                color: "#0f172a",
-                background: "#fff",
-                outline: "none",
-                resize: "vertical",
-                fontFamily: "inherit",
-                boxSizing: "border-box",
-              }}
+            <label style={labelStyle}>
+              Código{!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
+            </label>
+            <input
+              value={state.codigo}
+              onChange={setField("codigo")}
+              placeholder="Ej: CLI-001"
+              readOnly={isEdit}
+              style={isEdit ? readOnlyStyle : inputStyle(!!state.errors.codigo)}
+              title={isEdit ? "El código no puede modificarse" : ""}
             />
+            {state.errors.codigo && (
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
+                {state.errors.codigo}
+              </p>
+            )}
           </div>
+
+          {/* Nombre */}
+          <div>
+            <label style={labelStyle}>
+              Nombre <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+            <input
+              value={state.nombre}
+              onChange={setField("nombre")}
+              placeholder="Nombre del cliente"
+              style={inputStyle(!!state.errors.nombre)}
+            />
+            {state.errors.nombre && (
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
+                {state.errors.nombre}
+              </p>
+            )}
+          </div>
+
+          {/* Estado */}
+          <div>
+            <label style={labelStyle}>Estado</label>
+            <select value={state.activo} onChange={setField("activo")} style={selectStyle}>
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+
         </div>
 
-        {/* ── FOOTER ── */}
+        {/* FOOTER */}
         <div style={{
           padding: "14px 24px",
           borderTop: "1px solid #e5e7eb",
@@ -451,16 +269,12 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
         }}>
           <button
             onClick={onClose}
-            disabled={loading}
+            disabled={state.loading}
             style={{
-              background: "#f9fafb",
-              color: "#374151",
+              background: "#f9fafb", color: "#374151",
               border: "1px solid #d1d5db",
-              padding: "10px 20px",
-              borderRadius: 8,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontSize: 14,
+              padding: "10px 20px", borderRadius: 8,
+              fontWeight: 600, cursor: "pointer", fontSize: 14,
             }}
           >
             Cancelar
@@ -468,20 +282,18 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
 
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={state.loading}
             style={{
-              background: loading ? "#9ca3af" : "#1f8f57",
-              color: "#fff",
-              border: "none",
-              padding: "10px 24px",
-              borderRadius: 8,
+              background: state.loading ? "#9ca3af" : "#1f8f57",
+              color: "#fff", border: "none",
+              padding: "10px 24px", borderRadius: 8,
               fontWeight: 700,
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: state.loading ? "not-allowed" : "pointer",
               fontSize: 14,
-              boxShadow: loading ? "none" : "0 4px 12px rgba(31,143,87,0.25)",
+              boxShadow: state.loading ? "none" : "0 4px 12px rgba(31,143,87,0.25)",
             }}
           >
-            {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear Cliente"}
+            {state.loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear Cliente"}
           </button>
         </div>
       </div>
