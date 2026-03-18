@@ -2,14 +2,6 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { getProcesos } from '../services/procesosService';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Este componente NO usa useEffect para poblar el formulario.
-// El padre debe pasarle una `key` dinámica para que React lo desmonte/monte
-// al cambiar, reiniciando el estado del formulario automáticamente.
-// El único useEffect que queda es para cargar el catálogo de procesos (fetch),
-// que sí es un efecto legítimo y no llama setState de forma problemática.
-// ─────────────────────────────────────────────────────────────────────────────
-
 function resolveProcesoId(proc) {
   if (!proc) return '';
   if (typeof proc === 'string') return proc;
@@ -33,7 +25,7 @@ export default function NuevaIntervencionModal({
   onClose,
   onSubmit,
 }) {
-  // Estado inicializado directamente desde props — sin useEffect de formulario
+  // Estado inicializado directo desde props — el padre pasa key dinámica al editar
   const [codigo,      setCodigo]      = useState(initialValues?.codigo      ?? '');
   const [nombre,      setNombre]      = useState(initialValues?.nombre      ?? '');
   const [proceso,     setProceso]     = useState(resolveProcesoId(initialValues?.proceso));
@@ -42,7 +34,7 @@ export default function NuevaIntervencionModal({
   const [saving,      setSaving]      = useState(false);
   const [error,       setError]       = useState(null);
 
-  // Este useEffect es legítimo: fetch de datos externos, no modifica estado del form
+  // Fetch legítimo — solo carga el catálogo de procesos, no toca el form
   const [procesos, setProcesos] = useState([]);
   useEffect(() => {
     if (!isOpen) return;
@@ -61,22 +53,28 @@ export default function NuevaIntervencionModal({
 
   const isEdit = title.toLowerCase().includes('editar');
 
+  // Solo dígitos en el código
+  const handleCodigo = (e) => {
+    const val = e.target.value.replace(/\D/g, '');
+    setCodigo(val);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    const payload = {
-      codigo:      String(codigo).trim(),
-      nombre:      String(nombre).trim(),
-      proceso,
-      activo:      Boolean(activo),
-      descripcion: String(descripcion).trim(),
-    };
-
-    if (!payload.codigo || !payload.nombre || !payload.proceso) {
+    if (!codigo.trim() || !nombre.trim() || !proceso) {
       setError('Código, nombre y proceso son obligatorios');
       return;
     }
+
+    const payload = {
+      codigo:      Number(codigo),
+      nombre:      nombre.trim(),
+      proceso,
+      activo:      Boolean(activo),
+      descripcion: descripcion.trim() || undefined,
+    };
 
     try {
       setSaving(true);
@@ -107,12 +105,15 @@ export default function NuevaIntervencionModal({
         </div>
 
         <div className="modal-body">
+
+          {/* Código — solo números */}
           <label className="field">
             <span>Código *</span>
             <input
               value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              placeholder="Ej: INT-001"
+              onChange={handleCodigo}
+              placeholder="Ej: 1"
+              inputMode="numeric"
               autoFocus
               required
             />
@@ -152,7 +153,7 @@ export default function NuevaIntervencionModal({
           </label>
 
           <label className="field">
-            <span>Descripción</span>
+            <span>Descripción <span style={{ color: '#9ca3af', fontWeight: 400 }}>(opcional)</span></span>
             <textarea
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}

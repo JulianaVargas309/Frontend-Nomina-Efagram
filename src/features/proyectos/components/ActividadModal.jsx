@@ -1,39 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { X } from "lucide-react";
 import { createActividad, updateActividad } from "../services/actividadesService";
+import { getIntervenciones } from "../services/intervencionesService";
 
-// ── Constantes ────────────────────────────────────────────
-const CATEGORIAS = [
-  { value: "PREPARACION_TERRENO", label: "Preparacion de Terreno" },
-  { value: "SIEMBRA",             label: "Siembra" },
-  { value: "MANTENIMIENTO",       label: "Mantenimiento" },
-  { value: "CONTROL_MALEZA",      label: "Control de Maleza" },
-  { value: "FERTILIZACION",       label: "Fertilizacion" },
-  { value: "PODAS",               label: "Podas" },
-  { value: "OTRO",                label: "Otro" },
-];
-
-const UNIDADES = [
-  { value: "HECTAREA",       label: "Hectarea" },
-  { value: "ARBOL",          label: "Arbol" },
-  { value: "METRO",          label: "Metro" },
-  { value: "METRO_CUADRADO", label: "Metro Cuadrado" },
-  { value: "KILOGRAMO",      label: "Kilogramo" },
-  { value: "LITRO",          label: "Litro" },
-  { value: "JORNAL",         label: "Jornal" },
-  { value: "UNIDAD",         label: "Unidad" },
-];
-
-const FORM_INICIAL = {
-  codigo:                      "",
-  nombre:                      "",
-  categoria:                   "PREPARACION_TERRENO",
-  unidad_medida:               "HECTAREA",
-  activa:                      "true",
-  rendimiento_diario_estimado: "",
-  descripcion:                 "",
+// ── Estado inicial del formulario ─────────────────────────────────────────────
+const INITIAL_STATE = {
+  codigo:       "",
+  nombre:       "",
+  intervencion: "",
+  activa:       "true",
+  loading:      false,
+  errors:       {},
 };
 
+function reducer(state, action) {
+  switch (action.type) {
+    case "SET_FIELD":
+      return {
+        ...state,
+        [action.field]: action.value,
+        errors: { ...state.errors, [action.field]: null },
+      };
+    case "RESET":
+      return { ...INITIAL_STATE, ...action.values };
+    case "SET_LOADING":
+      return { ...state, loading: action.value };
+    case "SET_ERRORS":
+      return { ...state, errors: action.value, loading: false };
+    default:
+      return state;
+  }
+}
+
+// ── Estilos inline ────────────────────────────────────────────────────────────
 const inputStyle = (hasError = false) => ({
   width: "100%",
   padding: "9px 12px",
@@ -47,7 +46,7 @@ const inputStyle = (hasError = false) => ({
   fontFamily: "inherit",
 });
 
-const readOnlyInputStyle = {
+const readOnlyStyle = {
   ...inputStyle(),
   background: "#f1f5f9",
   color: "#64748b",
@@ -76,83 +75,89 @@ const labelStyle = {
   marginBottom: 5,
 };
 
-// ══════════════════════════════════════════════════════════
-// COMPONENTE PRINCIPAL
-// ══════════════════════════════════════════════════════════
+// ── Componente ────────────────────────────────────────────────────────────────
 const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) => {
   const isEdit = Boolean(actividadEditar);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  const [form,    setForm]    = useState(FORM_INICIAL);
-  const [loading, setLoading] = useState(false);
-  const [errors,  setErrors]  = useState({});
+  // Solo intervenciones — fetch legítimo
+  const [intervenciones, setIntervenciones] = useReducer(
+    (_, list) => list,
+    []
+  );
 
+  // Cargar intervenciones al abrir
   useEffect(() => {
     if (!isOpen) return;
+    getIntervenciones()
+      .then((res) => {
+        let list = [];
+        if (Array.isArray(res))                  list = res;
+        else if (Array.isArray(res?.data))       list = res.data;
+        else if (Array.isArray(res?.data?.data)) list = res.data.data;
+        setIntervenciones(list.filter((i) => i.activo !== false));
+      })
+      .catch(() => setIntervenciones([]));
+  }, [isOpen]);
 
-    if (isEdit && actividadEditar) {
-      setForm({
-        codigo:                      actividadEditar.codigo                      ?? "",
-        nombre:                      actividadEditar.nombre                      ?? "",
-        categoria:                   actividadEditar.categoria                   ?? "PREPARACION_TERRENO",
-        unidad_medida:               actividadEditar.unidad_medida               ?? "HECTAREA",
-        activa:                      String(actividadEditar.activa ?? true),
-        rendimiento_diario_estimado: actividadEditar.rendimiento_diario_estimado != null
-                                       ? String(actividadEditar.rendimiento_diario_estimado)
-                                       : "",
-        descripcion:                 actividadEditar.descripcion ?? "",
-      });
-    } else {
-      setForm(FORM_INICIAL);
-    }
-
-    setErrors({});
+  // Rellenar al editar — UN solo dispatch
+  useEffect(() => {
+    if (!isOpen) return;
+    dispatch({
+      type: "RESET",
+      values: isEdit && actividadEditar
+        ? {
+            codigo:       actividadEditar.codigo       ?? "",
+            nombre:       actividadEditar.nombre       ?? "",
+            intervencion: actividadEditar.intervencion?._id
+                          ?? actividadEditar.intervencion
+                          ?? "",
+            activa:       String(actividadEditar.activa ?? true),
+          }
+        : {},
+    });
   }, [isOpen, actividadEditar]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
-  };
+  if (!isOpen) return null;
 
-  const validate = () => {
-    const errs = {};
-    if (!form.codigo.trim()) errs.codigo = "El código es obligatorio";
-    if (!form.nombre.trim()) errs.nombre = "El nombre es obligatorio";
-    if (form.rendimiento_diario_estimado !== "" && isNaN(Number(form.rendimiento_diario_estimado)))
-      errs.rendimiento_diario_estimado = "Debe ser un número válido";
-    return errs;
+  const setField = (field) => (e) =>
+    dispatch({ type: "SET_FIELD", field, value: e.target.value });
+
+  // Solo dígitos en el código
+  const handleCodigo = (e) => {
+    const val = e.target.value.replace(/\D/g, "");
+    dispatch({ type: "SET_FIELD", field: "codigo", value: val });
   };
 
   const handleSubmit = async () => {
-    const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    const errs = {};
+    if (!state.codigo.trim()) errs.codigo = "El código es obligatorio";
+    if (!state.nombre.trim()) errs.nombre = "El nombre es obligatorio";
+    if (Object.keys(errs).length > 0) {
+      dispatch({ type: "SET_ERRORS", value: errs });
+      return;
+    }
 
     try {
-      setLoading(true);
+      dispatch({ type: "SET_LOADING", value: true });
 
       const payload = {
-        nombre:        form.nombre.trim(),
-        categoria:     form.categoria,
-        unidad_medida: form.unidad_medida,
-        activa:        form.activa === "true",
-        descripcion:   form.descripcion.trim(),
-        ...(form.rendimiento_diario_estimado !== ""
-          ? { rendimiento_diario_estimado: Number(form.rendimiento_diario_estimado) }
-          : {}),
+        nombre:        state.nombre.trim(),
+        activa:        state.activa === "true",
+        unidad_medida: "HECTAREA",  // requerido por el backend
+        categoria:     "OTRO",      // requerido por el backend
+        intervencion:  state.intervencion || undefined,
       };
 
       if (isEdit) {
         await updateActividad(actividadEditar._id, payload);
       } else {
-        await createActividad({
-          ...payload,
-          codigo: form.codigo.trim().toUpperCase(),
-        });
+        // El backend guarda codigo como String uppercase
+        await createActividad({ ...payload, codigo: String(state.codigo).trim() });
       }
 
       onSuccess?.();
       onClose?.();
-
     } catch (err) {
       const serverMsg =
         err?.response?.data?.errors?.[0]?.message ||
@@ -162,16 +167,12 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
         "Error guardando la actividad";
 
       if (err?.response?.status === 409) {
-        setErrors({ codigo: "Este código ya está en uso" });
+        dispatch({ type: "SET_ERRORS", value: { codigo: "Este código ya está en uso" } });
       } else {
-        setErrors({ _general: serverMsg });
+        dispatch({ type: "SET_ERRORS", value: { _general: serverMsg } });
       }
-    } finally {
-      setLoading(false);
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div
@@ -185,9 +186,9 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
       }}
     >
       <div
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(560px, calc(100% - 24px))",
+          width: "min(480px, calc(100% - 24px))",
           background: "#fff",
           borderRadius: 14,
           boxShadow: "0 20px 60px rgba(15,23,42,0.2)",
@@ -197,7 +198,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
           overflowY: "auto",
         }}
       >
-        {/* ── HEADER ── */}
+        {/* HEADER */}
         <div style={{
           padding: "20px 24px 16px",
           borderBottom: "1px solid #e5e7eb",
@@ -214,7 +215,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
             </p>
           </div>
 
-          {/* ✅ FIX: Botón X con ícono lucide visible */}
           <button
             onClick={onClose}
             title="Cerrar"
@@ -222,22 +222,17 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
               background: "#f3f4f6",
               border: "1.5px solid #e5e7eb",
               borderRadius: 8,
-              width: 34,
-              height: 34,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              width: 34, height: 34,
+              display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer",
-              flexShrink: 0,
               color: "#374151",
-              transition: "background 0.15s, color 0.15s",
             }}
-            onMouseEnter={e => {
+            onMouseEnter={(e) => {
               e.currentTarget.style.background = "#fee2e2";
               e.currentTarget.style.color = "#dc2626";
               e.currentTarget.style.borderColor = "#fca5a5";
             }}
-            onMouseLeave={e => {
+            onMouseLeave={(e) => {
               e.currentTarget.style.background = "#f3f4f6";
               e.currentTarget.style.color = "#374151";
               e.currentTarget.style.borderColor = "#e5e7eb";
@@ -247,36 +242,38 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
           </button>
         </div>
 
-        {/* ── BODY ── */}
-        <div style={{ padding: "20px 24px" }}>
+        {/* BODY */}
+        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
 
-          {errors._general && (
+          {state.errors._general && (
             <div style={{
               background: "#fef2f2", border: "1px solid #fecaca",
               borderRadius: 8, padding: "10px 14px",
-              fontSize: 13, color: "#dc2626", marginBottom: 16,
+              fontSize: 13, color: "#dc2626",
             }}>
-              {errors._general}
+              {state.errors._general}
             </div>
           )}
 
-          {/* FILA 1: Código + Nombre */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px", marginBottom: 16 }}>
+          {/* Código + Nombre */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <div>
               <label style={labelStyle}>
-                Codigo{!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
+                Código{!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
               </label>
               <input
-                name="codigo"
-                value={form.codigo}
-                onChange={handleChange}
-                placeholder="Ej: ACT-001"
+                value={state.codigo}
+                onChange={handleCodigo}
+                placeholder="Ej: 1"
+                inputMode="numeric"
                 readOnly={isEdit}
-                style={isEdit ? readOnlyInputStyle : inputStyle(!!errors.codigo)}
+                style={isEdit ? readOnlyStyle : inputStyle(!!state.errors.codigo)}
                 title={isEdit ? "El código no puede modificarse" : ""}
               />
-              {errors.codigo && (
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>{errors.codigo}</p>
+              {state.errors.codigo && (
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
+                  {state.errors.codigo}
+                </p>
               )}
             </div>
 
@@ -285,94 +282,52 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
                 Nombre <span style={{ color: "#dc2626" }}>*</span>
               </label>
               <input
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
+                value={state.nombre}
+                onChange={setField("nombre")}
                 placeholder="Nombre de la actividad"
-                style={inputStyle(!!errors.nombre)}
+                style={inputStyle(!!state.errors.nombre)}
               />
-              {errors.nombre && (
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>{errors.nombre}</p>
+              {state.errors.nombre && (
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
+                  {state.errors.nombre}
+                </p>
               )}
             </div>
           </div>
 
-          {/* FILA 2: Categoría + Unidad + Estado */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 12px", marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>Categoria</label>
-              <select name="categoria" value={form.categoria} onChange={handleChange} style={selectStyle}>
-                {CATEGORIAS.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Unidad</label>
-              <select name="unidad_medida" value={form.unidad_medida} onChange={handleChange} style={selectStyle}>
-                {UNIDADES.map(u => (
-                  <option key={u.value} value={u.value}>{u.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Estado</label>
-              <select name="activa" value={form.activa} onChange={handleChange} style={selectStyle}>
-                <option value="true">Activa</option>
-                <option value="false">Inactiva</option>
-              </select>
-            </div>
-          </div>
-
-          {/* FILA 3: Precio Base */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Precio Base ($)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              name="rendimiento_diario_estimado"
-              value={form.rendimiento_diario_estimado}
-              onChange={handleChange}
-              placeholder="Ej: 850000"
-              style={inputStyle(!!errors.rendimiento_diario_estimado)}
-            />
-            {errors.rendimiento_diario_estimado && (
-              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
-                {errors.rendimiento_diario_estimado}
-              </p>
-            )}
-          </div>
-
-          {/* FILA 4: Descripción */}
+          {/* Intervención */}
           <div>
-            <label style={labelStyle}>Descripcion</label>
-            <textarea
-              name="descripcion"
-              value={form.descripcion}
-              onChange={handleChange}
-              placeholder="Descripción detallada de la actividad..."
-              rows={4}
-              style={{
-                width: "100%",
-                padding: "9px 12px",
-                border: "1.5px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-                color: "#0f172a",
-                background: "#fff",
-                outline: "none",
-                resize: "vertical",
-                fontFamily: "inherit",
-                boxSizing: "border-box",
-              }}
-            />
+            <label style={labelStyle}>Intervención</label>
+            <select
+              value={state.intervencion}
+              onChange={setField("intervencion")}
+              style={selectStyle}
+            >
+              <option value="">— Sin intervención —</option>
+              {intervenciones.map((i) => (
+                <option key={i._id ?? i.id} value={i._id ?? i.id}>
+                  {i.codigo} – {i.nombre}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {/* Estado */}
+          <div>
+            <label style={labelStyle}>Estado</label>
+            <select
+              value={state.activa}
+              onChange={setField("activa")}
+              style={selectStyle}
+            >
+              <option value="true">Activa</option>
+              <option value="false">Inactiva</option>
+            </select>
+          </div>
+
         </div>
 
-        {/* ── FOOTER ── */}
+        {/* FOOTER */}
         <div style={{
           padding: "14px 24px",
           borderTop: "1px solid #e5e7eb",
@@ -382,16 +337,12 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
         }}>
           <button
             onClick={onClose}
-            disabled={loading}
+            disabled={state.loading}
             style={{
-              background: "#f9fafb",
-              color: "#374151",
+              background: "#f9fafb", color: "#374151",
               border: "1px solid #d1d5db",
-              padding: "10px 20px",
-              borderRadius: 8,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontSize: 14,
+              padding: "10px 20px", borderRadius: 8,
+              fontWeight: 600, cursor: "pointer", fontSize: 14,
             }}
           >
             Cancelar
@@ -399,20 +350,18 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
 
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={state.loading}
             style={{
-              background: loading ? "#9ca3af" : "#1f8f57",
-              color: "#fff",
-              border: "none",
-              padding: "10px 24px",
-              borderRadius: 8,
+              background: state.loading ? "#9ca3af" : "#1f8f57",
+              color: "#fff", border: "none",
+              padding: "10px 24px", borderRadius: 8,
               fontWeight: 700,
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: state.loading ? "not-allowed" : "pointer",
               fontSize: 14,
-              boxShadow: loading ? "none" : "0 4px 12px rgba(31,143,87,0.25)",
+              boxShadow: state.loading ? "none" : "0 4px 12px rgba(31,143,87,0.25)",
             }}
           >
-            {loading ? "Guardando..." : "Guardar"}
+            {state.loading ? "Guardando..." : "Guardar"}
           </button>
         </div>
       </div>

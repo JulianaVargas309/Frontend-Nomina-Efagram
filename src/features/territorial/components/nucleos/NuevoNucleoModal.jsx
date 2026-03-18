@@ -1,5 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { X } from 'lucide-react';
+
+const INITIAL_STATE = {
+  codigo: '',
+  nombre: '',
+  zona:   '',
+  estado: true,
+  saving: false,
+  error:  null,
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value };
+    case 'RESET':
+      return { ...INITIAL_STATE, ...action.values };
+    case 'SET_SAVING':
+      return { ...state, saving: action.value };
+    case 'SET_ERROR':
+      return { ...state, error: action.value };
+    default:
+      return state;
+  }
+}
 
 export default function NuevoNucleoModal({
   isOpen,
@@ -9,51 +33,61 @@ export default function NuevoNucleoModal({
   onClose,
   onSubmit,
 }) {
-  const [codigo, setCodigo] = useState('');
-  const [nombre, setNombre] = useState('');
-  const [zona, setZona]     = useState('');
-  const [estado, setEstado] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState(null);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
+  const setField = (field) => (e) =>
+    dispatch({ type: 'SET_FIELD', field, value: e.target.value });
+
+  // UN solo dispatch — sin renders en cascada
   useEffect(() => {
     if (!isOpen) return;
-    setCodigo(initialValues?.codigo ?? '');
-    setNombre(initialValues?.nombre ?? '');
-    setZona(initialValues?.zona ?? initialValues?.zonaId ?? '');
     const estadoValue = initialValues?.activo ?? initialValues?.activa ?? initialValues?.estado;
-    setEstado(typeof estadoValue === 'boolean' ? estadoValue : true);
-    setError(null);
-    setSaving(false);
+    dispatch({
+      type: 'RESET',
+      values: {
+        codigo: initialValues?.codigo ?? '',
+        nombre: initialValues?.nombre ?? '',
+        zona:   initialValues?.zona   ?? initialValues?.zonaId ?? '',
+        estado: typeof estadoValue === 'boolean' ? estadoValue : true,
+        saving: false,
+        error:  null,
+      },
+    });
   }, [isOpen, initialValues]);
 
   if (!isOpen) return null;
 
   const isEdit = title.toLowerCase().includes('editar');
 
+  // Solo 2 dígitos (00-99)
+  const handleCodigo = (e) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    dispatch({ type: 'SET_FIELD', field: 'codigo', value: val });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    dispatch({ type: 'SET_ERROR', value: null });
 
-    const payload = {
-      codigo: String(codigo).trim(),
-      nombre: String(nombre).trim(),
-      activo: Boolean(estado),
-    };
-    if (zona) payload.zona = zona;
-
-    if (!payload.codigo || !payload.nombre) {
-      setError('Código y nombre son obligatorios');
+    if (!state.codigo.trim() || !state.nombre.trim()) {
+      dispatch({ type: 'SET_ERROR', value: 'Código y nombre son obligatorios' });
       return;
     }
 
+    const payload = {
+      codigo: Number(state.codigo),
+      nombre: state.nombre.trim(),
+      activo: Boolean(state.estado),
+    };
+    if (state.zona) payload.zona = state.zona;
+
     try {
-      setSaving(true);
+      dispatch({ type: 'SET_SAVING', value: true });
       await onSubmit?.(payload);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'No se pudo guardar');
-      setSaving(false);
+      dispatch({ type: 'SET_ERROR', value: err?.response?.data?.message || 'No se pudo guardar' });
+      dispatch({ type: 'SET_SAVING', value: false });
     }
   };
 
@@ -72,12 +106,16 @@ export default function NuevoNucleoModal({
         </div>
 
         <form className="modal-body" onSubmit={handleSubmit}>
+
+          {/* Código — 2 dígitos */}
           <label className="field">
-            <span>Código</span>
+            <span>Código <span style={{ color: '#9ca3af', fontWeight: 400 }}>(2 dígitos)</span></span>
             <input
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              placeholder="Ej: NC-001"
+              value={state.codigo}
+              onChange={handleCodigo}
+              placeholder="Ej: 01"
+              inputMode="numeric"
+              maxLength={2}
               autoFocus
             />
           </label>
@@ -85,8 +123,8 @@ export default function NuevoNucleoModal({
           <label className="field">
             <span>Nombre</span>
             <input
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              value={state.nombre}
+              onChange={setField('nombre')}
               placeholder="Ej: Núcleo Norte 1"
             />
           </label>
@@ -94,7 +132,7 @@ export default function NuevoNucleoModal({
           {zonas.length > 0 && (
             <label className="field">
               <span>Zona</span>
-              <select value={zona} onChange={(e) => setZona(e.target.value)}>
+              <select value={state.zona} onChange={setField('zona')}>
                 <option value="">-- Sin zona --</option>
                 {zonas.map((z) => {
                   const id = z?._id ?? z?.id;
@@ -107,20 +145,22 @@ export default function NuevoNucleoModal({
           <label className="field">
             <span>Estado</span>
             <select
-              value={estado ? 'true' : 'false'}
-              onChange={(e) => setEstado(e.target.value === 'true')}
+              value={state.estado ? 'true' : 'false'}
+              onChange={(e) =>
+                dispatch({ type: 'SET_FIELD', field: 'estado', value: e.target.value === 'true' })
+              }
             >
               <option value="true">Activo</option>
               <option value="false">Inactivo</option>
             </select>
           </label>
 
-          {error && <div className="form-error">{error}</div>}
+          {state.error && <div className="form-error">{state.error}</div>}
 
           <div className="modal-actions">
             <button className="btn-modal-cancel" type="button" onClick={onClose}>Cancelar</button>
-            <button className="btn-modal-submit" type="submit" disabled={saving}>
-              {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+            <button className="btn-modal-submit" type="submit" disabled={state.saving}>
+              {state.saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
             </button>
           </div>
         </form>

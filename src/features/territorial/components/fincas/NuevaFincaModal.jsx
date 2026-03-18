@@ -48,7 +48,7 @@ export default function NuevaFincaModal({
       activa: Boolean(estado),
     };
     if (nucleo)      payload.nucleo = nucleo;
-    if (area !== '') payload.area   = parseFloat(area);
+    if (area !== '') payload.area_total = parseFloat(area);
 
     if (!payload.codigo || !payload.nombre) {
       setError('Código y nombre son obligatorios');

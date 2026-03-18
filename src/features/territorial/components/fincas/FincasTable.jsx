@@ -14,7 +14,7 @@ function FincaDetalleModal({ isOpen, finca, onClose }) {
     isActive = v === 'activa' || v === 'activo' || v === 'active' || v === 'true' || v === '1';
   } else if (typeof raw === 'number') isActive = raw === 1;
 
-  const area = finca?.area ?? finca?.areaTotal ?? finca?.hectareas;
+  const area = finca?.area_total ?? finca?.area ?? finca?.areaTotal ?? finca?.hectareas;
 
   return (
     <>
@@ -96,7 +96,7 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
     ? fincas.filter((f) => resolveNucleoId(f) === nucleoFiltro)
     : fincas;
 
-  const getArea = (f) => f?.area ?? f?.areaTotal ?? f?.hectareas;
+  const getArea = (f) => f?.area_total ?? f?.area ?? f?.areaTotal ?? f?.hectareas;
 
   const resolveEstado = (f) => {
     const raw = f?.activa ?? f?.estado;
