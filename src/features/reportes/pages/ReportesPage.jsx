@@ -40,10 +40,10 @@ const pctFill = (p) => {
 
 const estadoBadge = (estado) => {
   const m = {
-    CUMPLIDA:     ['badge-green',  'Cumplida'],
-    EN_EJECUCION: ['badge-blue',   'En ejecución'],
-    PENDIENTE:    ['badge-amber',  'Pendiente'],
-    CANCELADA:    ['badge-red',    'Cancelada'],
+    CUMPLIDA: ['badge-green', 'Cumplida'],
+    EN_EJECUCION: ['badge-blue', 'En ejecución'],
+    PENDIENTE: ['badge-amber', 'Pendiente'],
+    CANCELADA: ['badge-red', 'Cancelada'],
     REPROGRAMADA: ['badge-purple', 'Reprogramada'],
   };
   const [cls, label] = m[estado] || ['badge-gray', estado || '—'];
@@ -109,11 +109,11 @@ function TabAvanceMetas({ data }) {
     <>
       {/* Stats resumen */}
       <div className="reportes-stats">
-        <StatCard icon={Target}      label="Total PALs"       value={resumen.total_pals ?? 0}              color="#2563eb" bg="rgba(37,99,235,0.1)" />
-        <StatCard icon={TrendingUp}  label="Avance general"   value={`${resumen.porcentaje_avance_general ?? 0}%`} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
-        <StatCard icon={CheckCircle} label="PALs cumplidos"   value={resumen.pals_cumplidos ?? 0}          color="#1f8f57" bg="rgba(31,143,87,0.1)" />
-        <StatCard icon={Activity}    label="En ejecución"     value={resumen.pals_en_ejecucion ?? 0}       color="#d97706" bg="rgba(217,119,6,0.1)" />
-        <StatCard icon={Clock}       label="Pendientes"        value={resumen.pals_pendientes ?? 0}         color="#64748b" bg="rgba(100,116,139,0.1)" />
+        <StatCard icon={Target} label="Total PALs" value={resumen.total_pals ?? 0} color="#2563eb" bg="rgba(37,99,235,0.1)" />
+        <StatCard icon={TrendingUp} label="Avance general" value={`${resumen.porcentaje_avance_general ?? 0}%`} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
+        <StatCard icon={CheckCircle} label="PALs cumplidos" value={resumen.pals_cumplidos ?? 0} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
+        <StatCard icon={Activity} label="En ejecución" value={resumen.pals_en_ejecucion ?? 0} color="#d97706" bg="rgba(217,119,6,0.1)" />
+        <StatCard icon={Clock} label="Pendientes" value={resumen.pals_pendientes ?? 0} color="#64748b" bg="rgba(100,116,139,0.1)" />
       </div>
 
       {/* Tabla detalle */}
@@ -182,10 +182,10 @@ function TabPorActividad({ data }) {
   return (
     <>
       <div className="reportes-stats">
-        <StatCard icon={Activity}   label="Actividades"      value={lista.length}             color="#7c3aed" bg="rgba(124,58,237,0.1)" />
-        <StatCard icon={Target}     label="Meta total"        value={fmtNum(totalMeta)}        color="#2563eb" bg="rgba(37,99,235,0.1)" />
-        <StatCard icon={TrendingUp} label="Ejecutado total"   value={fmtNum(totalEjec)}        color="#1f8f57" bg="rgba(31,143,87,0.1)" />
-        <StatCard icon={BarChart3}  label="Avance promedio"   value={`${pctGlobal}%`}          color="#d97706" bg="rgba(217,119,6,0.1)" />
+        <StatCard icon={Activity} label="Actividades" value={lista.length} color="#7c3aed" bg="rgba(124,58,237,0.1)" />
+        <StatCard icon={Target} label="Meta total" value={fmtNum(totalMeta)} color="#2563eb" bg="rgba(37,99,235,0.1)" />
+        <StatCard icon={TrendingUp} label="Ejecutado total" value={fmtNum(totalEjec)} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
+        <StatCard icon={BarChart3} label="Avance promedio" value={`${pctGlobal}%`} color="#d97706" bg="rgba(217,119,6,0.1)" />
       </div>
 
       <div className="reportes-section">
@@ -257,9 +257,9 @@ function TabNomina({ data }) {
       </div>
 
       <div className="reportes-stats">
-        <StatCard icon={Users}      label="Trabajadores"     value={resumen.total_trabajadores ?? 0}        color="#2563eb" bg="rgba(37,99,235,0.1)" />
-        <StatCard icon={Clock}      label="Horas totales"    value={fmtNum(resumen.total_horas)}            color="#7c3aed" bg="rgba(124,58,237,0.1)" />
-        <StatCard icon={DollarSign} label="Prom. por trab."  value={fmtMoney(resumen.promedio_nomina_por_trabajador)} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
+        <StatCard icon={Users} label="Trabajadores" value={resumen.total_trabajadores ?? 0} color="#2563eb" bg="rgba(37,99,235,0.1)" />
+        <StatCard icon={Clock} label="Horas totales" value={fmtNum(resumen.total_horas)} color="#7c3aed" bg="rgba(124,58,237,0.1)" />
+        <StatCard icon={DollarSign} label="Prom. por trab." value={fmtMoney(resumen.promedio_nomina_por_trabajador)} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
       </div>
 
       <div className="reportes-section">
@@ -312,23 +312,23 @@ function TabNomina({ data }) {
 // PÁGINA PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════
 const TABS = [
-  { id: 'metas',     label: 'Avance de metas',      icon: Target      },
-  { id: 'actividad', label: 'Producción actividad',  icon: Activity    },
-  { id: 'nomina',    label: 'Nómina general',        icon: DollarSign  },
+  { id: 'metas', label: 'Avance de metas', icon: Target },
+  { id: 'actividad', label: 'Producción actividad', icon: Activity },
+  { id: 'nomina', label: 'Nómina general', icon: DollarSign },
 ];
 
 export default function ReportesPage() {
   const [fechaInicio, setFechaInicio] = useState(hace30());
-  const [fechaFin,    setFechaFin]    = useState(hoy());
-  const [tabActiva,   setTabActiva]   = useState('metas');
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState(null);
+  const [fechaFin, setFechaFin] = useState(hoy());
+  const [tabActiva, setTabActiva] = useState('metas');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Datos por sección
-  const [dataMetas,     setDataMetas]     = useState(null);
+  const [dataMetas, setDataMetas] = useState(null);
   const [dataActividad, setDataActividad] = useState(null);
-  const [dataNomina,    setDataNomina]    = useState(null);
-  const [buscado,       setBuscado]       = useState(false);
+  const [dataNomina, setDataNomina] = useState(null);
+  const [buscado, setBuscado] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!fechaInicio || !fechaFin) {
@@ -345,9 +345,9 @@ export default function ReportesPage() {
         reportesService.getNominaGeneral(fechaInicio, fechaFin),
       ]);
 
-      setDataMetas(     rMetas.status     === 'fulfilled' ? rMetas.value?.data     : null);
-      setDataActividad( rActividad.status === 'fulfilled' ? rActividad.value?.data : null);
-      setDataNomina(    rNomina.status    === 'fulfilled' ? rNomina.value?.data    : null);
+      setDataMetas(rMetas.status === 'fulfilled' ? rMetas.value?.data : null);
+      setDataActividad(rActividad.status === 'fulfilled' ? rActividad.value?.data : null);
+      setDataNomina(rNomina.status === 'fulfilled' ? rNomina.value?.data : null);
 
       // Mostrar error si alguno falló
       const fallidos = [rMetas, rActividad, rNomina].filter(r => r.status === 'rejected');
@@ -371,9 +371,9 @@ export default function ReportesPage() {
         <p>Selecciona un período y presiona <strong>Generar reporte</strong>.</p>
       </div>
     );
-    if (tabActiva === 'metas')     return <TabAvanceMetas    data={dataMetas}     />;
-    if (tabActiva === 'actividad') return <TabPorActividad   data={dataActividad} />;
-    if (tabActiva === 'nomina')    return <TabNomina         data={dataNomina}    />;
+    if (tabActiva === 'metas') return <TabAvanceMetas data={dataMetas} />;
+    if (tabActiva === 'actividad') return <TabPorActividad data={dataActividad} />;
+    if (tabActiva === 'nomina') return <TabNomina data={dataNomina} />;
     return null;
   };
 
@@ -385,12 +385,13 @@ export default function ReportesPage() {
         <div className="reportes-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{
-              width: 46, height: 46, borderRadius: 12,
-              background: 'linear-gradient(135deg, #1f8f57 0%, #16a34a 100%)',
+              width: 40, height: 40, borderRadius: 8,
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, boxShadow: '0 4px 12px rgba(31,143,87,0.3)',
+              flexShrink: 0,
             }}>
-              <BarChart3 size={24} color="#fff" strokeWidth={2} />
+              <BarChart3 size={20} color="#2563eb" strokeWidth={2} />
             </div>
             <div>
               <h1 style={{ margin: 0 }}>Reportes Generales</h1>

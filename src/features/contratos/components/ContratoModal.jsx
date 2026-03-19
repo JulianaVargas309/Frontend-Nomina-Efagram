@@ -528,7 +528,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         </div>
 
         <div className="modal-body">
-          {error && <div className="contratos-error" style={{ marginBottom:12 }}>{error}</div>}
 
           {/* ══ TAB DATOS ══════════════════════════════════════════ */}
           {tab === 'datos' && (
@@ -986,10 +985,23 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         </div>
 
         <div className="modal-footer">
-          <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
-          <button className="btn-guardar" onClick={handleSave} disabled={saving}>
-            {saving ? 'Guardando...' : modo === 'editar' ? 'Guardar cambios' : 'Crear contrato'}
-          </button>
+          {error && (
+            <div style={{
+              background: '#fef2f2', border: '1px solid #fecaca',
+              borderRadius: 8, padding: '10px 14px', marginBottom: 12,
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              fontSize: 13, color: '#dc2626',
+            }}>
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{error}</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
+            <button className="btn-guardar" onClick={handleSave} disabled={saving}>
+              {saving ? 'Guardando...' : modo === 'editar' ? 'Guardar cambios' : 'Crear contrato'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
