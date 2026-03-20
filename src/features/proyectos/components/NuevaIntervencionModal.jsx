@@ -53,10 +53,8 @@ export default function NuevaIntervencionModal({
 
   const isEdit = title.toLowerCase().includes('editar');
 
-  // Solo dígitos en el código
   const handleCodigo = (e) => {
-    const val = e.target.value.replace(/\D/g, '');
-    setCodigo(val);
+    setCodigo(e.target.value.toUpperCase());
   };
 
   const handleSubmit = async (e) => {
@@ -69,7 +67,7 @@ export default function NuevaIntervencionModal({
     }
 
     const payload = {
-      codigo:      Number(codigo),
+      codigo:      String(codigo).trim().toUpperCase(),
       nombre:      nombre.trim(),
       proceso,
       activo:      Boolean(activo),
@@ -191,4 +189,4 @@ export default function NuevaIntervencionModal({
       </form>
     </div>
   );
-}
+}0.

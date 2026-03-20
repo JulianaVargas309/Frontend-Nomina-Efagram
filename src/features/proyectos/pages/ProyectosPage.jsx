@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProyectos, deleteProyecto } from "../services/proyectosService";
+import { getActividadesProyecto } from "../services/subproyectosService";
 import "../../../assets/styles/proyectos.css";
 import ProyectoModal from "../components/ProyectoModal";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
@@ -34,6 +35,7 @@ const ProyectosPage = () => {
 
   // modalState = { open: bool, modo: "crear"|"editar"|"ver", proyecto: obj|null }
   const [modalState, setModalState] = useState({ open:false, modo:"crear", proyecto:null });
+  const [actividadesMap, setActividadesMap] = useState({});
 
   const abrirCrear  = ()  => setModalState({ open:true, modo:"crear",  proyecto:null });
   const abrirVer    = (p) => setModalState({ open:true, modo:"ver",    proyecto:p });
@@ -46,7 +48,17 @@ const ProyectosPage = () => {
       setLoading(true);
       setError(null);
       const response = await getProyectos();
-      setProyectos(response?.data?.success ? response.data.data : []);
+      const data = response?.data?.success ? response.data.data : [];
+      setProyectos(data);
+      // Cargar actividades de todos los proyectos para los badges
+      const map = {};
+      await Promise.all(data.map(async (p) => {
+        try {
+          const res = await getActividadesProyecto({ proyecto: p._id });
+          map[p._id] = res?.data?.data ?? [];
+        } catch { map[p._id] = []; }
+      }));
+      setActividadesMap(map);
     } catch (err) {
       console.error("Error cargando proyectos:", err);
       setError("No se pudieron cargar los proyectos.");
@@ -147,9 +159,22 @@ const ProyectosPage = () => {
             const estado  = proyecto.estado?.toUpperCase();
             const avance  = proyecto.avance ?? 0;
 
-            const intervenciones = Object.entries(proyecto.actividades_por_intervencion ?? {})
-              .filter(([, arr]) => Array.isArray(arr) && arr.length > 0);
+            // Agrupar actividades por intervención desde actividadesMap
+            const actsProyecto = actividadesMap[proyecto._id] ?? [];
+            const intervByObj = actsProyecto.reduce((acc, a) => {
+              const id = a.intervencion?._id ?? a.intervencion ?? "sin_tipo";
+              const nombre = a.intervencion?.nombre ?? id;
+              if (!acc[id]) acc[id] = { nombre, acts: [], monto: 0 };
+              acc[id].acts.push(a);
+              acc[id].monto += (a.precio_unitario || 0) * (a.cantidad_total || 0);
+              return acc;
+            }, {});
+            const intervenciones = Object.values(intervByObj);
 
+            // Fallback: proyectos antiguos con actividades_por_intervencion
+            const intervOld = actsProyecto.length === 0
+              ? Object.entries(proyecto.actividades_por_intervencion ?? {}).filter(([, arr]) => Array.isArray(arr) && arr.length > 0)
+              : [];
             const presupuesto = proyecto.presupuesto_por_intervencion ?? {};
 
             return (
@@ -183,7 +208,14 @@ const ProyectosPage = () => {
                 {/* Chips de intervenciones */}
                 {intervenciones.length > 0 && (
                   <div className="proy-intervenciones">
-                    {intervenciones.map(([tipo, acts]) => {
+                    {intervenciones.map((iv) => (
+                      <span key={iv.nombre} className="proy-interv-chip">
+                        🌿 {iv.nombre}&nbsp;
+                        <strong>{iv.acts.length}</strong>
+                        {iv.monto > 0 && <>&nbsp;{fmtMonto(iv.monto)}</>}
+                      </span>
+                    ))}
+                    {intervOld.map(([tipo, acts]) => {
                       const monto = presupuesto[tipo]?.monto_presupuestado;
                       return (
                         <span key={tipo} className="proy-interv-chip">

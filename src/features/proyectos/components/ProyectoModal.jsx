@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createProyecto, updateProyecto } from "../services/proyectosService";
-import { getPersonas } from "../../../personal/services/personalService";
+import { getPersonas } from "../services/personalService";
 import { getZonas } from "../../territorial/services/zonas.service";
 import ActividadesIntervencion from "./ActividadesIntervencion";
 import {
@@ -195,19 +195,17 @@ const ProyectoModal = ({
   };
 
   const buildPayload = () => {
-    const actividadesPorIntervencion = {
-      mantenimiento:  [],
-      no_programadas: [],
-      establecimiento:[],
-    };
+    const actividadesPorIntervencion = {};
 
     let clienteId = "";
 
     intervenciones.forEach((bloque) => {
       if (!clienteId && bloque.cliente_id) clienteId = bloque.cliente_id;
+      const key = bloque.intervencion_id ?? bloque.tipo ?? "sin_tipo";
+      if (!actividadesPorIntervencion[key]) actividadesPorIntervencion[key] = [];
 
       bloque.actividades.forEach((act) => {
-        actividadesPorIntervencion[bloque.tipo]?.push({
+        actividadesPorIntervencion[key].push({
           nombre: act.nombre,
           precio_unitario: Number(act.precio_unitario) || 0,
           cantidad: Number(act.cantidad) || 0,
@@ -225,7 +223,6 @@ const ProyectoModal = ({
       nombre: form.nombre.trim(),
       zona: form.zona || undefined,
       cliente: clienteId,
-      actividades_por_intervencion: actividadesPorIntervencion,
     };
   };
 
@@ -259,6 +256,7 @@ const ProyectoModal = ({
       }
 
       if (proyectoId) {
+        console.log("BLOQUES:", JSON.stringify(intervenciones, null, 2));
         for (const bloque of intervenciones) {
           for (const act of bloque.actividades) {
             if (!act.catalogo_id) continue;
@@ -267,7 +265,7 @@ const ProyectoModal = ({
                 createActividadProyecto({
                   proyecto:        proyectoId,
                   actividad:       act.catalogo_id,
-                  intervencion:    bloque.tipo,
+                  intervencion:    bloque.intervencion_id ?? bloque.tipo,
                   cliente:         bloque.cliente_id   || undefined,
                   supervisor:      bloque.supervisor_id || undefined,
                   precio_unitario: Number(act.precio_unitario) || 0,
@@ -276,9 +274,7 @@ const ProyectoModal = ({
                 })
               );
             } catch (e) {
-              if (!e?.response?.data?.message?.includes("duplicate")) {
-                console.warn("No se pudo sincronizar actividad:", act.nombre, e?.response?.data?.message);
-              }
+              console.error("ERROR actividad:", act.nombre, JSON.stringify(e?.response?.data));
             }
           }
         }
