@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { getProcesos } from '../services/procesosService';
 
 function resolveProcesoId(proc) {
@@ -25,16 +25,14 @@ export default function NuevaIntervencionModal({
   onClose,
   onSubmit,
 }) {
-  // Estado inicializado directo desde props — el padre pasa key dinámica al editar
   const [codigo,      setCodigo]      = useState(initialValues?.codigo      ?? '');
   const [nombre,      setNombre]      = useState(initialValues?.nombre      ?? '');
   const [proceso,     setProceso]     = useState(resolveProcesoId(initialValues?.proceso));
   const [activo,      setActivo]      = useState(resolveActivo(initialValues?.activo ?? initialValues?.estado));
   const [descripcion, setDescripcion] = useState(initialValues?.descripcion ?? '');
   const [saving,      setSaving]      = useState(false);
-  const [error,       setError]       = useState(null);
+  const [errors,      setErrors]      = useState([]);
 
-  // Fetch legítimo — solo carga el catálogo de procesos, no toca el form
   const [procesos, setProcesos] = useState([]);
   useEffect(() => {
     if (!isOpen) return;
@@ -53,18 +51,15 @@ export default function NuevaIntervencionModal({
 
   const isEdit = title.toLowerCase().includes('editar');
 
-  const handleCodigo = (e) => {
-    setCodigo(e.target.value.toUpperCase());
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setErrors([]);
 
-    if (!codigo.trim() || !nombre.trim() || !proceso) {
-      setError('Código, nombre y proceso son obligatorios');
-      return;
-    }
+    const locales = [];
+    if (!codigo.trim()) locales.push('El código es obligatorio.');
+    if (!nombre.trim()) locales.push('El nombre de la intervención es obligatorio.');
+    if (!proceso)       locales.push('Debes seleccionar un proceso.');
+    if (locales.length > 0) { setErrors(locales); return; }
 
     const payload = {
       codigo:      String(codigo).trim().toUpperCase(),
@@ -78,7 +73,22 @@ export default function NuevaIntervencionModal({
       setSaving(true);
       await onSubmit?.(payload);
     } catch (err) {
-      setError(err?.response?.data?.message || 'No se pudo guardar');
+      const backendErrors = err?.response?.data?.errors;
+      if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+        const MENSAJES = {
+          codigo:      'El código es obligatorio.',
+          nombre:      'El nombre de la intervención es obligatorio.',
+          proceso:     'Debes seleccionar un proceso.',
+          activo:      'El estado es obligatorio.',
+          descripcion: 'La descripción no es válida.',
+        };
+        setErrors(backendErrors.map(e => {
+          const campo = e.path ?? e.param ?? e.field ?? '';
+          return MENSAJES[campo] ?? e.msg ?? e.message ?? `Campo inválido: ${campo}`;
+        }));
+      } else {
+        setErrors([err?.response?.data?.message || 'No se pudo guardar la intervención.']);
+      }
       setSaving(false);
     }
   };
@@ -106,16 +116,13 @@ export default function NuevaIntervencionModal({
 
         <div className="modal-body">
 
-          {/* Código — solo números */}
           <label className="field">
             <span>Código *</span>
             <input
               value={codigo}
-              onChange={handleCodigo}
-              placeholder="Ej: 1"
-              inputMode="numeric"
+              onChange={(e) => { setCodigo(e.target.value.toUpperCase()); setErrors([]); }}
+              placeholder="Ej: INT-001"
               autoFocus
-              required
             />
           </label>
 
@@ -123,15 +130,14 @@ export default function NuevaIntervencionModal({
             <span>Nombre *</span>
             <input
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              onChange={(e) => { setNombre(e.target.value); setErrors([]); }}
               placeholder="Ej: Establecimiento"
-              required
             />
           </label>
 
           <label className="field">
             <span>Proceso *</span>
-            <select value={proceso} onChange={(e) => setProceso(e.target.value)} required>
+            <select value={proceso} onChange={(e) => { setProceso(e.target.value); setErrors([]); }}>
               <option value="">— Selecciona un proceso —</option>
               {procesos.map((p) => (
                 <option key={p._id ?? p.id} value={p._id ?? p.id}>
@@ -175,18 +181,37 @@ export default function NuevaIntervencionModal({
             />
           </label>
 
-          {error && <div className="form-error">{error}</div>}
         </div>
 
-        <div className="modal-actions">
-          <button className="btn-modal-cancel" type="button" onClick={onClose}>
-            Cancelar
-          </button>
-          <button className="btn-modal-submit" type="submit" disabled={saving}>
-            {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
-          </button>
+        <div className="modal-actions" style={{ flexDirection: 'column', gap: 10 }}>
+          {errors.length > 0 && (
+            <div style={{
+              background: '#fef2f2', border: '1px solid #fecaca',
+              borderRadius: 8, padding: '10px 14px',
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              width: '100%', boxSizing: 'border-box',
+            }}>
+              <AlertCircle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div style={{ flex: 1 }}>
+                {errors.map((msg, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 13, color: '#dc2626', marginBottom: i < errors.length - 1 ? 4 : 0 }}>
+                    <span style={{ flexShrink: 0 }}>•</span>
+                    <span>{msg}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, width: '100%' }}>
+            <button className="btn-modal-cancel" type="button" onClick={onClose}>
+              Cancelar
+            </button>
+            <button className="btn-modal-submit" type="submit" disabled={saving}>
+              {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+            </button>
+          </div>
         </div>
       </form>
     </div>
   );
-}0.
+}

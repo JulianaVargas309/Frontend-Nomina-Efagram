@@ -1,31 +1,41 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
+const MENSAJES_CAMPO = {
+  codigo:        'El código es obligatorio (ej: S07-2026).',
+  fecha_inicio:  'La fecha de inicio es obligatoria.',
+  fecha_fin:     'La fecha de fin es obligatoria.',
+  año:           'El año es obligatorio.',
+  numero_semana: 'El número de semana es obligatorio.',
+  estado:        'El estado es obligatorio.',
+  registros:     'El número de registros debe ser un valor válido.',
+  cumplimiento:  'El cumplimiento debe ser un valor entre 0 y 100.',
+  observaciones: 'Las observaciones no son válidas.',
+};
+
 export default function NuevaSemanaModal({
   isOpen, title = 'Nueva Semana', initialValues = {}, onClose, onSubmit,
 }) {
-  const [codigo, setCodigo] = useState('');
-  const [fecha_inicio, setFechaInicio] = useState('');
-  const [fecha_fin, setFechaFin] = useState('');
-  // CORRECCIÓN: estado inicial era 'ACTIVA' — el enum del backend es ABIERTA | CERRADA | BLOQUEADA
-  const [estado, setEstado] = useState('ABIERTA');
-  const [registros, setRegistros] = useState('');
-  const [cumplimiento, setCumplimiento] = useState('');
+  const [codigo,        setCodigo]        = useState('');
+  const [fecha_inicio,  setFechaInicio]   = useState('');
+  const [fecha_fin,     setFechaFin]      = useState('');
+  const [estado,        setEstado]        = useState('ACTIVA');
+  const [registros,     setRegistros]     = useState('');
+  const [cumplimiento,  setCumplimiento]  = useState('');
   const [observaciones, setObservaciones] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const [saving,        setSaving]        = useState(false);
+  const [errors,        setErrors]        = useState([]);
 
   useEffect(() => {
     if (!isOpen) return;
     setCodigo(initialValues?.codigo ?? initialValues?.semana ?? '');
     setFechaInicio(initialValues?.fecha_inicio ? String(initialValues.fecha_inicio).slice(0, 10) : '');
     setFechaFin(initialValues?.fecha_fin ? String(initialValues.fecha_fin).slice(0, 10) : '');
-    // CORRECCIÓN: default era 'ACTIVA'
-    setEstado(initialValues?.estado ?? 'ABIERTA');
+    setEstado(initialValues?.estado ?? 'ACTIVA');
     setRegistros(String(initialValues?.registros ?? ''));
     setCumplimiento(String(initialValues?.cumplimiento ?? ''));
     setObservaciones(initialValues?.observaciones ?? '');
-    setError(null);
+    setErrors([]);
     setSaving(false);
   }, [isOpen, initialValues]);
 
@@ -35,16 +45,23 @@ export default function NuevaSemanaModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    if (!fecha_inicio) return setError('La fecha de inicio es obligatoria');
-    if (!fecha_fin) return setError('La fecha de fin es obligatoria');
+    setErrors([]);
+
+    // Validación frontend
+    const locales = [];
+    if (!codigo.trim())  locales.push('El código es obligatorio (ej: S07-2026).');
+    if (!fecha_inicio)   locales.push('La fecha de inicio es obligatoria.');
+    if (!fecha_fin)      locales.push('La fecha de fin es obligatoria.');
+    if (fecha_inicio && fecha_fin && fecha_fin < fecha_inicio)
+                         locales.push('La fecha de fin no puede ser anterior a la fecha de inicio.');
+    if (locales.length > 0) return setErrors(locales);
 
     const payload = {
-      ...(codigo.trim() && { codigo: codigo.trim() }),
+      codigo: codigo.trim(),
       fecha_inicio,
       fecha_fin,
       estado,
-      ...(registros && { registros: Number(registros) }),
+      ...(registros    && { registros: Number(registros) }),
       ...(cumplimiento && { cumplimiento: Number(cumplimiento) }),
       ...(observaciones.trim() && { observaciones: observaciones.trim() }),
     };
@@ -53,14 +70,26 @@ export default function NuevaSemanaModal({
       setSaving(true);
       await onSubmit?.(payload);
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'No se pudo guardar');
+      // Errores de validación del backend (array errors[])
+      const backendErrors = err?.response?.data?.errors;
+      if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+        const mensajes = backendErrors.map((e) => {
+          const campo = e.path ?? e.param ?? e.field ?? '';
+          return MENSAJES_CAMPO[campo] ?? e.msg ?? e.message ?? `Campo inválido: ${campo}`;
+        });
+        setErrors(mensajes);
+      } else {
+        const msg = err?.response?.data?.message ?? err?.message ?? 'No se pudo guardar la semana.';
+        setErrors([msg]);
+      }
       setSaving(false);
     }
   };
-  
+
   return (
-    <div className="nrm-backdrop">
-      <div className="nrm-modal" role="dialog" aria-modal="true">
+    <div className="nrm-backdrop" onClick={onClose}>
+      <div className="nrm-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+
         <div className="nrm-header">
           <div>
             <h3 className="nrm-title">{title}</h3>
@@ -75,31 +104,30 @@ export default function NuevaSemanaModal({
           <div className="nrm-scroll-area">
 
             <div className="nrm-field">
-              <label className="nrm-label">Código <span className="nrm-opt">(opcional, ej: SEM-2026-07)</span></label>
+              <label className="nrm-label">Código <span className="nrm-req">*</span></label>
               <input className="nrm-input" value={codigo}
-                onChange={(e) => setCodigo(e.target.value)} placeholder="Ej: SEM-2026-07" autoFocus />
+                onChange={(e) => setCodigo(e.target.value)}
+                placeholder="Ej: S07-2026" autoFocus />
             </div>
 
             <div className="nrm-row">
               <div className="nrm-field">
                 <label className="nrm-label">Fecha Inicio <span className="nrm-req">*</span></label>
                 <input className="nrm-input" type="date" value={fecha_inicio}
-                  onChange={(e) => setFechaInicio(e.target.value)} required />
+                  onChange={(e) => setFechaInicio(e.target.value)} />
               </div>
               <div className="nrm-field">
                 <label className="nrm-label">Fecha Fin <span className="nrm-req">*</span></label>
                 <input className="nrm-input" type="date" value={fecha_fin}
-                  onChange={(e) => setFechaFin(e.target.value)} required />
+                  onChange={(e) => setFechaFin(e.target.value)} />
               </div>
             </div>
 
             <div className="nrm-field">
               <label className="nrm-label">Estado</label>
-              {/* CORRECCIÓN: opciones sincronizadas con el enum del backend */}
               <select className="nrm-select" value={estado} onChange={(e) => setEstado(e.target.value)}>
-                <option value="ABIERTA">Abierta</option>
+                <option value="ACTIVA">Activa</option>
                 <option value="CERRADA">Cerrada</option>
-                <option value="BLOQUEADA">Bloqueada</option>
               </select>
             </div>
 
@@ -123,7 +151,17 @@ export default function NuevaSemanaModal({
                 placeholder="Ej: Semana en curso" rows={2} />
             </div>
 
-            {error && <div className="nrm-error">{error}</div>}
+            {errors.length > 0 && (
+              <div className="nrm-error">
+                {errors.map((msg, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                    <span style={{ marginTop: 2, flexShrink: 0 }}>•</span>
+                    <span>{msg}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
           </div>
 
           <div className="nrm-footer">

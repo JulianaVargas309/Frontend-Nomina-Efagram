@@ -6,40 +6,35 @@ import {
 import ActividadModal from "../components/ActividadModal";
 import "../../../assets/styles/actividades.css";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
+import { ClipboardList, Tag, Pencil, Trash2, Search } from "lucide-react";
 
 const getBadgeCategoria = (categoria = "") => {
   const map = {
     PREPARACION_TERRENO: "badge-preparacion",
-    SIEMBRA:             "badge-siembra",
-    MANTENIMIENTO:       "badge-mantenimiento",
-    CONTROL_MALEZA:      "badge-control",
-    FERTILIZACION:       "badge-fertilizacion",
-    PODAS:               "badge-podas",
-    OTRO:                "badge-default"
+    SIEMBRA: "badge-siembra",
+    MANTENIMIENTO: "badge-mantenimiento",
+    CONTROL_MALEZA: "badge-control",
+    FERTILIZACION: "badge-fertilizacion",
+    PODAS: "badge-podas",
+    OTRO: "badge-default"
   };
   return map[categoria] || "badge-default";
 };
 
 const CatalogoActividadesPage = () => {
-  const [actividades,      setActividades]      = useState([]);
-  const [loading,          setLoading]          = useState(false);
-  const [busqueda,         setBusqueda]         = useState("");
-  const [filtroEstado,     setFiltroEstado]     = useState("activas");
+  const [actividades, setActividades] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("activas");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [actividadEditar, setActividadEditar] = useState(null);
 
-  // FIX: estado para controlar el modal (abrir/cerrar + actividad a editar)
-  const [modalOpen,       setModalOpen]       = useState(false);
-  const [actividadEditar, setActividadEditar] = useState(null); // null = crear, obj = editar
-
-  // =============================
-  // CARGAR DESDE BACKEND
-  // =============================
   const cargarActividades = async () => {
     try {
       setLoading(true);
       const params = {};
-      if (filtroEstado === "activas")   params.activa = true;
+      if (filtroEstado === "activas") params.activa = true;
       if (filtroEstado === "inactivas") params.activa = false;
-
       const res = await getActividades(params);
       setActividades(res?.data?.data || []);
     } catch (error) {
@@ -49,13 +44,8 @@ const CatalogoActividadesPage = () => {
     }
   };
 
-  useEffect(() => {
-    cargarActividades();
-  }, [filtroEstado]);
+  useEffect(() => { cargarActividades(); }, [filtroEstado]);
 
-  // =============================
-  // FILTRO LOCAL (BÚSQUEDA)
-  // =============================
   const actividadesFiltradas = actividades.filter((a) => {
     const q = busqueda.toLowerCase();
     return (
@@ -65,30 +55,10 @@ const CatalogoActividadesPage = () => {
     );
   });
 
+  const abrirCrear = () => { setActividadEditar(null); setModalOpen(true); };
+  const abrirEditar = (actividad) => { setActividadEditar(actividad); setModalOpen(true); };
+  const cerrarModal = () => { setModalOpen(false); setActividadEditar(null); };
 
-
-  // =============================
-  // ABRIR MODAL
-  // =============================
-  // FIX: funciones separadas para crear y editar
-  const abrirCrear = () => {
-    setActividadEditar(null);
-    setModalOpen(true);
-  };
-
-  const abrirEditar = (actividad) => {
-    setActividadEditar(actividad);
-    setModalOpen(true);
-  };
-
-  const cerrarModal = () => {
-    setModalOpen(false);
-    setActividadEditar(null);
-  };
-
-  // =============================
-  // ELIMINAR (DESACTIVAR)
-  // =============================
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Seguro que deseas desactivar esta actividad?")) return;
     try {
@@ -99,17 +69,16 @@ const CatalogoActividadesPage = () => {
     }
   };
 
-  // =============================
-  // UI
-  // =============================
   return (
     <DashboardLayout>
       <div className="catalogo-wrapper">
 
-        {/* ---------- STATS ---------- */}
+        {/* STATS */}
         <div className="catalogo-stats">
           <div className="stat-card">
-            <div className="stat-card-icon">📋</div>
+            <div className="stat-card-icon">
+              <ClipboardList size={20} color="#27ae60" strokeWidth={1.8} />
+            </div>
             <div className="stat-card-info">
               <span className="stat-card-label">TOTAL ACTIVIDADES</span>
               <span className="stat-card-value">{actividades.length}</span>
@@ -117,7 +86,9 @@ const CatalogoActividadesPage = () => {
           </div>
 
           <div className="stat-card">
-            <div className="stat-card-icon">🏷️</div>
+            <div className="stat-card-icon">
+              <Tag size={20} color="#27ae60" strokeWidth={1.8} />
+            </div>
             <div className="stat-card-info">
               <span className="stat-card-label">CATEGORÍAS</span>
               <span className="stat-card-value">
@@ -127,27 +98,19 @@ const CatalogoActividadesPage = () => {
           </div>
         </div>
 
-        {/* ---------- PANEL ---------- */}
+        {/* PANEL */}
         <div className="catalogo-panel">
 
-          {/* HEADER */}
           <div className="catalogo-panel-header">
-            <h2 className="catalogo-panel-title">
-              Catálogo de Actividades
-            </h2>
-            {/* FIX: onClick ahora llama a abrirCrear */}
-            <button
-              className="btn-nueva-actividad"
-              onClick={abrirCrear}
-            >
+            <h2 className="catalogo-panel-title">Catálogo de Actividades</h2>
+            <button className="btn-nueva-actividad" onClick={abrirCrear}>
               + Nueva Actividad
             </button>
           </div>
 
-          {/* TOOLBAR */}
           <div className="catalogo-toolbar">
             <div className="search-wrapper">
-              <span className="search-icon">🔍</span>
+              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               <input
                 type="text"
                 className="search-input"
@@ -156,7 +119,6 @@ const CatalogoActividadesPage = () => {
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
-
             <select
               className="filter-select"
               value={filtroEstado}
@@ -168,7 +130,6 @@ const CatalogoActividadesPage = () => {
             </select>
           </div>
 
-          {/* TABLA */}
           {loading ? (
             <div className="catalogo-loading">Cargando actividades...</div>
           ) : (
@@ -184,7 +145,6 @@ const CatalogoActividadesPage = () => {
                   <th>ACCIONES</th>
                 </tr>
               </thead>
-
               <tbody>
                 {actividadesFiltradas.length === 0 ? (
                   <tr>
@@ -211,20 +171,31 @@ const CatalogoActividadesPage = () => {
                       </td>
                       <td>
                         <div className="acciones-cell">
-                          {/* FIX: onClick wired — antes no tenía handler */}
                           <button
-                            className="btn-accion editar"
                             onClick={() => abrirEditar(a)}
                             title="Editar actividad"
+                            style={{
+                              width: 32, height: 32,
+                              border: '1px solid #e2e8f0',
+                              borderRadius: 8, cursor: 'pointer',
+                              display: 'flex', alignItems: 'center',
+                              justifyContent: 'center', background: '#fff',
+                            }}
                           >
-                            ✏️
+                            <Pencil size={15} strokeWidth={1.8} color="#64748b" />
                           </button>
                           <button
-                            className="btn-accion eliminar"
                             onClick={() => handleEliminar(a._id)}
                             title="Desactivar actividad"
+                            style={{
+                              width: 32, height: 32,
+                              border: '1px solid #e2e8f0',
+                              borderRadius: 8, cursor: 'pointer',
+                              display: 'flex', alignItems: 'center',
+                              justifyContent: 'center', background: '#fff',
+                            }}
                           >
-                            🗑️
+                            <Trash2 size={15} strokeWidth={1.8} color="#64748b" />
                           </button>
                         </div>
                       </td>
@@ -236,14 +207,10 @@ const CatalogoActividadesPage = () => {
           )}
         </div>
 
-        {/* MODAL — FIX: ahora recibe actividadEditar para modo edición */}
         <ActividadModal
           isOpen={modalOpen}
           onClose={cerrarModal}
-          onSuccess={() => {
-            cerrarModal();
-            cargarActividades();
-          }}
+          onSuccess={() => { cerrarModal(); cargarActividades(); }}
           actividadEditar={actividadEditar}
         />
       </div>

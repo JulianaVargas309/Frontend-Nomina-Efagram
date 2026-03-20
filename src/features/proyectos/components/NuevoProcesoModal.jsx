@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 
 const INITIAL_STATE = {
   codigo:      '',
@@ -7,19 +7,19 @@ const INITIAL_STATE = {
   descripcion: '',
   estado:      true,
   saving:      false,
-  error:       null,
+  errors:      [],
 };
 
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_FIELD':
-      return { ...state, [action.field]: action.value };
+      return { ...state, [action.field]: action.value, errors: [] };
     case 'RESET':
       return { ...INITIAL_STATE, ...action.values };
     case 'SET_SAVING':
       return { ...state, saving: action.value };
-    case 'SET_ERROR':
-      return { ...state, error: action.value };
+    case 'SET_ERRORS':
+      return { ...state, errors: action.value };
     default:
       return state;
   }
@@ -37,7 +37,6 @@ export default function NuevoProcesoModal({
   const setField = (field) => (e) =>
     dispatch({ type: 'SET_FIELD', field, value: e.target.value });
 
-  // UN solo dispatch — sin renders en cascada
   useEffect(() => {
     if (!isOpen) return;
     const estadoValue = initialValues?.estado;
@@ -49,7 +48,7 @@ export default function NuevoProcesoModal({
         descripcion: initialValues?.descripcion ?? '',
         estado:      typeof estadoValue === 'boolean' ? estadoValue : true,
         saving:      false,
-        error:       null,
+        errors:      [],
       },
     });
   }, [isOpen, initialValues]);
@@ -58,23 +57,17 @@ export default function NuevoProcesoModal({
 
   const isEdit = title.toLowerCase().includes('editar');
 
-  // Solo permite dígitos en el campo código
-  const handleCodigo = (e) => {
-    const val = e.target.value.replace(/\D/g, '');
-    dispatch({ type: 'SET_FIELD', field: 'codigo', value: val });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch({ type: 'SET_ERROR', value: null });
+    dispatch({ type: 'SET_ERRORS', value: [] });
 
-    if (!state.codigo.trim() || !state.nombre.trim()) {
-      dispatch({ type: 'SET_ERROR', value: 'Código y nombre son obligatorios' });
-      return;
-    }
+    const locales = [];
+    if (!state.codigo.trim()) locales.push('El código es obligatorio.');
+    if (!state.nombre.trim()) locales.push('El nombre del proceso es obligatorio.');
+    if (locales.length > 0) { dispatch({ type: 'SET_ERRORS', value: locales }); return; }
 
     const payload = {
-      codigo:      Number(state.codigo),
+      codigo:      state.codigo.trim(),
       nombre:      state.nombre.trim(),
       descripcion: state.descripcion.trim() || undefined,
       estado:      Boolean(state.estado),
@@ -84,8 +77,24 @@ export default function NuevoProcesoModal({
       dispatch({ type: 'SET_SAVING', value: true });
       await onSubmit?.(payload);
     } catch (err) {
-      console.error(err);
-      dispatch({ type: 'SET_ERROR', value: err?.response?.data?.message || 'No se pudo guardar' });
+      const backendErrors = err?.response?.data?.errors;
+      if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+        const MENSAJES = {
+          codigo:      'El código es obligatorio.',
+          nombre:      'El nombre del proceso es obligatorio.',
+          descripcion: 'La descripción no es válida.',
+          estado:      'El estado es obligatorio.',
+        };
+        dispatch({
+          type: 'SET_ERRORS',
+          value: backendErrors.map(e => {
+            const campo = e.path ?? e.param ?? e.field ?? '';
+            return MENSAJES[campo] ?? e.msg ?? e.message ?? `Campo inválido: ${campo}`;
+          }),
+        });
+      } else {
+        dispatch({ type: 'SET_ERRORS', value: [err?.response?.data?.message || 'No se pudo guardar el proceso.'] });
+      }
       dispatch({ type: 'SET_SAVING', value: false });
     }
   };
@@ -114,19 +123,16 @@ export default function NuevoProcesoModal({
         {/* BODY */}
         <form className="modal-body" onSubmit={handleSubmit}>
 
-          {/* Código — solo números */}
           <label className="field">
             <span>Código *</span>
             <input
               value={state.codigo}
-              onChange={handleCodigo}
-              placeholder="Ej: 1"
-              inputMode="numeric"
+              onChange={setField('codigo')}
+              placeholder="Ej: COSECHA"
               autoFocus
             />
           </label>
 
-          {/* Nombre */}
           <label className="field">
             <span>Nombre *</span>
             <input
@@ -136,7 +142,6 @@ export default function NuevoProcesoModal({
             />
           </label>
 
-          {/* Descripción — opcional */}
           <label className="field">
             <span>
               Descripción{' '}
@@ -164,7 +169,6 @@ export default function NuevoProcesoModal({
             />
           </label>
 
-          {/* Estado */}
           <label className="field">
             <span>Estado *</span>
             <select
@@ -178,16 +182,34 @@ export default function NuevoProcesoModal({
             </select>
           </label>
 
-          {state.error && <div className="form-error">{state.error}</div>}
-
-          {/* ACCIONES */}
-          <div className="modal-actions">
-            <button className="btn-modal-cancel" type="button" onClick={onClose}>
-              Cancelar
-            </button>
-            <button className="btn-modal-submit" type="submit" disabled={state.saving}>
-              {state.saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
-            </button>
+          {/* ACCIONES con error banner encima de botones */}
+          <div className="modal-actions" style={{ flexDirection: 'column', gap: 10 }}>
+            {state.errors.length > 0 && (
+              <div style={{
+                background: '#fef2f2', border: '1px solid #fecaca',
+                borderRadius: 8, padding: '10px 14px',
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                width: '100%', boxSizing: 'border-box',
+              }}>
+                <AlertCircle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
+                <div style={{ flex: 1 }}>
+                  {state.errors.map((msg, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 13, color: '#dc2626', marginBottom: i < state.errors.length - 1 ? 4 : 0 }}>
+                      <span style={{ flexShrink: 0 }}>•</span>
+                      <span>{msg}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, width: '100%' }}>
+              <button className="btn-modal-cancel" type="button" onClick={onClose}>
+                Cancelar
+              </button>
+              <button className="btn-modal-submit" type="submit" disabled={state.saving}>
+                {state.saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
