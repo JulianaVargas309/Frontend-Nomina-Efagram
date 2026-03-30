@@ -14,11 +14,11 @@ function FincaDetalleModal({ isOpen, finca, onClose }) {
     isActive = v === 'activa' || v === 'activo' || v === 'active' || v === 'true' || v === '1';
   } else if (typeof raw === 'number') isActive = raw === 1;
 
-  const area = finca?.area ?? finca?.areaTotal ?? finca?.hectareas;
+  const area = finca?.area_total ?? finca?.area ?? finca?.areaTotal ?? finca?.hectareas;
 
   return (
     <>
-      <div className="zdm-overlay" onClick={onClose} />
+      <div className="zdm-overlay" />
       <div className="zdm-panel" role="dialog" aria-modal="true">
         <button className="zdm-close" onClick={onClose} aria-label="Cerrar"><X size={15} /></button>
 
@@ -96,7 +96,7 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
     ? fincas.filter((f) => resolveNucleoId(f) === nucleoFiltro)
     : fincas;
 
-  const getArea = (f) => f?.area ?? f?.areaTotal ?? f?.hectareas;
+  const getArea = (f) => f?.area_total ?? f?.area ?? f?.areaTotal ?? f?.hectareas;
 
   const resolveEstado = (f) => {
     const raw = f?.activa ?? f?.estado;
@@ -215,6 +215,7 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
       <FincaDetalleModal isOpen={!!detalleFinca} finca={detalleFinca} onClose={() => setDetalleFinca(null)} />
 
       <NuevaFincaModal
+        key={openCreate ? 'create' : 'create-closed'}
         isOpen={openCreate}
         title="Nueva Finca"
         initialValues={{ codigo: '', nombre: '', nucleo: '', area: '', estado: true }}
@@ -224,6 +225,7 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
       />
 
       <NuevaFincaModal
+        key={editFinca ? (editFinca._id ?? editFinca.id ?? 'edit') : 'edit-closed'}
         isOpen={!!editFinca}
         title="Editar Finca"
         initialValues={{

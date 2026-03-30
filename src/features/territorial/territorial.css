@@ -26,7 +26,7 @@
   padding: 12px 28px 24px;
   min-height: 0;
   background: #f4f6f9;
-  height: 100vh;
+  height: 100%;
 }
 
 /* ======================================================
@@ -87,7 +87,6 @@
   border: 1px solid #e8edf2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 0;
-  max-height: calc(100vh - 230px);
   margin-bottom: 20px;
 }
 
@@ -180,7 +179,7 @@
 .zonas-table-scroll {
   flex: 1;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
   min-height: 0;
 }
 
@@ -192,8 +191,7 @@
 .zonas-table-grid {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
-  min-width: 520px;
+  table-layout: auto;
 }
 
 .zonas-table-grid th {
@@ -395,9 +393,12 @@
   border-radius: 16px;
   width: 100%;
   max-width: 480px;
+  max-height: 85vh;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
   overflow: hidden;
   animation: modal-in 0.18s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes modal-in {
@@ -411,6 +412,8 @@
   align-items: flex-start;
   padding: 24px 24px 16px;
   border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 .modal-title   { margin: 0; font-size: 18px; font-weight: 700; color: #111827; }
@@ -447,7 +450,16 @@
   flex-direction: column;
   gap: 18px;
   padding: 20px 24px 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
 }
+
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.modal-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field span { font-size: 14px; font-weight: 600; color: #374151; }
@@ -483,7 +495,11 @@
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-top: 6px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #fff;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 .btn-modal-cancel {
@@ -551,6 +567,7 @@
   background: rgba(0, 0, 0, 0.45);
   z-index: 900;
   animation: zdm-fade-in 0.18s ease;
+  pointer-events: none;
 }
 
 .zdm-panel {

@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
     LayoutDashboard, BarChart3, Play, Folder,
     Users, CheckSquare, ChevronDown, Layers, Building,
-    ClipboardList, AlertTriangle, Calendar, Clock,
-    Settings, MapPin
+    AlertTriangle, Calendar, Clock,
+    Settings, MapPin, Wrench, GitBranch, FileText, Activity, Briefcase
 } from "lucide-react";
 import "./sidebar.css";
 
@@ -12,23 +12,21 @@ export default function Sidebar() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // ── Detección de sección activa por ruta ─────────────────
     const isEjecucion     = location.pathname.startsWith("/ejecucion");
     const isProyectos     = location.pathname.startsWith("/proyectos");
+    const isProgramacion  = location.pathname.startsWith("/programacion");
     const isConfiguracion = location.pathname.startsWith("/configuracion");
+    const isReportes      = location.pathname.startsWith("/reportes");
 
-    // ── Estados de apertura manual ────────────────────────────
     const [manualEjecucion,     setManualEjecucion]     = useState(null);
     const [manualProyectos,     setManualProyectos]     = useState(null);
     const [manualConfiguracion, setManualConfiguracion] = useState(null);
     const [openReportes,        setOpenReportes]        = useState(false);
 
-    // ── Sub-menús dentro de Configuración ─────────────────────
     const [openUbicacion, setOpenUbicacion] = useState(
         location.pathname.startsWith("/configuracion/ubicacion")
     );
 
-    // ── Apertura automática según ruta ────────────────────────
     const openEjecucion     = manualEjecucion     !== null ? manualEjecucion     : isEjecucion;
     const openProyectos     = manualProyectos     !== null ? manualProyectos     : isProyectos;
     const openConfiguracion = manualConfiguracion !== null ? manualConfiguracion : isConfiguracion;
@@ -43,9 +41,13 @@ export default function Sidebar() {
     return (
         <aside className="sidebar">
 
-            {/* HEADER */}
             <div className="sidebar-header">
-                <div className="logo-icon"><span>🌿</span></div>
+                <div className="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 3C21 3 13 3 8 8c-3.5 3.5-4 9-4 9s5.5-.5 9-4c1.2-1.2 2.1-2.6 2.7-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M3 21c2-2 4-6 5-9" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                </div>
                 <div><h2>EFAGRAM S.A.S</h2><p>Sistema de Gestión</p></div>
             </div>
 
@@ -65,13 +67,13 @@ export default function Sidebar() {
                 <div className="menu-title">Módulos</div>
 
                 {/* ── REPORTES ── */}
-                <div className="menu-item" onClick={() => setOpenReportes(!openReportes)}>
+                <div className={`menu-item ${isReportes ? "active" : ""}`} onClick={() => setOpenReportes(!openReportes)}>
                     <BarChart3 size={18} /><span>Reportes</span>
                     <ChevronDown size={16} className={`arrow ${openReportes ? "rotate" : ""}`} />
                 </div>
                 {openReportes && (
                     <div className="submenu">
-                        <div className="submenu-item">
+                        <div className={`submenu-item ${isActiveSub("/reportes")}`} onClick={() => navigate("/reportes")}>
                             <BarChart3 size={16} />Reporte General
                         </div>
                     </div>
@@ -87,9 +89,6 @@ export default function Sidebar() {
                 </div>
                 {openEjecucion && (
                     <div className="submenu">
-                        <div className={`submenu-item ${isActiveSub("/ejecucion/registros-diarios")}`} onClick={() => navigate("/ejecucion/registros-diarios")}>
-                            <ClipboardList size={16} />Registro Diario
-                        </div>
                         <div className={`submenu-item ${isActiveSub("/ejecucion/novedades")}`} onClick={() => navigate("/ejecucion/novedades")}>
                             <AlertTriangle size={16} />Novedades
                         </div>
@@ -101,6 +100,14 @@ export default function Sidebar() {
                         </div>
                     </div>
                 )}
+
+                {/* ── PROGRAMACIÓN ── */}
+                <div
+                    className={`menu-item ${isProgramacion ? "active" : ""}`}
+                    onClick={() => navigate("/programacion")}
+                >
+                    <Activity size={18} /><span>Programación</span>
+                </div>
 
                 {/* ── PROYECTOS ── */}
                 <div
@@ -115,14 +122,18 @@ export default function Sidebar() {
                         <div className={`submenu-item ${isActiveSub("/proyectos")}`} onClick={() => navigate("/proyectos")}>
                             <Folder size={16} />Proyectos
                         </div>
+                        <div className={`submenu-item ${isActiveSub("/proyectos/subproyectos")}`} onClick={() => navigate("/proyectos/subproyectos")}>
+                            <GitBranch size={16} />Subproyectos
+                        </div>
+                        <div className={`submenu-item ${isActiveSub("/proyectos/contratos")}`} onClick={() => navigate("/proyectos/contratos")}>
+                            <FileText size={16} />Contratos
+                        </div>
                     </div>
                 )}
 
-                {/* ══════════════════════════════════════════════
-                    CONFIGURACIÓN — siempre al final del menú
-                ══════════════════════════════════════════════ */}
                 <div className="menu-title">Sistema</div>
 
+                {/* ── CONFIGURACIÓN ── */}
                 <div
                     className={`menu-item ${isConfiguracion ? "active" : ""}`}
                     onClick={toggleConfiguracion}
@@ -134,7 +145,6 @@ export default function Sidebar() {
                 {openConfiguracion && (
                     <div className="submenu">
 
-                        {/* ── Catálogo Clientes ── */}
                         <div
                             className={`submenu-item ${isActiveSub("/configuracion/catalogo-clientes")}`}
                             onClick={() => navigate("/configuracion/catalogo-clientes")}
@@ -142,7 +152,6 @@ export default function Sidebar() {
                             <Users size={16} />Catálogo Clientes
                         </div>
 
-                        {/* ── Catálogo Actividades ── */}
                         <div
                             className={`submenu-item ${isActiveSub("/configuracion/catalogo-actividades")}`}
                             onClick={() => navigate("/configuracion/catalogo-actividades")}
@@ -150,7 +159,35 @@ export default function Sidebar() {
                             <CheckSquare size={16} />Catálogo Actividades
                         </div>
 
-                        {/* ── Ubicación (antes Territorial) ── */}
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-intervenciones")}`}
+                            onClick={() => navigate("/configuracion/catalogo-intervenciones")}
+                        >
+                            <Wrench size={16} />Catálogo Intervenciones
+                        </div>
+
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-procesos")}`}
+                            onClick={() => navigate("/configuracion/catalogo-procesos")}
+                        >
+                            <Layers size={16} />Catálogo Procesos
+                        </div>
+
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-personal")}`}
+                            onClick={() => navigate("/configuracion/catalogo-personal")}
+                        >
+                            <Users size={16} />Catálogo Personal
+                        </div>
+
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-cargos")}`}
+                            onClick={() => navigate("/configuracion/catalogo-cargos")}
+                        >
+                            <Briefcase size={16} />Catálogo Cargos
+                        </div>
+
+                        {/* ── Ubicación ── */}
                         <div
                             className="submenu-item submenu-group"
                             onClick={() => setOpenUbicacion(!openUbicacion)}
@@ -187,7 +224,6 @@ export default function Sidebar() {
 
             </div>
 
-            {/* FOOTER */}
             <div className="sidebar-footer">
                 <div className="user-avatar">J</div>
                 <div><strong>Julianavida1309</strong><span>Administrador</span></div>

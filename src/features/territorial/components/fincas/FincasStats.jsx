@@ -18,7 +18,7 @@ export default function FincasStats({ fincas = [] }) {
   const inactivas = fincas.filter((f) => !isActive(f)).length;
 
   const areaTotal = fincas.reduce((acc, f) => {
-    const val = parseFloat(f?.area ?? f?.areaTotal ?? f?.hectareas ?? 0);
+    const val = parseFloat(f?.area_total ?? f?.area ?? f?.areaTotal ?? f?.hectareas ?? 0);
     return acc + (isNaN(val) ? 0 : val);
   }, 0);
 
