@@ -5,17 +5,7 @@ import { getActividadesProyecto } from "../services/subproyectosService";
 import "../../../assets/styles/proyectos.css";
 import ProyectoModal from "../components/ProyectoModal";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
-import {
-  Eye,
-  Pencil,
-  Trash2,
-  Folder,
-  MapPin,
-  TrendingUp,
-  Search,
-  PlusCircle,
-  Users,
-} from "lucide-react";
+import { Eye, Pencil, Trash2, Folder, GitBranch, MapPin, TrendingUp, Search, PlusCircle, Users } from "lucide-react";
 
 // ── Helpers ──────────────────────────────────────────────
 const fmtFecha = (iso) =>
@@ -25,80 +15,53 @@ const fmtMonto = (n) =>
   n != null ? "$ " + Number(n).toLocaleString("es-CO") : null;
 
 const ESTADO_LABEL = {
-  ACTIVO: "Activo",
-  PLANEADO: "Planeado",
-  FINALIZADO: "Finalizado",
-  SUSPENDIDO: "Suspendido",
-  CERRADO: "Cerrado",
-  EN_NEGOCIACION: "En negociación",
-  CANCELADO: "Cancelado",
+  ACTIVO:"Activo", PLANEADO:"Planeado", FINALIZADO:"Finalizado",
+  SUSPENDIDO:"Suspendido", CERRADO:"Cerrado",
+  EN_NEGOCIACION:"En negociación", CANCELADO:"Cancelado",
 };
 
 const INTERVENCION_LABEL = {
-  establecimiento: "Establecimiento",
-  mantenimiento: "Mantenimiento",
-  no_programadas: "No programadas",
+  establecimiento:"Establecimiento", mantenimiento:"Mantenimiento", no_programadas:"No programadas",
 };
 
 // ── Componente principal ──────────────────────────────────
 const ProyectosPage = () => {
   const navigate = useNavigate();
-  const [proyectos, setProyectos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [busqueda, setBusqueda] = useState("");
-  const [deletingId, setDeletingId] = useState(null);
+  const [proyectos,   setProyectos]   = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState(null);
+  const [busqueda,    setBusqueda]    = useState("");
+  const [deletingId,  setDeletingId]  = useState(null);
 
   // modalState = { open: bool, modo: "crear"|"editar"|"ver", proyecto: obj|null }
-  const [modalState, setModalState] = useState({
-    open: false,
-    modo: "crear",
-    proyecto: null,
-  });
-
+  const [modalState, setModalState] = useState({ open:false, modo:"crear", proyecto:null });
   const [actividadesMap, setActividadesMap] = useState({});
 
-  const abrirCrear = () =>
-    setModalState({ open: true, modo: "crear", proyecto: null });
-
-  const abrirVer = (p) =>
-    setModalState({ open: true, modo: "ver", proyecto: p });
-
-  const abrirEditar = (p) =>
-    setModalState({ open: true, modo: "editar", proyecto: p });
-
-  const cerrarModal = () =>
-    setModalState((prev) => ({ ...prev, open: false }));
+  const abrirCrear  = ()  => setModalState({ open:true, modo:"crear",  proyecto:null });
+  const abrirVer    = (p) => setModalState({ open:true, modo:"ver",    proyecto:p });
+  const abrirEditar = (p) => setModalState({ open:true, modo:"editar", proyecto:p });
+  const cerrarModal = ()  => setModalState(prev => ({ ...prev, open:false }));
 
   // ── Cargar proyectos ──
   const cargarProyectos = async () => {
     try {
       setLoading(true);
       setError(null);
-
       const response = await getProyectos();
-      const data = response?.data?.data ?? response?.data ?? [];
-      const proyectosData = Array.isArray(data) ? data : [];
-
-      setProyectos(proyectosData);
-
+      const data = response?.data?.success ? response.data.data : [];
+      setProyectos(data);
+      // Cargar actividades de todos los proyectos para los badges
       const map = {};
-      await Promise.all(
-        proyectosData.map(async (p) => {
-          try {
-            const res = await getActividadesProyecto({ proyecto: p._id });
-            map[p._id] = res?.data?.data ?? [];
-          } catch {
-            map[p._id] = [];
-          }
-        })
-      );
+      await Promise.all(data.map(async (p) => {
+        try {
+          const res = await getActividadesProyecto({ proyecto: p._id });
+          map[p._id] = res?.data?.data ?? [];
+        } catch { map[p._id] = []; }
+      }));
       setActividadesMap(map);
     } catch (err) {
       console.error("Error cargando proyectos:", err);
       setError("No se pudieron cargar los proyectos.");
-      setProyectos([]);
-      setActividadesMap({});
     } finally {
       setLoading(false);
     }
@@ -107,54 +70,32 @@ const ProyectosPage = () => {
   // ── Eliminar proyecto ──
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar este proyecto?")) return;
-
     try {
       setDeletingId(id);
       await deleteProyecto(id);
       await cargarProyectos();
     } catch (err) {
-      alert(
-        err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          "No se pudo eliminar el proyecto"
-      );
+      alert(err?.response?.data?.message || err?.response?.data?.error || "No se pudo eliminar el proyecto");
     } finally {
       setDeletingId(null);
     }
   };
 
-  useEffect(() => {
-    cargarProyectos();
-  }, []);
+  useEffect(() => { cargarProyectos(); }, []);
 
   // ── Stats derivadas ──
-  const activos = proyectos.filter(
-    (p) => p.estado?.toUpperCase() === "ACTIVO"
-  ).length;
-
-  const totalLotes = proyectos.reduce(
-    (acc, p) => acc + (p.lotes?.length ?? p.cantidad_lotes ?? 0),
-    0
-  );
-
-  const avancePromedio =
-    proyectos.length > 0
-      ? Math.round(
-          proyectos.reduce((acc, p) => acc + (p.avance ?? 0), 0) /
-            proyectos.length
-        )
-      : 0;
+  const activos = proyectos.filter(p => p.estado?.toUpperCase() === "ACTIVO").length;
+  const totalLotes = proyectos.reduce((acc, p) => acc + (p.lotes?.length ?? p.cantidad_lotes ?? 0), 0);
+  const avancePromedio = proyectos.length > 0
+    ? Math.round(proyectos.reduce((acc, p) => acc + (p.avance ?? 0), 0) / proyectos.length)
+    : 0;
 
   // ── Filtro búsqueda ──
-  const proyectosFiltrados = proyectos.filter((p) => {
-    const q = busqueda.toLowerCase().trim();
-
-    if (!q) return true;
-
+  const proyectosFiltrados = proyectos.filter(p => {
+    const q = busqueda.toLowerCase();
     return (
       p.nombre?.toLowerCase().includes(q) ||
       p.cliente?.nombre?.toLowerCase().includes(q) ||
-      p.cliente?.razon_social?.toLowerCase().includes(q) ||
       p.codigo?.toLowerCase().includes(q)
     );
   });
@@ -162,31 +103,25 @@ const ProyectosPage = () => {
   return (
     <DashboardLayout>
       <div className="proyectos-container">
+
+        {/* ── STATS ── */}
         <div className="proy-stats-row">
           <div className="proy-stat-card">
-            <div className="proy-stat-icon proy-stat-icon--green">
-              <Folder size={22} />
-            </div>
+            <div className="proy-stat-icon proy-stat-icon--green"><Folder size={22} /></div>
             <div>
               <p className="proy-stat-label">Proyectos Activos</p>
               <p className="proy-stat-value">{activos}</p>
             </div>
           </div>
-
           <div className="proy-stat-card">
-            <div className="proy-stat-icon proy-stat-icon--blue">
-              <MapPin size={22} />
-            </div>
+            <div className="proy-stat-icon proy-stat-icon--blue"><MapPin size={22} /></div>
             <div>
               <p className="proy-stat-label">Total Lotes</p>
               <p className="proy-stat-value">{totalLotes}</p>
             </div>
           </div>
-
           <div className="proy-stat-card">
-            <div className="proy-stat-icon proy-stat-icon--orange">
-              <TrendingUp size={22} />
-            </div>
+            <div className="proy-stat-icon proy-stat-icon--orange"><TrendingUp size={22} /></div>
             <div>
               <p className="proy-stat-label">Avance Promedio</p>
               <p className="proy-stat-value">{avancePromedio}%</p>
@@ -194,103 +129,84 @@ const ProyectosPage = () => {
           </div>
         </div>
 
+        {/* ── TOOLBAR ── */}
         <div className="proy-toolbar">
           <div className="proy-search-wrapper">
-            <Search
-              size={15}
-              className="proy-search-icon"
-              style={{ color: "#94a3b8" }}
-            />
+            <Search size={15} className="proy-search-icon" style={{ color:'#94a3b8' }} />
             <input
               className="proy-search-input"
               type="text"
               placeholder="Buscar proyecto o cliente..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={e => setBusqueda(e.target.value)}
             />
           </div>
-
-          <button
-            className="btn-crear"
-            onClick={abrirCrear}
-            style={{ display: "flex", alignItems: "center", gap: 7 }}
-          >
+          <button className="btn-crear" onClick={abrirCrear} style={{ display:'flex', alignItems:'center', gap:7 }}>
             <PlusCircle size={16} /> Nuevo Proyecto
           </button>
         </div>
 
-        {loading && <p className="proy-msg">Cargando proyectos...</p>}
-        {error && <p className="proy-msg proy-msg--error">{error}</p>}
+        {/* ── ESTADOS ── */}
+        {loading  && <p className="proy-msg">Cargando proyectos...</p>}
+        {error    && <p className="proy-msg proy-msg--error">{error}</p>}
         {!loading && proyectosFiltrados.length === 0 && (
           <p className="proy-msg">No hay proyectos registrados.</p>
         )}
 
+        {/* ── GRID DE CARDS ── */}
         <div className="proy-cards-grid">
-          {proyectosFiltrados.map((proyecto) => {
-            const estado = proyecto.estado?.toUpperCase();
-            const avance = proyecto.avance ?? 0;
+          {proyectosFiltrados.map(proyecto => {
+            const estado  = proyecto.estado?.toUpperCase();
+            const avance  = proyecto.avance ?? 0;
 
+            // Agrupar actividades por intervención desde actividadesMap
             const actsProyecto = actividadesMap[proyecto._id] ?? [];
-
             const intervByObj = actsProyecto.reduce((acc, a) => {
               const id = a.intervencion?._id ?? a.intervencion ?? "sin_tipo";
               const nombre = a.intervencion?.nombre ?? id;
-
               if (!acc[id]) acc[id] = { nombre, acts: [], monto: 0 };
-
               acc[id].acts.push(a);
-              acc[id].monto +=
-                (a.precio_unitario || 0) * (a.cantidad_total || 0);
-
+              acc[id].monto += (a.precio_unitario || 0) * (a.cantidad_total || 0);
               return acc;
             }, {});
-
             const intervenciones = Object.values(intervByObj);
 
-            const intervOld =
-              actsProyecto.length === 0
-                ? Object.entries(
-                    proyecto.actividades_por_intervencion ?? {}
-                  ).filter(([, arr]) => Array.isArray(arr) && arr.length > 0)
-                : [];
-
+            // Fallback: proyectos antiguos con actividades_por_intervencion
+            const intervOld = actsProyecto.length === 0
+              ? Object.entries(proyecto.actividades_por_intervencion ?? {}).filter(([, arr]) => Array.isArray(arr) && arr.length > 0)
+              : [];
             const presupuesto = proyecto.presupuesto_por_intervencion ?? {};
 
             return (
               <div key={proyecto._id} className="proy-card">
+
+                {/* Cabecera */}
                 <div className="proy-card-header">
                   <div className="proy-card-icon-wrap">
                     <Folder size={20} color="#1f8f57" />
                   </div>
-
                   <div className="proy-card-title-block">
                     <h3 className="proy-card-nombre">{proyecto.nombre}</h3>
                     <p className="proy-card-cliente">
-                      {proyecto.cliente?.nombre ??
-                        proyecto.cliente?.razon_social ??
-                        "Sin cliente"}
+                      {proyecto.cliente?.nombre ?? proyecto.cliente?.razon_social ?? "Sin cliente"}
                     </p>
                   </div>
-
-                  <span
-                    className={`proy-estado-chip proy-estado-chip--${estado?.toLowerCase()}`}
-                  >
+                  <span className={`proy-estado-chip proy-estado-chip--${estado?.toLowerCase()}`}>
                     {ESTADO_LABEL[estado] ?? proyecto.estado}
                   </span>
                 </div>
 
+                {/* Barra de avance */}
                 <div className="proy-avance-row">
                   <span className="proy-avance-label">Avance</span>
                   <span className="proy-avance-pct">{avance}%</span>
                 </div>
                 <div className="proy-avance-bar-bg">
-                  <div
-                    className="proy-avance-bar-fill"
-                    style={{ width: `${avance}%` }}
-                  />
+                  <div className="proy-avance-bar-fill" style={{ width:`${avance}%` }} />
                 </div>
 
-                {(intervenciones.length > 0 || intervOld.length > 0) && (
+                {/* Chips de intervenciones */}
+                {intervenciones.length > 0 && (
                   <div className="proy-intervenciones">
                     {intervenciones.map((iv) => (
                       <span key={iv.nombre} className="proy-interv-chip">
@@ -299,10 +215,8 @@ const ProyectosPage = () => {
                         {iv.monto > 0 && <>&nbsp;{fmtMonto(iv.monto)}</>}
                       </span>
                     ))}
-
                     {intervOld.map(([tipo, acts]) => {
                       const monto = presupuesto[tipo]?.monto_presupuestado;
-
                       return (
                         <span key={tipo} className="proy-interv-chip">
                           🌿 {INTERVENCION_LABEL[tipo] ?? tipo}&nbsp;
@@ -314,85 +228,64 @@ const ProyectosPage = () => {
                   </div>
                 )}
 
+                {/* Valor total */}
                 {proyecto.valor_total != null && (
                   <p className="proy-valor-total">
                     Valor total: <strong>{fmtMonto(proyecto.valor_total)}</strong>
                   </p>
                 )}
 
+                {/* Cuadrillas y lotes */}
                 <div className="proy-meta-row">
                   {proyecto.cuadrillas != null && (
-                    <span
-                      className="proy-meta-item"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <Users size={12} /> {proyecto.cuadrillas} cuadrilla
-                      {proyecto.cuadrillas !== 1 ? "s" : ""}
+                    <span className="proy-meta-item" style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+                      <Users size={12} /> {proyecto.cuadrillas} cuadrilla{proyecto.cuadrillas !== 1 ? "s" : ""}
                     </span>
                   )}
-
                   {(proyecto.lotes?.length ?? proyecto.cantidad_lotes) ? (
-                    <span
-                      className="proy-meta-item"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <MapPin size={12} />{" "}
-                      {proyecto.lotes?.length ?? proyecto.cantidad_lotes} lote
-                      {(proyecto.lotes?.length ?? proyecto.cantidad_lotes) !== 1
-                        ? "s"
-                        : ""}
+                    <span className="proy-meta-item" style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+                      <MapPin size={12} /> {proyecto.lotes?.length ?? proyecto.cantidad_lotes} lote
+                      {(proyecto.lotes?.length ?? proyecto.cantidad_lotes) !== 1 ? "s" : ""}
                     </span>
                   ) : null}
                 </div>
 
+                {/* Footer */}
                 <div className="proy-card-footer">
                   <span className="proy-fechas">
-                    {fmtFecha(proyecto.fecha_inicio)} —{" "}
-                    {fmtFecha(proyecto.fecha_fin_estimada)}
+                    {fmtFecha(proyecto.fecha_inicio)} — {fmtFecha(proyecto.fecha_fin_estimada)}
                   </span>
-
                   <div className="proy-acciones">
+
+                    {/* IR A SUBPROYECTOS */}
                     <button
                       className="proy-btn-accion"
-                      title="Ver"
+                      title="Subproyectos"
+                      onClick={() => navigate(`/proyectos/subproyectos?proyecto=${proyecto._id}`)}
+                      style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d" }}
+                    >
+                      <GitBranch size={15} />
+                    </button>
+
+                    {/* VER DETALLE */}
+                    <button
+                      className="proy-btn-accion proy-btn-accion--view"
+                      title="Ver detalle"
                       onClick={() => abrirVer(proyecto)}
                     >
                       <Eye size={16} />
                     </button>
 
+                    {/* EDITAR */}
                     <button
-                      className="proy-btn-accion"
+                      className="proy-btn-accion proy-btn-accion--edit"
                       title="Editar"
                       onClick={() => abrirEditar(proyecto)}
                     >
                       <Pencil size={16} />
                     </button>
 
-                    <button
-                      className="proy-btn-accion"
-                      title="Subproyectos"
-                      onClick={() =>
-                        navigate(
-                          `/proyectos/subproyectos?proyecto=${proyecto._id}`
-                        )
-                      }
-                      style={{
-                        background: "#f0fdf4",
-                        border: "1px solid #bbf7d0",
-                        color: "#15803d",
-                      }}
-                    >
-                      <Folder size={16} />
-                    </button>
-
+                    {/* ELIMINAR */}
                     <button
                       className="proy-btn-accion proy-btn-accion--delete"
                       title="Eliminar"
@@ -401,6 +294,7 @@ const ProyectosPage = () => {
                     >
                       <Trash2 size={16} />
                     </button>
+
                   </div>
                 </div>
               </div>
@@ -408,6 +302,7 @@ const ProyectosPage = () => {
           })}
         </div>
 
+        {/* ── MODAL ÚNICO (maneja crear / editar / ver) ── */}
         <ProyectoModal
           isOpen={modalState.open}
           modo={modalState.modo}
@@ -415,13 +310,14 @@ const ProyectosPage = () => {
           onClose={cerrarModal}
           onSuccess={(accion) => {
             if (accion === "editar") {
-              setModalState((prev) => ({ ...prev, modo: "editar" }));
+              setModalState(prev => ({ ...prev, modo:"editar" }));
             } else {
               cerrarModal();
               cargarProyectos();
             }
           }}
         />
+
       </div>
     </DashboardLayout>
   );
