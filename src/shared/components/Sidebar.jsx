@@ -194,18 +194,8 @@ export default function Sidebar() {
                         >
                             <AlertTriangle size={16} />Novedades
                         </div>
-                        <div
-                            className={`submenu-item ${isActiveSub("/ejecucion/calendario")}`}
-                            onClick={() => navigatePreservingSidebar("/ejecucion/calendario")}
-                        >
-                            <Calendar size={16} />Calendario
-                        </div>
-                        <div
-                            className={`submenu-item ${isActiveSub("/ejecucion/semanas-operativas")}`}
-                            onClick={() => navigatePreservingSidebar("/ejecucion/semanas-operativas")}
-                        >
-                            <Clock size={16} />Semanas Operativas
-                        </div>
+                        
+                       
                     </div>
                 )}
 

@@ -48,7 +48,7 @@ const actionBtnStyle = (variant = 'primary') => ({
   height: '46px',
   borderRadius: '14px',
   border: variant === 'primary' ? 'none' : '1px solid #d1d5db',
-  background: variant === 'primary' ? '#2563eb' : '#ffffff',
+  background: variant === 'primary' ? '#16a34a' : '#ffffff',
   color: variant === 'primary' ? '#ffffff' : '#111827',
   padding: '0 18px',
   fontWeight: 700,
@@ -229,202 +229,164 @@ export default function CargaMasivaPersonalPage() {
     }
   };
 
+  // SOLO CAMBIA EL RETURN (todo lo demás déjalo igual)
+
   return (
     <DashboardLayout>
       <div style={{ padding: '24px' }}>
-        <div style={{ ...cardStyle, padding: '28px', overflow: 'hidden' }}>
+        <div style={{ ...cardStyle, padding: '28px' }}>
+
+          {/* HEADER */}
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              gap: '20px',
-              flexWrap: 'wrap',
               alignItems: 'center',
               marginBottom: '24px',
+              flexWrap: 'wrap',
+              gap: '16px',
             }}
           >
             <div>
               <div
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
+                  background: '#dcfce7',
+                  color: '#166534',
+                  padding: '6px 12px',
                   borderRadius: '999px',
-                  background: '#eff6ff',
-                  color: '#2563eb',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: 700,
-                  marginBottom: '14px',
+                  display: 'inline-block',
+                  marginBottom: '10px',
                 }}
               >
-                <Users size={14} />
-                Módulo de personal
+                Gestión masiva personal
               </div>
 
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: '30px',
-                  lineHeight: 1.1,
-                  fontWeight: 800,
-                  color: '#111827',
-                }}
-              >
+              <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800 }}>
                 Carga masiva de personal
               </h1>
 
-              <p
-                style={{
-                  marginTop: '10px',
-                  marginBottom: 0,
-                  color: '#6b7280',
-                  fontSize: '15px',
-                  maxWidth: '760px',
-                }}
-              >
-                Descarga la plantilla, edítala con los campos más necesarios y súbela nuevamente.
+              <p style={{ color: '#6b7280', marginTop: '6px' }}>
+                Descarga la plantilla, edita los datos y vuelve a subir el archivo.
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={handleDownloadTemplate}
-                disabled={loadingDownload}
-                style={actionBtnStyle('secondary')}
-              >
-                {loadingDownload ? <RefreshCw size={18} className="spin-icon" /> : <Download size={18} />}
-                {loadingDownload ? 'Descargando...' : 'Descargar plantilla'}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleDownloadTemplate} style={actionBtnStyle('secondary')}>
+                <Download size={16} /> Descargar
               </button>
 
               <label style={actionBtnStyle('primary')}>
-                {loadingUpload ? <RefreshCw size={18} className="spin-icon" /> : <Upload size={18} />}
-                {loadingUpload ? 'Procesando...' : 'Subir Excel'}
+                <Upload size={16} /> Subir Excel
                 <input
                   ref={inputRef}
                   type="file"
-                  accept=".xlsx,.xls"
                   onChange={handleFileChange}
                   style={{ display: 'none' }}
-                  disabled={loadingUpload}
                 />
               </label>
             </div>
           </div>
 
-          {error && (
-            <div
+          {/* PASOS */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '16px',
+              marginBottom: '20px',
+            }}
+          >
+            <div style={{ ...cardStyle, padding: '18px' }}>
+              <Download />
+              <h4>1. Descarga</h4>
+              <p style={{ fontSize: '13px', color: '#6b7280' }}>
+                Plantilla con datos de personal e instrucciones.
+              </p>
+            </div>
+
+            <div style={{ ...cardStyle, padding: '18px' }}>
+              <Database />
+              <h4>2. Edita</h4>
+              <p style={{ fontSize: '13px', color: '#6b7280' }}>
+                Completa los campos requeridos correctamente.
+              </p>
+            </div>
+
+            <div style={{ ...cardStyle, padding: '18px' }}>
+              <Upload />
+              <h4>3. Sube</h4>
+              <p style={{ fontSize: '13px', color: '#6b7280' }}>
+                Sube el archivo y revisa los resultados.
+              </p>
+            </div>
+          </div>
+
+          {/* 🔥 ZONA VERDE EXACTA */}
+          <div
+            style={{
+              border: '2px dashed #86efac',
+              background: '#f0fdf4',
+              borderRadius: '16px',
+              padding: '20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Upload size={24} color="#16a34a" />
+
+              <div>
+                <div style={{ fontWeight: 700 }}>
+                  Zona de carga rápida
+                </div>
+
+                <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                  El archivo debe contener la hoja Personal correctamente estructurada.
+                </div>
+              </div>
+            </div>
+
+            <label
               style={{
-                ...cardStyle,
-                marginBottom: '24px',
-                border: '1px solid #fecaca',
-                background: '#fef2f2',
-                padding: '16px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                color: '#b91c1c',
+                background: '#16a34a',
+                color: '#fff',
+                padding: '10px 16px',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontWeight: 600,
               }}
             >
-              <AlertTriangle size={18} />
-              <span>{error}</span>
+              Seleccionar archivo
+              <input
+                ref={inputRef}
+                type="file"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+            </label>
+          </div>
+
+          {/* RESULTADOS */}
+          {result && (
+            <div style={{ marginTop: '24px' }}>
+              <pre>{JSON.stringify(result, null, 2)}</pre>
             </div>
           )}
 
-          {result && (
-            <>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '16px',
-                  marginBottom: '24px',
-                }}
-              >
-                <div style={statCardStyle}>
-                  <div style={iconWrapStyle('#eff6ff', '#2563eb')}>
-                    <Database size={22} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: 600 }}>Total filas</div>
-                    <div style={{ fontSize: '30px', fontWeight: 800, color: '#111827' }}>{result.total}</div>
-                  </div>
-                </div>
-
-                <div style={statCardStyle}>
-                  <div style={iconWrapStyle('#ecfdf5', '#16a34a')}>
-                    <CheckCircle2 size={22} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: 600 }}>Creadas</div>
-                    <div style={{ fontSize: '30px', fontWeight: 800, color: '#111827' }}>{result.creadas}</div>
-                  </div>
-                </div>
-
-                <div style={statCardStyle}>
-                  <div style={iconWrapStyle('#f0fdf4', '#15803d')}>
-                    <RefreshCw size={22} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: 600 }}>Actualizadas</div>
-                    <div style={{ fontSize: '30px', fontWeight: 800, color: '#111827' }}>{result.actualizadas}</div>
-                  </div>
-                </div>
-
-                <div style={statCardStyle}>
-                  <div style={iconWrapStyle('#fef2f2', '#dc2626')}>
-                    <XCircle size={22} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: 600 }}>Rechazadas</div>
-                    <div style={{ fontSize: '30px', fontWeight: 800, color: '#111827' }}>{result.rechazadas}</div>
-                  </div>
-                </div>
-              </div>
-
-              {Array.isArray(result.errores) && result.errores.length > 0 && (
-                <div style={{ ...cardStyle, padding: '22px' }}>
-                  <h3 style={{ marginTop: 0, color: '#111827' }}>Errores encontrados</h3>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ textAlign: 'left', padding: '12px', borderBottom: '1px solid #e5e7eb' }}>Fila</th>
-                          <th style={{ textAlign: 'left', padding: '12px', borderBottom: '1px solid #e5e7eb' }}>Mensaje</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.errores.map((err, idx) => (
-                          <tr key={`${err.rowNumber}-${idx}`}>
-                            <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', fontWeight: 700 }}>
-                              {err.rowNumber}
-                            </td>
-                            <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>
-                              {err.message}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </>
+          {/* ERROR */}
+          {error && (
+            <div style={{ color: 'red', marginTop: '12px' }}>
+              {error}
+            </div>
           )}
+
         </div>
       </div>
-
-      <style>{`
-        .spin-icon {
-          animation: spinBulkPersonal 1s linear infinite;
-        }
-
-        @keyframes spinBulkPersonal {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </DashboardLayout>
   );
 }
