@@ -4,9 +4,10 @@ import DashboardLayout from '../../../app/layouts/DashboardLayout';
 import SubproyectoModal from '../components/SubproyectoModal';
 import { getSubproyectos, deleteSubproyecto } from '../services/subproyectosService';
 import { getProyectos } from '../services/proyectosService';
-import { FolderGit2, Plus, Pencil, Trash2, MapPin, Users } from 'lucide-react';
+import { FolderGit2, Plus, Pencil, Trash2, MapPin, Users, Settings } from 'lucide-react';
 import '../../../assets/styles/proyectos.css';
 import SubproyectoCuadrillas from '../components/SubproyectoCuadrillas';
+import GestionarSubproyectoModal from "./GestionarSubproyectoModal";
 import { getResumenHorasSubproyecto } from '../services/horasService';
 
 const ESTADO_COLOR = {
@@ -26,6 +27,7 @@ const SubproyectosPage = () => {
   const [resumenHoras, setResumenHoras] = useState({});
   const [loading, setLoading] = useState(false);
   const [modalState, setModalState] = useState({ open: false, sub: null });
+  const [gestionarModal, setGestionarModal] = useState({ open: false, sub: null });
 
   // Cargar proyectos para el selector
   useEffect(() => {
@@ -220,7 +222,19 @@ const SubproyectosPage = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e6e8ef' }}>
-                  {['Código', 'Proyecto', 'Cliente', 'Nombre', 'Cuadrillas', 'Núcleos', 'Supervisor', 'Estado', 'Acciones'].map(h => (
+                  {[
+                    'Código',
+                    'Proyecto',
+                    'Cliente',
+                    'Nombre',
+                    'Horas Trabajadas',
+                    'Horas No Trabajadas',
+                    'Cuadrillas',
+                    'Núcleos',
+                    'Supervisor',
+                    'Estado',
+                    'Acciones'
+                  ].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       {h}
                     </th>
@@ -250,6 +264,26 @@ const SubproyectosPage = () => {
 
                       <td style={{ padding: '13px 16px', fontSize: 13, color: '#0f172a' }}>
                         {s.nombre}
+                      </td>
+
+                      {/* 🟢 Horas trabajadas */}
+                      <td style={{
+                        padding: '13px 16px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: '#1f8f57'
+                      }}>
+                        {s.horasTrabajadas ?? 0}
+                      </td>
+
+                      {/* 🔴 Horas no trabajadas */}
+                      <td style={{
+                        padding: '13px 16px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: '#dc2626'
+                      }}>
+                        {s.horasNoTrabajadas ?? 0}
                       </td>
 
                       <td style={{ padding: '13px 16px' }}>
@@ -285,6 +319,20 @@ const SubproyectosPage = () => {
                       {/* ── Acciones ── */}
                       <td style={{ padding: '13px 16px' }}>
                         <div style={{ display: 'flex', gap: 8 }}>
+
+                          <button
+                            title="Gestionar cuadrillas y horas"
+                            onClick={() => setGestionarModal({ open: true, sub: s })}
+                            style={{
+                              background: '#eff6ff', border: '1.5px solid #bfdbfe',
+                              color: '#2563eb', height: 34, padding: '0 12px',
+                              borderRadius: 8, display: 'flex', alignItems: 'center',
+                              gap: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                            }}
+                          >
+                            <Settings size={13} />
+                            Gestionar
+                          </button>
 
                           <button
                             title="Editar subproyecto"
@@ -332,6 +380,14 @@ const SubproyectosPage = () => {
         onSuccess={recargar}
         subproyecto={modalState.sub}
         proyecto={proyectoObj}
+      />
+
+      {/* ── Modal gestionar cuadrillas y horas ── */}
+      <GestionarSubproyectoModal
+        isOpen={gestionarModal.open}
+        onClose={() => setGestionarModal({ open: false, sub: null })}
+        onSuccess={recargar}
+        subproyecto={gestionarModal.sub}
       />
     </DashboardLayout>
   );
