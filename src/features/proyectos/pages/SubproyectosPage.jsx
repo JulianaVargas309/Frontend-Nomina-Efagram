@@ -6,6 +6,8 @@ import { getSubproyectos, deleteSubproyecto } from '../services/subproyectosServ
 import { getProyectos } from '../services/proyectosService';
 import { FolderGit2, Plus, Pencil, Trash2, MapPin, Users } from 'lucide-react';
 import '../../../assets/styles/proyectos.css';
+import SubproyectoCuadrillas from '../components/SubproyectoCuadrillas';
+import { getResumenHorasSubproyecto } from '../services/horasService';
 
 const ESTADO_COLOR = {
   ACTIVO: { bg: '#f0faf4', color: '#1f8f57', border: '#1f8f57' },
@@ -21,6 +23,7 @@ const SubproyectosPage = () => {
   const [proyectoSel, setProyectoSel] = useState(proyectoIdParam || '');
   const [proyectoObj, setProyectoObj] = useState(null);
   const [subproyectos, setSubproyectos] = useState([]);
+  const [resumenHoras, setResumenHoras] = useState({});
   const [loading, setLoading] = useState(false);
   const [modalState, setModalState] = useState({ open: false, sub: null });
 
@@ -46,7 +49,24 @@ const SubproyectosPage = () => {
       setLoading(true);
       try {
         const res = await getSubproyectos({ proyecto: proyectoSel });
-        setSubproyectos(res?.data?.data ?? []);
+        const subs = res?.data?.data ?? [];
+
+        // ✅ Guardar subproyectos en el estado ANTES de cargar horas
+        setSubproyectos(subs);
+
+        // Cargar horas por subproyecto
+        const resumenTemp = {};
+
+        for (const s of subs) {
+          try {
+            const r = await getResumenHorasSubproyecto(s._id);
+            resumenTemp[s._id] = r.data;
+          } catch (e) {
+            resumenTemp[s._id] = [];
+          }
+        }
+
+        setResumenHoras(resumenTemp);
         setProyectoObj(proyectos.find(p => p._id === proyectoSel) ?? null);
       } catch (err) {
         console.error(err);
@@ -200,7 +220,7 @@ const SubproyectosPage = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e6e8ef' }}>
-                  {['Código', 'Proyecto', 'Cliente', 'Nombre', 'Núcleos', 'Supervisor', 'Estado', 'Acciones'].map(h => (
+                  {['Código', 'Proyecto', 'Cliente', 'Nombre', 'Cuadrillas', 'Núcleos', 'Supervisor', 'Estado', 'Acciones'].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       {h}
                     </th>
@@ -230,6 +250,13 @@ const SubproyectosPage = () => {
 
                       <td style={{ padding: '13px 16px', fontSize: 13, color: '#0f172a' }}>
                         {s.nombre}
+                      </td>
+
+                      <td style={{ padding: '13px 16px' }}>
+                        <SubproyectoCuadrillas
+                          subproyecto={s}
+                          resumen={resumenHoras[s._id]}
+                        />
                       </td>
 
                       <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b' }}>
