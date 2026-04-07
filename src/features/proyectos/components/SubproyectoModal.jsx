@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   createSubproyecto,
   updateSubproyecto,
@@ -61,6 +61,63 @@ const ErrorBanner = ({ errors }) => {
   );
 };
 
+const padSubproyectoNumber = (value) => String(value).padStart(3, '0');
+
+const formatIsoToDisplay = (iso) => {
+  if (!iso) return '';
+  const [year, month, day] = iso.slice(0, 10).split('-');
+  return `${day}/${month}/${year}`;
+};
+
+const formatDisplayToDateParts = (value) => {
+  const raw = String(value || '').replace(/[^0-9]/g, '').slice(0, 8);
+
+  let display = raw;
+  if (raw.length > 4) {
+    display = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4)}`;
+  } else if (raw.length > 2) {
+    display = `${raw.slice(0, 2)}/${raw.slice(2)}`;
+  }
+
+  if (raw.length !== 8) {
+    return { display, iso: '' };
+  }
+
+  const day = raw.slice(0, 2);
+  const month = raw.slice(2, 4);
+  const year = raw.slice(4, 8);
+
+  const date = new Date(`${year}-${month}-${day}T00:00:00`);
+  const isValid =
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === Number(year) &&
+    date.getMonth() + 1 === Number(month) &&
+    date.getDate() === Number(day);
+
+  return {
+    display,
+    iso: isValid ? `${year}-${month}-${day}` : '',
+  };
+};
+
+const getNextSubproyectoCode = (projectCode, subproyectos = []) => {
+  const baseCode = String(projectCode || '').trim().toUpperCase();
+  if (!baseCode) return '';
+
+  const maxNumber = subproyectos.reduce((acc, item) => {
+    const code = String(item?.codigo || '').trim().toUpperCase();
+    const match = code.match(/-SP-(\d+)$/);
+    if (!match) return acc;
+
+    const current = Number(match[1]);
+    if (Number.isNaN(current)) return acc;
+
+    return Math.max(acc, current);
+  }, 0);
+
+  return `${baseCode}-SP-${padSubproyectoNumber(maxNumber + 1)}`;
+};
+
 const SectionHeader = ({ title, subtitle, icon, tone = 'green' }) => {
   const tones = {
     green: {
@@ -114,7 +171,14 @@ const SectionHeader = ({ title, subtitle, icon, tone = 'green' }) => {
   );
 };
 
-const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proyecto }) => {
+const SubproyectoModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  subproyecto = null,
+  proyecto,
+  subproyectosActuales = [],
+}) => {
   const modoEditar = !!subproyecto;
 
   const [form, setForm] = useState({
@@ -140,6 +204,8 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
   const [loading, setLoading] = useState(false);
   const [loadData, setLoadData] = useState(false);
   const [formErrors, setFormErrors] = useState([]);
+  const fechaInicioPickerRef = useRef(null);
+  const fechaFinPickerRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen || !proyecto) return;
@@ -172,15 +238,9 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
             observaciones: subproyecto.observaciones ?? '',
           });
 
-          const toDisplay = (iso) => {
-            if (!iso) return '';
-            const [y, m, d] = iso.slice(0, 10).split('-');
-            return `${d}/${m}/${y}`;
-          };
-
           setDisplayFechas({
-            fecha_inicio: toDisplay(subproyecto.fecha_inicio),
-            fecha_fin_estimada: toDisplay(subproyecto.fecha_fin_estimada),
+            fecha_inicio: formatIsoToDisplay(subproyecto.fecha_inicio),
+            fecha_fin_estimada: formatIsoToDisplay(subproyecto.fecha_fin_estimada),
           });
 
           setNucleosSel(subproyecto.nucleos?.map((n) => n._id ?? n) ?? []);
@@ -189,7 +249,7 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
           setAsignaciones(asRes?.data?.data ?? []);
         } else {
           setForm({
-            codigo: '',
+            codigo: getNextSubproyectoCode(proyecto?.codigo, subproyectosActuales),
             nombre: '',
             supervisor: '',
             fecha_inicio: '',
@@ -209,7 +269,7 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
     };
 
     cargar();
-  }, [isOpen, proyecto, subproyecto, modoEditar]);
+  }, [isOpen, proyecto, subproyecto, modoEditar, subproyectosActuales]);
 
   const toggleNucleo = (id) => {
     setFormErrors([]);
@@ -267,11 +327,102 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
     }
   };
 
+  const renderDateField = ({ label, field, pickerRef }) => (
+    <div className="form-group">
+      <label>{label}</label>
+
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        <input
+          type="text"
+          placeholder="DD/MM/AAAA"
+          maxLength={10}
+          value={displayFechas[field]}
+          onChange={(e) => {
+            setFormErrors([]);
+            const { display, iso } = formatDisplayToDateParts(e.target.value);
+
+            setDisplayFechas((prev) => ({
+              ...prev,
+              [field]: display,
+            }));
+
+            setForm((prev) => ({
+              ...prev,
+              [field]: iso,
+            }));
+          }}
+          style={{ letterSpacing: 1, paddingRight: 44 }}
+        />
+
+        <button
+          type="button"
+          onClick={() => {
+            if (pickerRef.current?.showPicker) {
+              pickerRef.current.showPicker();
+            } else {
+              pickerRef.current?.focus();
+            }
+          }}
+          style={{
+            position: 'absolute',
+            right: 8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontSize: 18,
+            color: '#64748b',
+            padding: 4,
+            lineHeight: 1,
+          }}
+          title={`Seleccionar ${label}`}
+        >
+          📅
+        </button>
+
+        <input
+          ref={pickerRef}
+          type="date"
+          value={form[field] || ''}
+          onChange={(e) => {
+            const iso = e.target.value;
+
+            setFormErrors([]);
+            setForm((prev) => ({
+              ...prev,
+              [field]: iso,
+            }));
+            setDisplayFechas((prev) => ({
+              ...prev,
+              [field]: formatIsoToDisplay(iso),
+            }));
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0,
+            pointerEvents: 'none',
+            width: 0,
+            height: 0,
+          }}
+          tabIndex={-1}
+        />
+      </div>
+    </div>
+  );
+
   const handleSubmit = async () => {
     setFormErrors([]);
 
     const errores = [];
-    if (!form.codigo.trim()) errores.push('El código del subproyecto es obligatorio (ej: SUB-001).');
+    if (!form.codigo.trim()) errores.push('No se pudo generar el código automático del subproyecto.');
     if (!form.nombre.trim()) errores.push('El nombre del subproyecto es obligatorio.');
     if (nucleosSel.length === 0) errores.push('Debes seleccionar al menos un núcleo.');
     if (errores.length > 0) {
@@ -324,7 +475,7 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
 
       if (Array.isArray(backendErrors) && backendErrors.length > 0) {
         const MENSAJES = {
-          codigo: 'El código del subproyecto es obligatorio.',
+          codigo: 'No se pudo generar el código automático del subproyecto.',
           nombre: 'El nombre del subproyecto es obligatorio.',
           nucleos: 'Debes seleccionar al menos un núcleo.',
           supervisor: 'El supervisor seleccionado no es válido.',
@@ -485,24 +636,25 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
               />
 
               <div className="form-group">
-                <label>Código *</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Lock size={13} /> Código *
+                </label>
                 <input
                   type="text"
                   name="codigo"
                   value={form.codigo}
-                  onChange={(e) => {
-                    setFormErrors([]);
-                    setForm((p) => ({ ...p, codigo: e.target.value }));
+                  placeholder="Código generado automáticamente"
+                  style={{
+                    textTransform: 'uppercase',
+                    background: '#f8fafc',
+                    color: '#475569',
+                    cursor: 'not-allowed',
                   }}
-                  placeholder="Ej: SUB-001"
-                  style={{ textTransform: 'uppercase' }}
-                  disabled={modoEditar}
+                  disabled
                 />
-                {modoEditar && (
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
-                    El código no puede modificarse después de la creación.
-                  </p>
-                )}
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
+                  El código se genera automáticamente según el proyecto seleccionado.
+                </p>
               </div>
 
               <div className="form-group">
@@ -538,67 +690,17 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
               </div>
 
               <div className="modal-grid">
-                <div className="form-group">
-                  <label>Fecha Inicio</label>
-                  <input
-                    type="text"
-                    placeholder="DD/MM/AAAA"
-                    maxLength={10}
-                    value={displayFechas.fecha_inicio}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
-                      let display = raw;
-                      if (raw.length > 4) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2, 4) + '/' + raw.slice(4);
-                      } else if (raw.length > 2) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2);
-                      }
+                {renderDateField({
+                  label: 'Fecha Inicio',
+                  field: 'fecha_inicio',
+                  pickerRef: fechaInicioPickerRef,
+                })}
 
-                      setDisplayFechas((p) => ({ ...p, fecha_inicio: display }));
-
-                      if (raw.length === 8) {
-                        const d = raw.slice(0, 2);
-                        const m = raw.slice(2, 4);
-                        const y = raw.slice(4, 8);
-                        setForm((p) => ({ ...p, fecha_inicio: `${y}-${m}-${d}` }));
-                      } else {
-                        setForm((p) => ({ ...p, fecha_inicio: '' }));
-                      }
-                    }}
-                    style={{ letterSpacing: 1 }}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Fecha Fin Estimada</label>
-                  <input
-                    type="text"
-                    placeholder="DD/MM/AAAA"
-                    maxLength={10}
-                    value={displayFechas.fecha_fin_estimada}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
-                      let display = raw;
-                      if (raw.length > 4) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2, 4) + '/' + raw.slice(4);
-                      } else if (raw.length > 2) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2);
-                      }
-
-                      setDisplayFechas((p) => ({ ...p, fecha_fin_estimada: display }));
-
-                      if (raw.length === 8) {
-                        const d = raw.slice(0, 2);
-                        const m = raw.slice(2, 4);
-                        const y = raw.slice(4, 8);
-                        setForm((p) => ({ ...p, fecha_fin_estimada: `${y}-${m}-${d}` }));
-                      } else {
-                        setForm((p) => ({ ...p, fecha_fin_estimada: '' }));
-                      }
-                    }}
-                    style={{ letterSpacing: 1 }}
-                  />
-                </div>
+                {renderDateField({
+                  label: 'Fecha Fin Estimada',
+                  field: 'fecha_fin_estimada',
+                  pickerRef: fechaFinPickerRef,
+                })}
               </div>
 
               <div className="form-group">
@@ -638,9 +740,8 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                         onClick={() => toggleNucleo(n._id)}
                         style={{
                           padding: '10px 14px',
-                          border: `1.5px solid ${
-                            nucleosSel.includes(n._id) ? '#1f8f57' : '#e6e8ef'
-                          }`,
+                          border: `1.5px solid ${nucleosSel.includes(n._id) ? '#1f8f57' : '#e6e8ef'
+                            }`,
                           background: nucleosSel.includes(n._id) ? '#f0faf4' : '#fff',
                           borderRadius: 10,
                           cursor: 'pointer',
@@ -655,9 +756,8 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                             width: 16,
                             height: 16,
                             borderRadius: 4,
-                            border: `2px solid ${
-                              nucleosSel.includes(n._id) ? '#1f8f57' : '#cbd5e1'
-                            }`,
+                            border: `2px solid ${nucleosSel.includes(n._id) ? '#1f8f57' : '#cbd5e1'
+                              }`,
                             background: nucleosSel.includes(n._id) ? '#1f8f57' : '#fff',
                             display: 'flex',
                             alignItems: 'center',
@@ -1065,7 +1165,6 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
             </>
           )}
         </div>
-
         <div style={{ padding: '16px 24px', borderTop: '1px solid #f0f2f5' }}>
           <ErrorBanner errors={formErrors} />
 
