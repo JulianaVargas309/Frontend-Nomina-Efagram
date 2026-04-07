@@ -4,8 +4,11 @@ import DashboardLayout from '../../../app/layouts/DashboardLayout';
 import SubproyectoModal from '../components/SubproyectoModal';
 import { getSubproyectos, deleteSubproyecto } from '../services/subproyectosService';
 import { getProyectos } from '../services/proyectosService';
-import { FolderGit2, Plus, Pencil, Trash2, MapPin, Users } from 'lucide-react';
+import { FolderGit2, Plus, Pencil, Trash2, MapPin, Users, Settings } from 'lucide-react';
 import '../../../assets/styles/proyectos.css';
+import SubproyectoCuadrillas from '../components/SubproyectoCuadrillas';
+import GestionarSubproyectoModal from "./GestionarSubproyectoModal";
+import { getResumenHorasSubproyecto } from '../services/horasService';
 
 const ESTADO_COLOR = {
   ACTIVO: { bg: '#f0faf4', color: '#1f8f57', border: '#1f8f57' },
@@ -21,8 +24,10 @@ const SubproyectosPage = () => {
   const [proyectoSel, setProyectoSel] = useState(proyectoIdParam || '');
   const [proyectoObj, setProyectoObj] = useState(null);
   const [subproyectos, setSubproyectos] = useState([]);
+  const [resumenHoras, setResumenHoras] = useState({});
   const [loading, setLoading] = useState(false);
   const [modalState, setModalState] = useState({ open: false, sub: null });
+  const [gestionarModal, setGestionarModal] = useState({ open: false, sub: null });
 
   // Cargar proyectos para el selector
   useEffect(() => {
@@ -46,7 +51,24 @@ const SubproyectosPage = () => {
       setLoading(true);
       try {
         const res = await getSubproyectos({ proyecto: proyectoSel });
-        setSubproyectos(res?.data?.data ?? []);
+        const subs = res?.data?.data ?? [];
+
+        // ✅ Guardar subproyectos en el estado ANTES de cargar horas
+        setSubproyectos(subs);
+
+        // Cargar horas por subproyecto
+        const resumenTemp = {};
+
+        for (const s of subs) {
+          try {
+            const r = await getResumenHorasSubproyecto(s._id);
+            resumenTemp[s._id] = r.data;
+          } catch (e) {
+            resumenTemp[s._id] = [];
+          }
+        }
+
+        setResumenHoras(resumenTemp);
         setProyectoObj(proyectos.find(p => p._id === proyectoSel) ?? null);
       } catch (err) {
         console.error(err);
@@ -200,9 +222,33 @@ const SubproyectosPage = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e6e8ef' }}>
-                  {['Código', 'Proyecto', 'Cliente', 'Nombre', 'Núcleos', 'Supervisor', 'Estado', 'Acciones'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      {h}
+                  {[
+                    { label: 'Código', width: null },
+                    { label: 'Proyecto', width: null },
+                    { label: 'Cliente', width: null },
+                    { label: 'Nombre', width: null },
+                    { label: 'Horas Trabajadas', width: null },
+                    { label: 'Horas No Trabajadas', width: null },
+                    { label: 'Cuadrillas', width: null },
+                    { label: 'Núcleos', width: null },
+                    { label: 'Supervisor', width: null },
+                    { label: 'Estado', width: null },
+                    { label: 'Acciones', width: '130px' }
+                  ].map(({ label, width }) => (
+                    <th 
+                      key={label} 
+                      style={{ 
+                        padding: '12px 16px', 
+                        textAlign: label === 'Acciones' ? 'center' : 'left',
+                        fontSize: 11, 
+                        fontWeight: 700, 
+                        color: '#64748b', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.4px',
+                        ...(width && { width, minWidth: width })
+                      }}
+                    >
+                      {label}
                     </th>
                   ))}
                 </tr>
@@ -232,6 +278,33 @@ const SubproyectosPage = () => {
                         {s.nombre}
                       </td>
 
+                      {/* 🟢 Horas trabajadas */}
+                      <td style={{
+                        padding: '13px 16px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: '#1f8f57'
+                      }}>
+                        {s.horasTrabajadas ?? 0}
+                      </td>
+
+                      {/* 🔴 Horas no trabajadas */}
+                      <td style={{
+                        padding: '13px 16px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: '#dc2626'
+                      }}>
+                        {s.horasNoTrabajadas ?? 0}
+                      </td>
+
+                      <td style={{ padding: '13px 16px' }}>
+                        <SubproyectoCuadrillas
+                          subproyecto={s}
+                          resumen={resumenHoras[s._id]}
+                        />
+                      </td>
+
                       <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b' }}>
                         {s.nucleos?.length > 0
                           ? s.nucleos.map(n => n.nombre ?? n).join(', ')
@@ -256,21 +329,51 @@ const SubproyectosPage = () => {
                       </td>
 
                       {/* ── Acciones ── */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                      <td style={{ padding: '13px 16px', width: '130px', minWidth: '130px' }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', justifyContent: 'center' }}>
+
+                          <button
+                            title="Gestionar cuadrillas y horas"
+                            onClick={() => setGestionarModal({ open: true, sub: s })}
+                            style={{
+                              background: '#eff6ff', border: '1.5px solid #bfdbfe',
+                              color: '#2563eb', width: 34, height: 34,
+                              borderRadius: 8, display: 'flex', alignItems: 'center',
+                              justifyContent: 'center', cursor: 'pointer',
+                              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            <Settings size={16} />
+                          </button>
 
                           <button
                             title="Editar subproyecto"
                             onClick={() => setModalState({ open: true, sub: s })}
                             style={{
                               background: '#f0faf4', border: '1.5px solid #bbf7d0',
-                              color: '#1f8f57', height: 34, padding: '0 12px',
+                              color: '#1f8f57', width: 34, height: 34,
                               borderRadius: 8, display: 'flex', alignItems: 'center',
-                              gap: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              justifyContent: 'center', cursor: 'pointer',
+                              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(31,143,87,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            <Pencil size={13} />
-                            Editar
+                            <Pencil size={16} />
                           </button>
 
                           <button
@@ -278,13 +381,21 @@ const SubproyectosPage = () => {
                             onClick={() => handleDelete(s._id)}
                             style={{
                               background: '#fee2e2', border: '1.5px solid #fecaca',
-                              color: '#dc2626', height: 34, padding: '0 12px',
+                              color: '#dc2626', width: 34, height: 34,
                               borderRadius: 8, display: 'flex', alignItems: 'center',
-                              gap: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              justifyContent: 'center', cursor: 'pointer',
+                              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(220,38,38,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            <Trash2 size={13} />
-                            Eliminar
+                            <Trash2 size={16} />
                           </button>
 
                         </div>
@@ -305,6 +416,14 @@ const SubproyectosPage = () => {
         onSuccess={recargar}
         subproyecto={modalState.sub}
         proyecto={proyectoObj}
+      />
+
+      {/* ── Modal gestionar cuadrillas y horas ── */}
+      <GestionarSubproyectoModal
+        isOpen={gestionarModal.open}
+        onClose={() => setGestionarModal({ open: false, sub: null })}
+        onSuccess={recargar}
+        subproyecto={gestionarModal.sub}
       />
     </DashboardLayout>
   );
