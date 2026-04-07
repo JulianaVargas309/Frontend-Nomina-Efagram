@@ -223,20 +223,32 @@ const SubproyectosPage = () => {
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e6e8ef' }}>
                   {[
-                    'Código',
-                    'Proyecto',
-                    'Cliente',
-                    'Nombre',
-                    'Horas Trabajadas',
-                    'Horas No Trabajadas',
-                    'Cuadrillas',
-                    'Núcleos',
-                    'Supervisor',
-                    'Estado',
-                    'Acciones'
-                  ].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      {h}
+                    { label: 'Código', width: null },
+                    { label: 'Proyecto', width: null },
+                    { label: 'Cliente', width: null },
+                    { label: 'Nombre', width: null },
+                    { label: 'Horas Trabajadas', width: null },
+                    { label: 'Horas No Trabajadas', width: null },
+                    { label: 'Cuadrillas', width: null },
+                    { label: 'Núcleos', width: null },
+                    { label: 'Supervisor', width: null },
+                    { label: 'Estado', width: null },
+                    { label: 'Acciones', width: '130px' }
+                  ].map(({ label, width }) => (
+                    <th 
+                      key={label} 
+                      style={{ 
+                        padding: '12px 16px', 
+                        textAlign: label === 'Acciones' ? 'center' : 'left',
+                        fontSize: 11, 
+                        fontWeight: 700, 
+                        color: '#64748b', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.4px',
+                        ...(width && { width, minWidth: width })
+                      }}
+                    >
+                      {label}
                     </th>
                   ))}
                 </tr>
@@ -317,21 +329,29 @@ const SubproyectosPage = () => {
                       </td>
 
                       {/* ── Acciones ── */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                      <td style={{ padding: '13px 16px', width: '130px', minWidth: '130px' }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', justifyContent: 'center' }}>
 
                           <button
                             title="Gestionar cuadrillas y horas"
                             onClick={() => setGestionarModal({ open: true, sub: s })}
                             style={{
                               background: '#eff6ff', border: '1.5px solid #bfdbfe',
-                              color: '#2563eb', height: 34, padding: '0 12px',
+                              color: '#2563eb', width: 34, height: 34,
                               borderRadius: 8, display: 'flex', alignItems: 'center',
-                              gap: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              justifyContent: 'center', cursor: 'pointer',
+                              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            <Settings size={13} />
-                            Gestionar
+                            <Settings size={16} />
                           </button>
 
                           <button
@@ -339,13 +359,21 @@ const SubproyectosPage = () => {
                             onClick={() => setModalState({ open: true, sub: s })}
                             style={{
                               background: '#f0faf4', border: '1.5px solid #bbf7d0',
-                              color: '#1f8f57', height: 34, padding: '0 12px',
+                              color: '#1f8f57', width: 34, height: 34,
                               borderRadius: 8, display: 'flex', alignItems: 'center',
-                              gap: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              justifyContent: 'center', cursor: 'pointer',
+                              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(31,143,87,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            <Pencil size={13} />
-                            Editar
+                            <Pencil size={16} />
                           </button>
 
                           <button
@@ -353,13 +381,21 @@ const SubproyectosPage = () => {
                             onClick={() => handleDelete(s._id)}
                             style={{
                               background: '#fee2e2', border: '1.5px solid #fecaca',
-                              color: '#dc2626', height: 34, padding: '0 12px',
+                              color: '#dc2626', width: 34, height: 34,
                               borderRadius: 8, display: 'flex', alignItems: 'center',
-                              gap: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              justifyContent: 'center', cursor: 'pointer',
+                              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(220,38,38,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            <Trash2 size={13} />
-                            Eliminar
+                            <Trash2 size={16} />
                           </button>
 
                         </div>
