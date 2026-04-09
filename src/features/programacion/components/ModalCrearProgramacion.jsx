@@ -2,7 +2,7 @@
 // MODAL: CREAR PROGRAMACIÓN — VERSIÓN FINAL
 // ==========================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, AlertCircle, MapPin, Layers, Wrench, Calendar, Hash, DollarSign, CalendarDays, ClipboardList } from 'lucide-react';
 
 const getMensajeError = (err) => {
@@ -20,6 +20,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
   const [infoContrato, setInfoContrato] = useState(null);
   const [fechaInicial, setFechaInicial] = useState('');
   const [displayFechaInicial, setDisplayFechaInicial] = useState('');
+  const fechaInicialPickerRef = useRef(null);
   const [cantidadProyectada, setCantidadProyectada] = useState('');
   const [valorProyectado, setValorProyectado] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -288,36 +289,125 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                 <Calendar size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                 Fecha Inicial *
               </label>
-              <input
-                type="text"
-                placeholder="DD/MM/AAAA"
-                maxLength={10}
-                style={{ ...inputSt, letterSpacing: 1 }}
-                value={displayFechaInicial}
-                disabled={guardando}
-                onChange={e => {
-                  const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
-                  let display = raw;
-                  if (raw.length > 4) display = raw.slice(0,2) + '/' + raw.slice(2,4) + '/' + raw.slice(4);
-                  else if (raw.length > 2) display = raw.slice(0,2) + '/' + raw.slice(2);
-                  setDisplayFechaInicial(display);
-                  if (raw.length === 8) {
-                    const d = parseInt(raw.slice(0,2), 10);
-                    const m = parseInt(raw.slice(2,4), 10);
-                    const y = parseInt(raw.slice(4,8), 10);
-                    const fecha = new Date(y, m - 1, d);
-                    const valida = fecha.getFullYear() === y && fecha.getMonth() === m - 1 && fecha.getDate() === d && m >= 1 && m <= 12 && d >= 1 && d <= 31;
-                    if (valida) {
-                      const dd = String(d).padStart(2,'0'), mm = String(m).padStart(2,'0'), yy = String(y);
-                      setFechaInicial(`${yy}-${mm}-${dd}`);
+
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="DD/MM/AAAA"
+                  maxLength={10}
+                  style={{ ...inputSt, letterSpacing: 1, paddingRight: 46 }}
+                  value={displayFechaInicial}
+                  disabled={guardando}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
+                    let display = raw;
+
+                    if (raw.length > 4) display = raw.slice(0, 2) + '/' + raw.slice(2, 4) + '/' + raw.slice(4);
+                    else if (raw.length > 2) display = raw.slice(0, 2) + '/' + raw.slice(2);
+
+                    setDisplayFechaInicial(display);
+
+                    if (raw.length === 8) {
+                      const d = parseInt(raw.slice(0, 2), 10);
+                      const m = parseInt(raw.slice(2, 4), 10);
+                      const y = parseInt(raw.slice(4, 8), 10);
+
+                      const fecha = new Date(y, m - 1, d);
+                      const valida =
+                        fecha.getFullYear() === y &&
+                        fecha.getMonth() === m - 1 &&
+                        fecha.getDate() === d &&
+                        m >= 1 &&
+                        m <= 12 &&
+                        d >= 1 &&
+                        d <= 31;
+
+                      if (valida) {
+                        const dd = String(d).padStart(2, '0');
+                        const mm = String(m).padStart(2, '0');
+                        const yy = String(y);
+                        setFechaInicial(`${yy}-${mm}-${dd}`);
+                      } else {
+                        setFechaInicial('');
+                      }
                     } else {
                       setFechaInicial('');
                     }
-                  } else {
-                    setFechaInicial('');
-                  }
-                }}
-              />
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (fechaInicialPickerRef.current?.showPicker) {
+                      fechaInicialPickerRef.current.showPicker();
+                    } else {
+                      fechaInicialPickerRef.current?.focus();
+                    }
+                  }}
+                  disabled={guardando}
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: guardando ? 'not-allowed' : 'pointer',
+                    color: '#16a34a',
+                    transition: 'all .2s ease',
+                    opacity: guardando ? 0.7 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!guardando) e.currentTarget.style.background = '#ecfdf5';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f8fafc';
+                  }}
+                  title="Seleccionar fecha inicial"
+                >
+                  <CalendarDays size={16} />
+                </button>
+
+                <input
+                  ref={fechaInicialPickerRef}
+                  type="date"
+                  value={fechaInicial || ''}
+                  onChange={(e) => {
+                    const iso = e.target.value;
+                    setFechaInicial(iso);
+
+                    if (!iso) {
+                      setDisplayFechaInicial('');
+                      return;
+                    }
+
+                    const [yy, mm, dd] = iso.split('-');
+                    setDisplayFechaInicial(`${dd}/${mm}/${yy}`);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    width: 0,
+                    height: 0,
+                  }}
+                  tabIndex={-1}
+                />
+              </div>
+
               {displayFechaInicial.length === 10 && !fechaInicial && (
                 <small style={{ color: '#dc2626', fontSize: 11, marginTop: 2, display: 'block' }}>
                   Fecha inválida — verifica día, mes y año

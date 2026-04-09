@@ -8,7 +8,11 @@ import {
   DollarSign,
   FileText
 } from "lucide-react";
-import { createActividad, updateActividad } from "../services/actividadesService";
+import {
+  getActividades,
+  createActividad,
+  updateActividad
+} from "../services/actividadesService";
 import { getIntervenciones } from "../services/intervencionesService";
 
 const FORM_INICIAL = {
@@ -18,6 +22,30 @@ const FORM_INICIAL = {
   activa: "true",
   precio_base: "",
   descripcion: "",
+};
+
+const normalizeList = (res) => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.data?.data)) return res.data.data;
+  return [];
+};
+
+const padActividadNumber = (value) => String(value).padStart(3, "0");
+
+const getNextActividadCode = (actividades = [], prefijo = "ACT") => {
+  const maxNumber = actividades.reduce((acc, item) => {
+    const code = String(item?.codigo || "").trim().toUpperCase();
+    const match = code.match(/(\d+)$/);
+    if (!match) return acc;
+
+    const current = Number(match[1]);
+    if (Number.isNaN(current)) return acc;
+
+    return Math.max(acc, current);
+  }, 0);
+
+  return `${prefijo}-${padActividadNumber(maxNumber + 1)}`;
 };
 
 const inputStyle = (hasError = false) => ({
@@ -38,6 +66,8 @@ const readOnlyInputStyle = {
   background: "#f1f5f9",
   color: "#64748b",
   cursor: "not-allowed",
+  fontWeight: 600,
+  letterSpacing: 1,
 };
 
 const selectStyle = (hasError = false) => ({
@@ -72,6 +102,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
   const [errors, setErrors] = useState({});
   const [intervenciones, setIntervenciones] = useState([]);
   const [loadingIntervenciones, setLoadingIntervenciones] = useState(false);
+  const [actividadesActuales, setActividadesActuales] = useState([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -93,6 +124,23 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen || isEdit) return;
+
+    const cargarActividadesExistentes = async () => {
+      try {
+        const res = await getActividades();
+        const lista = normalizeList(res);
+        setActividadesActuales(lista);
+      } catch (error) {
+        console.error("Error cargando actividades existentes", error);
+        setActividadesActuales([]);
+      }
+    };
+
+    cargarActividadesExistentes();
+  }, [isOpen, isEdit]);
+
+  useEffect(() => {
     if (!isOpen) return;
 
     if (isEdit && actividadEditar) {
@@ -106,11 +154,18 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
         descripcion: actividadEditar.descripcion ?? "",
       });
     } else {
-      setForm(FORM_INICIAL);
+      setForm({
+        codigo: getNextActividadCode(actividadesActuales, "ACT"),
+        nombre: "",
+        intervencion: "",
+        activa: "true",
+        precio_base: "",
+        descripcion: "",
+      });
     }
 
     setErrors({});
-  }, [isOpen, actividadEditar, isEdit]);
+  }, [isOpen, actividadEditar, isEdit, actividadesActuales]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -309,22 +364,26 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
                 >
                   <Hash size={16} color="#3b82f6" strokeWidth={1} />
                 </div>
-                Código {!isEdit && <span style={{ color: "#dc2626" }}>*</span>}
+                Código <span style={{ color: "#dc2626" }}>*</span>
               </label>
 
               <input
                 name="codigo"
                 value={form.codigo}
-                onChange={handleChange}
-                placeholder="Ej: ACT-001"
-                readOnly={isEdit}
-                style={isEdit ? readOnlyInputStyle : inputStyle(!!errors.codigo)}
+                placeholder="Código generado automáticamente"
+                readOnly
+                disabled
+                style={readOnlyInputStyle}
+                title="El código se genera automáticamente"
               />
               {errors.codigo && (
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
                   {errors.codigo}
                 </p>
               )}
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>
+                El código se genera automáticamente
+              </p>
             </div>
 
             <div>

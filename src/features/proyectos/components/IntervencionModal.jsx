@@ -4,11 +4,33 @@ import {
   updateIntervencion,
 } from "../services/intervencionesService";
 
+const generarCodigoIntervencion = (intervenciones = []) => {
+  if (!Array.isArray(intervenciones) || intervenciones.length === 0) {
+    return "INT-001";
+  }
+
+  let max = 0;
+
+  intervenciones.forEach((i) => {
+    const codigo = String(i?.codigo || "").trim().toUpperCase();
+    const match = codigo.match(/^INT-(\d+)$/);
+    if (!match) return;
+
+    const numero = parseInt(match[1], 10);
+    if (!isNaN(numero) && numero > max) {
+      max = numero;
+    }
+  });
+
+  return `INT-${String(max + 1).padStart(3, "0")}`;
+};
+
 const IntervencionModal = ({
   show,
   onClose,
   intervencionEditar,
   onSuccess,
+  intervencionesActuales = [],
 }) => {
   const [form, setForm] = useState({
     codigo: "",
@@ -18,8 +40,12 @@ const IntervencionModal = ({
     descripcion: "",
   });
 
+  const isEdit = Boolean(intervencionEditar);
+
   useEffect(() => {
-    if (intervencionEditar) {
+    if (!show) return;
+
+    if (isEdit && intervencionEditar) {
       setForm({
         codigo: intervencionEditar.codigo || "",
         nombre: intervencionEditar.nombre || "",
@@ -27,11 +53,22 @@ const IntervencionModal = ({
         estado: intervencionEditar.estado || "Activo",
         descripcion: intervencionEditar.descripcion || "",
       });
+    } else {
+      setForm({
+        codigo: generarCodigoIntervencion(intervencionesActuales),
+        nombre: "",
+        procesos: "",
+        estado: "Activo",
+        descripcion: "",
+      });
     }
-  }, [intervencionEditar]);
+  }, [show, isEdit, intervencionEditar, intervencionesActuales]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -41,11 +78,14 @@ const IntervencionModal = ({
       if (intervencionEditar) {
         await updateIntervencion(intervencionEditar.id, form);
       } else {
-        await createIntervencion(form);
+        await createIntervencion({
+          ...form,
+          codigo: form.codigo.trim().toUpperCase(),
+        });
       }
 
-      onSuccess();
-      onClose();
+      onSuccess?.();
+      onClose?.();
     } catch (error) {
       console.error("Error guardando intervención:", error);
     }
@@ -73,10 +113,21 @@ const IntervencionModal = ({
                   className="form-control"
                   name="codigo"
                   value={form.codigo}
-                  onChange={handleChange}
-                  placeholder="Ej: INT-001"
+                  placeholder="Código generado automáticamente"
+                  readOnly
+                  disabled
+                  style={{
+                    background: "#f8fafc",
+                    color: "#475569",
+                    cursor: "not-allowed",
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                  }}
                   required
                 />
+                <small className="text-muted">
+                  El código se genera automáticamente
+                </small>
               </div>
 
               <div className="mb-3">
@@ -131,7 +182,11 @@ const IntervencionModal = ({
             </div>
 
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={onClose}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+              >
                 Cancelar
               </button>
               <button type="submit" className="btn btn-primary">

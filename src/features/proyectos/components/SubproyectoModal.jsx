@@ -9,6 +9,7 @@ import {
 } from '../services/subproyectosService';
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
+import { CalendarDays } from "lucide-react";
 import {
   FolderGit2,
   User,
@@ -370,21 +371,30 @@ const SubproyectoModal = ({
             }
           }}
           style={{
-            position: 'absolute',
+            position: "absolute",
             right: 8,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            fontSize: 18,
-            color: '#64748b',
-            padding: 4,
-            lineHeight: 1,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            border: "1px solid #e2e8f0",
+            background: "#f8fafc",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "#6366f1",
+            transition: "all .2s ease"
           }}
-          title={`Seleccionar ${label}`}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#eef2ff"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#f8fafc"
+          }}
         >
-          📅
+          <CalendarDays size={16} />
         </button>
 
         <input
@@ -513,9 +523,14 @@ const SubproyectoModal = ({
   };
 
   const disponiblesPorIntervencion = actDisponibles.reduce((acc, a) => {
-    const tipo = a.intervencion;
+    const tipo =
+      typeof a.intervencion === "object"
+        ? a.intervencion?.nombre || a.intervencion?.codigo || "general"
+        : a.intervencion;
+
     if (!acc[tipo]) acc[tipo] = [];
     acc[tipo].push(a);
+
     return acc;
   }, {});
 
@@ -912,7 +927,7 @@ const SubproyectoModal = ({
                           gap: 6,
                         }}
                       >
-                        {TIPO_EMOJI[tipo]} {tipo.replace(/_/g, ' ').toUpperCase()}
+                        {TIPO_EMOJI[tipo]} {String(tipo).replace(/_/g, ' ').toUpperCase()}
                       </p>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

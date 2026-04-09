@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { CalendarDays, X } from 'lucide-react';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api/v1';
 const getToken = () => localStorage.getItem('efagram_token') ?? '';
@@ -26,32 +26,71 @@ const TIPOS = [
 ];
 
 const MENSAJES_CAMPO = {
-  fecha:               'La fecha es obligatoria y debe tener formato válido.',
-  trabajador:          'Debes seleccionar un trabajador.',
-  tipo:                'El tipo de novedad es obligatorio.',
-  descripcion:         'La descripción es obligatoria.',
-  dias:                'El número de días debe ser un valor válido.',
-  estado:              'El estado es obligatorio.',
-  afecta_nomina:       'El campo "Afecta nómina" es obligatorio.',
+  fecha: 'La fecha es obligatoria y debe tener formato válido.',
+  trabajador: 'Debes seleccionar un trabajador.',
+  tipo: 'El tipo de novedad es obligatorio.',
+  descripcion: 'La descripción es obligatoria.',
+  dias: 'El número de días debe ser un valor válido.',
+  estado: 'El estado es obligatorio.',
+  afecta_nomina: 'El campo "Afecta nómina" es obligatorio.',
   requiere_aprobacion: 'El campo "Requiere aprobación" es obligatorio.',
+};
+
+const formatIsoToDisplay = (iso) => {
+  if (!iso) return '';
+  const [year, month, day] = iso.slice(0, 10).split('-');
+  return `${day}/${month}/${year}`;
+};
+
+const formatDisplayToDateParts = (value) => {
+  const raw = String(value || '').replace(/[^0-9]/g, '').slice(0, 8);
+
+  let display = raw;
+  if (raw.length > 4) {
+    display = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4)}`;
+  } else if (raw.length > 2) {
+    display = `${raw.slice(0, 2)}/${raw.slice(2)}`;
+  }
+
+  if (raw.length !== 8) {
+    return { display, iso: '' };
+  }
+
+  const day = raw.slice(0, 2);
+  const month = raw.slice(2, 4);
+  const year = raw.slice(4, 8);
+
+  const date = new Date(`${year}-${month}-${day}T00:00:00`);
+  const isValid =
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === Number(year) &&
+    date.getMonth() + 1 === Number(month) &&
+    date.getDate() === Number(day);
+
+  return {
+    display,
+    iso: isValid ? `${year}-${month}-${day}` : '',
+  };
 };
 
 export default function NuevaNovedadModal({
   isOpen, title = 'Nueva Novedad', initialValues = {}, onClose, onSubmit,
 }) {
-  const [fecha,               setFecha]             = useState('');
-  const [trabajador,          setTrabajador]         = useState('');
-  const [tipo,                setTipo]               = useState('PERMISO');
-  const [descripcion,         setDescripcion]        = useState('');
-  const [dias,                setDias]               = useState('');
-  const [afecta_nomina,       setAfectaNomina]       = useState(false);
+  const [fecha, setFecha] = useState('');
+  const fechaPickerRef = useRef(null);
+  const [fechaDisplay, setFechaDisplay] = useState('');
+  const [trabajador, setTrabajador] = useState('');
+  const [tipo, setTipo] = useState('PERMISO');
+  const [descripcion, setDescripcion] = useState('');
+  const [dias, setDias] = useState('');
+  const [afecta_nomina, setAfectaNomina] = useState(false);
   const [requiere_aprobacion, setRequiereAprobacion] = useState(false);
-  const [estado,              setEstado]             = useState('PENDIENTE');
+  const [estado, setEstado] = useState('PENDIENTE');
 
   const [trabajadores, setTrabajadores] = useState([]);
-  const [loadingData,  setLoadingData]  = useState(false);
-  const [saving,       setSaving]       = useState(false);
-  const [errors,       setErrors]       = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -83,8 +122,8 @@ export default function NuevaNovedadModal({
 
     // Validación en el frontend
     const locales = [];
-    if (!fecha)              locales.push('La fecha es obligatoria.');
-    if (!trabajador)         locales.push('Debes seleccionar un trabajador.');
+    if (!fecha) locales.push('La fecha es obligatoria.');
+    if (!trabajador) locales.push('Debes seleccionar un trabajador.');
     if (!descripcion.trim()) locales.push('La descripción es obligatoria.');
     if (locales.length > 0) return setErrors(locales);
 
@@ -139,11 +178,89 @@ export default function NuevaNovedadModal({
           <div className="nrm-scroll-area">
 
             <div className="nrm-field">
-              <label className="nrm-label">Fecha <span className="nrm-req">*</span></label>
-              <input className="nrm-input" type="date" value={fecha}
-                onChange={(e) => setFecha(e.target.value)} autoFocus />
-            </div>
+              <label className="nrm-label">
+                Fecha <span className="nrm-req">*</span>
+              </label>
 
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <input
+                  className="nrm-input"
+                  type="text"
+                  placeholder="DD/MM/AAAA"
+                  maxLength={10}
+                  value={fechaDisplay}
+                  onChange={(e) => {
+                    const { display, iso } = formatDisplayToDateParts(e.target.value);
+                    setFechaDisplay(display);
+                    setFecha(iso);
+                  }}
+                  autoFocus
+                  style={{ paddingRight: 44 }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (fechaPickerRef.current?.showPicker) {
+                      fechaPickerRef.current.showPicker();
+                    } else {
+                      fechaPickerRef.current?.focus();
+                    }
+                  }}
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#6366f1',
+                    transition: 'all .2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#eef2ff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f8fafc';
+                  }}
+                  title="Seleccionar fecha"
+                >
+                  <CalendarDays size={16} />
+                </button>
+
+                <input
+                  ref={fechaPickerRef}
+                  type="date"
+                  value={fecha || ''}
+                  onChange={(e) => {
+                    const iso = e.target.value;
+                    setFecha(iso);
+                    setFechaDisplay(formatIsoToDisplay(iso));
+                  }}
+                  style={{
+                    position: 'absolute',
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    width: 0,
+                    height: 0,
+                  }}
+                  tabIndex={-1}
+                />
+              </div>
+            </div>
             <div className="nrm-field">
               <label className="nrm-label">Trabajador <span className="nrm-req">*</span></label>
               <select className="nrm-select" value={trabajador}

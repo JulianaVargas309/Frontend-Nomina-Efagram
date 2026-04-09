@@ -49,6 +49,7 @@ export default function CatalogoIntervencionesPage() {
   const filteredIntervenciones = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return intervenciones;
+
     return intervenciones.filter((i) => {
       const codigo = String(i?.codigo ?? '').toLowerCase();
       const nombre = String(i?.nombre ?? '').toLowerCase();
@@ -62,6 +63,7 @@ export default function CatalogoIntervencionesPage() {
   const handleAdd = async (payload) => {
     const created = await createIntervencion(payload);
     const obj = created?.data ?? created;
+
     if (obj && (obj._id || obj.id)) {
       setIntervenciones((prev) => [obj, ...prev]);
     } else {
@@ -72,8 +74,11 @@ export default function CatalogoIntervencionesPage() {
   const handleUpdate = async (id, payload) => {
     const updated = await updateIntervencion(id, payload);
     const obj = updated?.data ?? updated;
+
     if (obj && (obj._id || obj.id)) {
-      setIntervenciones((prev) => prev.map((i) => (getId(i) === id ? obj : i)));
+      setIntervenciones((prev) =>
+        prev.map((i) => (getId(i) === id ? obj : i))
+      );
     } else {
       await fetchIntervenciones();
     }
@@ -87,7 +92,6 @@ export default function CatalogoIntervencionesPage() {
   return (
     <DashboardLayout>
       <div className="territorial-wrapper">
-        
         <IntervencionesStats intervenciones={intervenciones} />
 
         {loading ? (
@@ -97,6 +101,7 @@ export default function CatalogoIntervencionesPage() {
         ) : (
           <IntervencionesTable
             intervenciones={filteredIntervenciones}
+            intervencionesActuales={intervenciones}
             search={search}
             setSearch={setSearch}
             onAdd={handleAdd}

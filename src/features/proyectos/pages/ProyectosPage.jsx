@@ -15,32 +15,32 @@ const fmtMonto = (n) =>
   n != null ? "$ " + Number(n).toLocaleString("es-CO") : null;
 
 const ESTADO_LABEL = {
-  ACTIVO:"Activo", PLANEADO:"Planeado", FINALIZADO:"Finalizado",
-  SUSPENDIDO:"Suspendido", CERRADO:"Cerrado",
-  EN_NEGOCIACION:"En negociación", CANCELADO:"Cancelado",
+  ACTIVO: "Activo", PLANEADO: "Planeado", FINALIZADO: "Finalizado",
+  SUSPENDIDO: "Suspendido", CERRADO: "Cerrado",
+  EN_NEGOCIACION: "En negociación", CANCELADO: "Cancelado",
 };
 
 const INTERVENCION_LABEL = {
-  establecimiento:"Establecimiento", mantenimiento:"Mantenimiento", no_programadas:"No programadas",
+  establecimiento: "Establecimiento", mantenimiento: "Mantenimiento", no_programadas: "No programadas",
 };
 
 // ── Componente principal ──────────────────────────────────
 const ProyectosPage = () => {
   const navigate = useNavigate();
-  const [proyectos,   setProyectos]   = useState([]);
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState(null);
-  const [busqueda,    setBusqueda]    = useState("");
-  const [deletingId,  setDeletingId]  = useState(null);
+  const [proyectos, setProyectos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   // modalState = { open: bool, modo: "crear"|"editar"|"ver", proyecto: obj|null }
-  const [modalState, setModalState] = useState({ open:false, modo:"crear", proyecto:null });
+  const [modalState, setModalState] = useState({ open: false, modo: "crear", proyecto: null });
   const [actividadesMap, setActividadesMap] = useState({});
 
-  const abrirCrear  = ()  => setModalState({ open:true, modo:"crear",  proyecto:null });
-  const abrirVer    = (p) => setModalState({ open:true, modo:"ver",    proyecto:p });
-  const abrirEditar = (p) => setModalState({ open:true, modo:"editar", proyecto:p });
-  const cerrarModal = ()  => setModalState(prev => ({ ...prev, open:false }));
+  const abrirCrear = () => setModalState({ open: true, modo: "crear", proyecto: null });
+  const abrirVer = (p) => setModalState({ open: true, modo: "ver", proyecto: p });
+  const abrirEditar = (p) => setModalState({ open: true, modo: "editar", proyecto: p });
+  const cerrarModal = () => setModalState(prev => ({ ...prev, open: false }));
 
   // ── Cargar proyectos ──
   const cargarProyectos = async () => {
@@ -132,7 +132,7 @@ const ProyectosPage = () => {
         {/* ── TOOLBAR ── */}
         <div className="proy-toolbar">
           <div className="proy-search-wrapper">
-            <Search size={15} className="proy-search-icon" style={{ color:'#94a3b8' }} />
+            <Search size={15} className="proy-search-icon" style={{ color: '#94a3b8' }} />
             <input
               className="proy-search-input"
               type="text"
@@ -141,14 +141,14 @@ const ProyectosPage = () => {
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
-          <button className="btn-crear" onClick={abrirCrear} style={{ display:'flex', alignItems:'center', gap:7 }}>
+          <button className="btn-crear" onClick={abrirCrear} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <PlusCircle size={16} /> Nuevo Proyecto
           </button>
         </div>
 
         {/* ── ESTADOS ── */}
-        {loading  && <p className="proy-msg">Cargando proyectos...</p>}
-        {error    && <p className="proy-msg proy-msg--error">{error}</p>}
+        {loading && <p className="proy-msg">Cargando proyectos...</p>}
+        {error && <p className="proy-msg proy-msg--error">{error}</p>}
         {!loading && proyectosFiltrados.length === 0 && (
           <p className="proy-msg">No hay proyectos registrados.</p>
         )}
@@ -156,8 +156,8 @@ const ProyectosPage = () => {
         {/* ── GRID DE CARDS ── */}
         <div className="proy-cards-grid">
           {proyectosFiltrados.map(proyecto => {
-            const estado  = proyecto.estado?.toUpperCase();
-            const avance  = proyecto.avance ?? 0;
+            const estado = proyecto.estado?.toUpperCase();
+            const avance = proyecto.avance ?? 0;
 
             // Agrupar actividades por intervención desde actividadesMap
             const actsProyecto = actividadesMap[proyecto._id] ?? [];
@@ -202,7 +202,7 @@ const ProyectosPage = () => {
                   <span className="proy-avance-pct">{avance}%</span>
                 </div>
                 <div className="proy-avance-bar-bg">
-                  <div className="proy-avance-bar-fill" style={{ width:`${avance}%` }} />
+                  <div className="proy-avance-bar-fill" style={{ width: `${avance}%` }} />
                 </div>
 
                 {/* Chips de intervenciones */}
@@ -238,12 +238,12 @@ const ProyectosPage = () => {
                 {/* Cuadrillas y lotes */}
                 <div className="proy-meta-row">
                   {proyecto.cuadrillas != null && (
-                    <span className="proy-meta-item" style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+                    <span className="proy-meta-item" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <Users size={12} /> {proyecto.cuadrillas} cuadrilla{proyecto.cuadrillas !== 1 ? "s" : ""}
                     </span>
                   )}
                   {(proyecto.lotes?.length ?? proyecto.cantidad_lotes) ? (
-                    <span className="proy-meta-item" style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+                    <span className="proy-meta-item" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <MapPin size={12} /> {proyecto.lotes?.length ?? proyecto.cantidad_lotes} lote
                       {(proyecto.lotes?.length ?? proyecto.cantidad_lotes) !== 1 ? "s" : ""}
                     </span>
@@ -305,17 +305,16 @@ const ProyectosPage = () => {
         {/* ── MODAL ÚNICO (maneja crear / editar / ver) ── */}
         <ProyectoModal
           isOpen={modalState.open}
-          modo={modalState.modo}
-          proyecto={modalState.proyecto}
-          onClose={cerrarModal}
-          onSuccess={(accion) => {
-            if (accion === "editar") {
-              setModalState(prev => ({ ...prev, modo:"editar" }));
-            } else {
-              cerrarModal();
-              cargarProyectos();
-            }
+          onClose={() => {
+            setModalState({ open: false, proyecto: null, modo: "crear" });
           }}
+          onSuccess={() => {
+            cargarProyectos();
+            setModalState({ open: false, proyecto: null, modo: "crear" });
+          }}
+          proyecto={modalState.proyecto}
+          modo={modalState.modo}
+          proyectosActuales={proyectos}
         />
 
       </div>
