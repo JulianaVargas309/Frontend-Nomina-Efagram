@@ -16,6 +16,20 @@ const ESTADO_COLOR = {
   CANCELADO: { bg: '#fee2e2', color: '#dc2626', border: '#dc2626' },
 };
 
+const getNextSubproyectoCode = (subproyectos = []) => {
+  const maxNumero = subproyectos.reduce((max, sub) => {
+    const codigo = String(sub?.codigo ?? '').toUpperCase().trim();
+    const match = codigo.match(/^SUB-(\d+)$/);
+
+    if (!match) return max;
+
+    const numero = Number(match[1]);
+    return Number.isNaN(numero) ? max : Math.max(max, numero);
+  }, 0);
+
+  return `SUB-${String(maxNumero + 1).padStart(3, '0')}`;
+};
+
 const SubproyectosPage = () => {
   const [searchParams] = useSearchParams();
   const proyectoIdParam = searchParams.get('proyecto');
@@ -99,6 +113,7 @@ const SubproyectosPage = () => {
 
   const activos = subproyectos.filter(s => s.estado === 'ACTIVO').length;
   const cerrados = subproyectos.filter(s => s.estado === 'CERRADO').length;
+  const nextSubproyectoCode = getNextSubproyectoCode(subproyectos);
 
   return (
     <DashboardLayout>
@@ -235,15 +250,15 @@ const SubproyectosPage = () => {
                     { label: 'Estado', width: null },
                     { label: 'Acciones', width: '130px' }
                   ].map(({ label, width }) => (
-                    <th 
-                      key={label} 
-                      style={{ 
-                        padding: '12px 16px', 
+                    <th
+                      key={label}
+                      style={{
+                        padding: '12px 16px',
                         textAlign: label === 'Acciones' ? 'center' : 'left',
-                        fontSize: 11, 
-                        fontWeight: 700, 
-                        color: '#64748b', 
-                        textTransform: 'uppercase', 
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#64748b',
+                        textTransform: 'uppercase',
                         letterSpacing: '0.4px',
                         ...(width && { width, minWidth: width })
                       }}
@@ -416,6 +431,7 @@ const SubproyectosPage = () => {
         onSuccess={recargar}
         subproyecto={modalState.sub}
         proyecto={proyectoObj}
+        nextCode={nextSubproyectoCode}
       />
 
       {/* ── Modal gestionar cuadrillas y horas ── */}

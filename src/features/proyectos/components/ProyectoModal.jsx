@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createProyecto, updateProyecto } from "../services/proyectosService";
 import { getPersonas } from "../services/personalService";
 import { getZonas } from "../../territorial/services/zonas.service";
@@ -15,6 +21,8 @@ import {
   MapPin,
   PlusCircle,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : "");
@@ -22,10 +30,10 @@ const toDateInput = (iso) => (iso ? iso.slice(0, 10) : "");
 const fmtFecha = (iso) =>
   iso
     ? new Date(iso).toLocaleDateString("es-CO", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "—";
 
 const fmtMonto = (n) =>
@@ -196,12 +204,322 @@ const ErrorBanner = ({ errors }) => {
   );
 };
 
+const MESES = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+const DIAS_CORTOS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
+
+function CalendarioPicker({ value, onChange, disabled = false }) {
+  const hoy = new Date();
+  const selDate = value ? new Date(value + "T12:00:00") : null;
+
+  const [vistaAnio, setVistaAnio] = useState(
+    selDate ? selDate.getFullYear() : hoy.getFullYear()
+  );
+  const [vistaMes, setVistaMes] = useState(
+    selDate ? selDate.getMonth() : hoy.getMonth()
+  );
+  const [abierto, setAbierto] = useState(false);
+
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!selDate) return;
+    setVistaAnio(selDate.getFullYear());
+    setVistaMes(selDate.getMonth());
+  }, [value]);
+
+  const irMesAnterior = () => {
+    if (vistaMes === 0) {
+      setVistaMes(11);
+      setVistaAnio((y) => y - 1);
+    } else {
+      setVistaMes((m) => m - 1);
+    }
+  };
+
+  const irMesSiguiente = () => {
+    if (vistaMes === 11) {
+      setVistaMes(0);
+      setVistaAnio((y) => y + 1);
+    } else {
+      setVistaMes((m) => m + 1);
+    }
+  };
+
+  const primerDia = new Date(vistaAnio, vistaMes, 1).getDay();
+  const offset = primerDia === 0 ? 6 : primerDia - 1;
+  const diasEnMes = new Date(vistaAnio, vistaMes + 1, 0).getDate();
+
+  const celdas = [];
+  for (let i = 0; i < offset; i++) celdas.push(null);
+  for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
+
+  const esSeleccionado = (d) => {
+    if (!d || !selDate) return false;
+    return (
+      selDate.getFullYear() === vistaAnio &&
+      selDate.getMonth() === vistaMes &&
+      selDate.getDate() === d
+    );
+  };
+
+  const esHoy = (d) => {
+    if (!d) return false;
+    return (
+      hoy.getFullYear() === vistaAnio &&
+      hoy.getMonth() === vistaMes &&
+      hoy.getDate() === d
+    );
+  };
+
+  const seleccionarDia = (d) => {
+    if (!d || disabled) return;
+    const mm = String(vistaMes + 1).padStart(2, "0");
+    const dd = String(d).padStart(2, "0");
+    onChange(`${vistaAnio}-${mm}-${dd}`);
+    setAbierto(false);
+  };
+
+  const labelBoton = selDate
+    ? `${String(selDate.getDate()).padStart(2, "0")}/${String(
+      selDate.getMonth() + 1
+    ).padStart(2, "0")}/${selDate.getFullYear()}`
+    : "dd/mm/aaaa";
+
+  const s = {
+    wrap: {
+      position: "relative",
+      width: "100%",
+      overflow: "visible",
+    },
+    trigger: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
+      padding: "11px 12px",
+      border: "1px solid #d1d5db",
+      borderRadius: 10,
+      background: disabled ? "#f8fafc" : "#fff",
+      cursor: disabled ? "not-allowed" : "pointer",
+      fontSize: 14,
+      color: selDate ? "#111827" : "#9ca3af",
+      fontFamily: "inherit",
+      boxSizing: "border-box",
+      transition: "border-color 0.15s",
+      letterSpacing: selDate ? 0 : 1,
+    },
+    popup: {
+      position: "absolute",
+      top: "calc(100% + 6px)",
+      left: "50%",
+      transform: "translateX(-50%)",
+      zIndex: 9999,
+      background: "#fff",
+      borderRadius: 14,
+      padding: "16px",
+      boxShadow: "0 12px 40px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)",
+      border: "1px solid #e5e7eb",
+      width: 280,
+      userSelect: "none",
+    },
+    navRow: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 14,
+    },
+    navBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      border: "1px solid #e5e7eb",
+      background: "#f9fafb",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      color: "#374151",
+    },
+    mesLabel: { fontWeight: 700, fontSize: 15, color: "#111827" },
+    grid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 },
+    diaHeader: {
+      textAlign: "center",
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#9ca3af",
+      padding: "4px 0",
+    },
+    celda: (d, sel, hoyFlag) => ({
+      width: "100%",
+      aspectRatio: "1",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 8,
+      fontSize: 13,
+      cursor: d ? "pointer" : "default",
+      fontWeight: sel ? 700 : hoyFlag ? 600 : 400,
+      background: sel ? "#16a34a" : hoyFlag ? "#f0fdf4" : "transparent",
+      color: sel ? "#fff" : hoyFlag ? "#16a34a" : d ? "#111827" : "transparent",
+      border:
+        hoyFlag && !sel ? "1.5px solid #86efac" : "1.5px solid transparent",
+    }),
+    footerRow: {
+      marginTop: 12,
+      paddingTop: 10,
+      borderTop: "1px solid #f1f5f9",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    btnHoy: {
+      fontSize: 12,
+      fontWeight: 600,
+      color: "#16a34a",
+      background: "#f0fdf4",
+      border: "1px solid #86efac",
+      borderRadius: 6,
+      padding: "4px 10px",
+      cursor: "pointer",
+    },
+    btnLimpiar: {
+      fontSize: 12,
+      fontWeight: 500,
+      color: "#6b7280",
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      padding: "4px 6px",
+    },
+  };
+
+  return (
+    <div ref={ref} style={s.wrap}>
+      <button
+        type="button"
+        style={s.trigger}
+        disabled={disabled}
+        onClick={() => !disabled && setAbierto((a) => !a)}
+        onFocus={(e) => {
+          if (!disabled) e.currentTarget.style.borderColor = "#16a34a";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "#d1d5db";
+        }}
+      >
+        <span>{labelBoton}</span>
+        <Calendar size={15} color="#6b7280" />
+      </button>
+
+      {abierto && (
+        <div style={s.popup}>
+          <div style={s.navRow}>
+            <button type="button" style={s.navBtn} onClick={irMesAnterior}>
+              <ChevronLeft size={14} />
+            </button>
+            <span style={s.mesLabel}>
+              {MESES[vistaMes]} {vistaAnio}
+            </span>
+            <button type="button" style={s.navBtn} onClick={irMesSiguiente}>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          <div style={s.grid}>
+            {DIAS_CORTOS.map((d) => (
+              <div key={d} style={s.diaHeader}>
+                {d}
+              </div>
+            ))}
+
+            {celdas.map((d, i) => {
+              const sel = esSeleccionado(d);
+              const hoyF = esHoy(d);
+
+              return (
+                <div
+                  key={i}
+                  style={s.celda(d, sel, hoyF)}
+                  onClick={() => seleccionarDia(d)}
+                  onMouseEnter={(e) => {
+                    if (d && !sel) e.currentTarget.style.background = "#f0fdf4";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (d && !sel)
+                      e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {d ?? ""}
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={s.footerRow}>
+            <button
+              type="button"
+              style={s.btnHoy}
+              onClick={() => {
+                const h = new Date();
+                const iso = `${h.getFullYear()}-${String(
+                  h.getMonth() + 1
+                ).padStart(2, "0")}-${String(h.getDate()).padStart(2, "0")}`;
+                onChange(iso);
+                setAbierto(false);
+              }}
+            >
+              Hoy
+            </button>
+
+            <button
+              type="button"
+              style={s.btnLimpiar}
+              onClick={() => {
+                onChange("");
+                setAbierto(false);
+              }}
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ProyectoModal = ({
   isOpen,
   onClose,
   onSuccess,
   proyecto = null,
   modo = "crear",
+  nextCode = "",
 }) => {
   const modoEditar = modo === "editar";
   const modoVer = modo === "ver";
@@ -229,10 +547,6 @@ const ProyectoModal = ({
   );
 
   const [form, setForm] = useState(initialForm);
-  const [displayFechas, setDisplayFechas] = useState({
-    fecha_inicio: "",
-    fecha_fin_estimada: "",
-  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -250,17 +564,6 @@ const ProyectoModal = ({
         tipo_contrato: proyecto.tipo_contrato ?? "FIJO_TODO_COSTO",
         avance: proyecto.avance ?? 0,
         descripcion: proyecto.descripcion ?? "",
-      });
-
-      const toDisplay = (iso) => {
-        if (!iso) return "";
-        const [y, m, d] = iso.slice(0, 10).split("-");
-        return `${d}/${m}/${y}`;
-      };
-
-      setDisplayFechas({
-        fecha_inicio: toDisplay(proyecto.fecha_inicio),
-        fecha_fin_estimada: toDisplay(proyecto.fecha_fin_estimada),
       });
 
       const bloquesMigrados = [];
@@ -297,8 +600,10 @@ const ProyectoModal = ({
 
       setIntervenciones(bloquesMigrados);
     } else {
-      setForm(initialForm);
-      setDisplayFechas({ fecha_inicio: "", fecha_fin_estimada: "" });
+      setForm({
+        ...initialForm,
+        codigo: nextCode || "",
+      });
       setIntervenciones([]);
     }
 
@@ -324,7 +629,17 @@ const ProyectoModal = ({
 
       cargar();
     }
-  }, [isOpen, modo, proyecto, modoEditar, modoVer, initialForm]);
+  }, [isOpen, modo, proyecto, modoEditar, modoVer, initialForm, nextCode]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (modoEditar || modoVer) return;
+
+    setForm((prev) => ({
+      ...prev,
+      codigo: nextCode || "",
+    }));
+  }, [isOpen, modoEditar, modoVer, nextCode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -476,7 +791,9 @@ const ProyectoModal = ({
 
         const mensajes = backendErrors.map((e) => {
           const campo = e.path ?? e.param ?? e.field ?? "";
-          return MENSAJES[campo] ?? e.msg ?? e.message ?? `Campo inválido: ${campo}`;
+          return (
+            MENSAJES[campo] ?? e.msg ?? e.message ?? `Campo inválido: ${campo}`
+          );
         });
 
         setFormErrors(mensajes);
@@ -521,8 +838,7 @@ const ProyectoModal = ({
       "Sin cliente";
 
     const responsableNombre = proyecto.responsable
-      ? (`${proyecto.responsable.nombres ?? ""} ${
-          proyecto.responsable.apellidos ?? ""
+      ? (`${proyecto.responsable.nombres ?? ""} ${proyecto.responsable.apellidos ?? ""
         }`.trim() || "—")
       : "—";
 
@@ -676,7 +992,11 @@ const ProyectoModal = ({
                     fontSize: 22,
                     fontWeight: 900,
                     color:
-                      avance >= 80 ? "#1f8f57" : avance >= 40 ? "#e67e22" : "#0f172a",
+                      avance >= 80
+                        ? "#1f8f57"
+                        : avance >= 40
+                          ? "#e67e22"
+                          : "#0f172a",
                   }}
                 >
                   {avance}%
@@ -700,8 +1020,8 @@ const ProyectoModal = ({
                       avance >= 80
                         ? "linear-gradient(90deg,#1f8f57,#2bb673)"
                         : avance >= 40
-                        ? "linear-gradient(90deg,#e67e22,#f39c12)"
-                        : "linear-gradient(90deg,#3b82f6,#60a5fa)",
+                          ? "linear-gradient(90deg,#e67e22,#f39c12)"
+                          : "linear-gradient(90deg,#3b82f6,#60a5fa)",
                     borderRadius: 999,
                     minWidth: 4,
                   }}
@@ -1098,20 +1418,40 @@ const ProyectoModal = ({
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-          <div style={{ padding: "18px 24px 10px" }}>
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "visible" }}>
+          <div style={{ padding: "18px 24px 10px", overflow: "visible" }}>
             <ErrorBanner errors={formErrors} />
 
             <div className="form-group">
-              <label>Código *</label>
+              <label>
+                Código *{" "}
+                {!modoEditar && !modoVer && (
+                  <span style={{ color: "#94a3b8", fontWeight: 400 }}>
+                    (automático)
+                  </span>
+                )}
+              </label>
               <input
                 name="codigo"
                 value={form.codigo}
                 onChange={handleChange}
                 placeholder="Ej: PRY-001"
                 style={{ textTransform: "uppercase" }}
-                disabled={modoEditar}
+                disabled={!modoEditar}
+                readOnly={!modoEditar}
               />
+              {!modoEditar && (
+                <p
+                  style={{
+                    margin: "4px 0 0",
+                    fontSize: 12,
+                    color: "#94a3b8",
+                  }}
+                >
+                  El código se genera automáticamente con base en los proyectos
+                  existentes.
+                </p>
+              )}
               {modoEditar && (
                 <p
                   style={{
@@ -1193,85 +1533,32 @@ const ProyectoModal = ({
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
                 gap: 16,
+                overflow: "visible",
               }}
             >
-              <div className="form-group">
+              <div className="form-group" style={{ overflow: "visible" }}>
                 <label>Fecha Inicio</label>
-                <input
-                  type="text"
-                  placeholder="dd/mm/aaaa"
-                  maxLength={10}
-                  value={displayFechas.fecha_inicio}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-                    let display = raw;
-
-                    if (raw.length > 4) {
-                      display =
-                        raw.slice(0, 2) +
-                        "/" +
-                        raw.slice(2, 4) +
-                        "/" +
-                        raw.slice(4);
-                    } else if (raw.length > 2) {
-                      display = raw.slice(0, 2) + "/" + raw.slice(2);
-                    }
-
-                    setDisplayFechas((p) => ({ ...p, fecha_inicio: display }));
-
-                    if (raw.length === 8) {
-                      const d = raw.slice(0, 2);
-                      const m = raw.slice(2, 4);
-                      const y = raw.slice(4, 8);
-                      setForm((p) => ({ ...p, fecha_inicio: `${y}-${m}-${d}` }));
-                    } else {
-                      setForm((p) => ({ ...p, fecha_inicio: "" }));
-                    }
-                  }}
-                  style={{ letterSpacing: 1 }}
+                <CalendarioPicker
+                  value={form.fecha_inicio}
+                  onChange={(fecha) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      fecha_inicio: fecha,
+                    }))
+                  }
                 />
               </div>
 
-              <div className="form-group">
+              <div className="form-group" style={{ overflow: "visible" }}>
                 <label>Fecha Fin Estimada</label>
-                <input
-                  type="text"
-                  placeholder="dd/mm/aaaa"
-                  maxLength={10}
-                  value={displayFechas.fecha_fin_estimada}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-                    let display = raw;
-
-                    if (raw.length > 4) {
-                      display =
-                        raw.slice(0, 2) +
-                        "/" +
-                        raw.slice(2, 4) +
-                        "/" +
-                        raw.slice(4);
-                    } else if (raw.length > 2) {
-                      display = raw.slice(0, 2) + "/" + raw.slice(2);
-                    }
-
-                    setDisplayFechas((p) => ({
-                      ...p,
-                      fecha_fin_estimada: display,
-                    }));
-
-                    if (raw.length === 8) {
-                      const d = raw.slice(0, 2);
-                      const m = raw.slice(2, 4);
-                      const y = raw.slice(4, 8);
-                      setForm((p) => ({
-                        ...p,
-                        fecha_fin_estimada: `${y}-${m}-${d}`,
-                      }));
-                    } else {
-                      setForm((p) => ({ ...p, fecha_fin_estimada: "" }));
-                    }
-                  }}
-                  style={{ letterSpacing: 1 }}
+                <CalendarioPicker
+                  value={form.fecha_fin_estimada}
+                  onChange={(fecha) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      fecha_fin_estimada: fecha,
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -1353,7 +1640,11 @@ const ProyectoModal = ({
               boxShadow: loading ? "none" : "0 6px 16px rgba(31,143,87,0.28)",
             }}
           >
-            {loading ? "Guardando..." : modoEditar ? "Guardar Cambios" : "Crear Proyecto"}
+            {loading
+              ? "Guardando..."
+              : modoEditar
+                ? "Guardar Cambios"
+                : "Crear Proyecto"}
           </button>
         </div>
       </div>

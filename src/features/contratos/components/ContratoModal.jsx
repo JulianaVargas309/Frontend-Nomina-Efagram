@@ -67,7 +67,7 @@ const InfoRow = ({ icon, label, children }) => {
 };
 
 // ══════════════════════════════════════════════════════════════════
-export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = null, modo = 'crear' }) {
+export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = null, modo = 'crear', nextCode = '' }) {
 
   const [fincas,       setFincas]       = useState([]);
   const [subproyectos, setSubproyectos] = useState([]);
@@ -175,8 +175,18 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, contrato, modo]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (modo !== 'crear') return;
+
+    setForm((prev) => ({
+      ...prev,
+      codigo: nextCode || '',
+    }));
+  }, [isOpen, modo, nextCode]);
+
   const resetForm = () => {
-    setForm({ codigo:'', subproyecto:'', finca:'',
+    setForm({ codigo: nextCode || '', subproyecto:'', finca:'',
               fecha_inicio:'', fecha_fin:'',
               fecha_inicio_proyecto:'', fecha_fin_proyecto:'',
               observaciones:'', estado:'ACTIVO' });
@@ -319,7 +329,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     if (!form.codigo.trim())         return setError('El código del contrato es obligatorio');
     if (!form.subproyecto)           return setError('Selecciona un subproyecto');
     if (!form.finca)                 return setError('Selecciona una finca');
-    if (lotes.length === 0)          return setError('Agrega al menos un lote'); // ✅
+    if (lotes.length === 0)          return setError('Agrega al menos un lote');
     if (actividadesSel.length === 0) return setError('Agrega al menos una actividad');
 
     for (const a of actividadesSel) {
@@ -424,7 +434,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
               {c.finca?.nombre ?? '—'} <span style={{ color:'#94a3b8', fontSize:12 }}>({c.finca?.codigo})</span>
             </InfoRow>
 
-            {/* ✅ NUEVO: Lotes embebidos en modo ver */}
             <InfoRow icon={Layers} label={`Lotes (${lotesContrato.length})`}>
               {lotesContrato.length === 0 ? (
                 <span style={{ color: '#94a3b8', fontSize: 13 }}>Sin lotes registrados</span>
@@ -559,9 +568,17 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                 <p className="form-section-title" style={{ display:'flex', alignItems:'center', gap:7 }}><LayoutList size={14} color="#3b82f6" /> Datos básicos</p>
                 <div className="form-row">
                   <div className="form-field">
-                    <label>Código *</label>
-                    <input placeholder="Ej: CON-001" value={form.codigo}
-                      onChange={e => setForm(p => ({ ...p, codigo: e.target.value }))} />
+                    <label>
+                      Código * {modo === 'crear' && <span style={{ color: '#94a3b8', fontWeight: 400 }}>(automático)</span>}
+                    </label>
+                    <input
+                      placeholder="Ej: CON-001"
+                      value={form.codigo}
+                      disabled
+                      readOnly
+                      style={{ background:'#f8fafc', color:'#0f172a', textTransform:'uppercase' }}
+                      onChange={e => setForm(p => ({ ...p, codigo: e.target.value }))}
+                    />
                   </div>
                   <div className="form-field">
                     <label>Estado</label>
@@ -575,8 +592,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
                 </div>
               </div>
-
-
 
               <div className="form-section">
                 <p className="form-section-title" style={{ display:'flex', alignItems:'center', gap:7 }}><MapPin size={14} color="#e67e22" /> Ubicación</p>

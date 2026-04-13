@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createSubproyecto,
   updateSubproyecto,
@@ -20,7 +20,93 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+
+const toDateInput = (iso) => (iso ? iso.slice(0, 10) : '');
+
+const INTERVENCION_LABEL = {
+  mantenimiento: 'Mantenimiento',
+  no_programadas: 'No programadas',
+  establecimiento: 'Establecimiento',
+  sin_intervencion: 'Sin intervención',
+};
+
+const INTERVENCION_COLOR = {
+  mantenimiento: { bg: '#f0faf4', border: '#1f8f57', color: '#1f8f57' },
+  no_programadas: { bg: '#eff6ff', border: '#3b82f6', color: '#1d4ed8' },
+  establecimiento: { bg: '#fff5f5', border: '#ef4444', color: '#dc2626' },
+  sin_intervencion: { bg: '#f8fafc', border: '#cbd5e1', color: '#475569' },
+};
+
+const TIPO_EMOJI = {
+  mantenimiento: '🔧',
+  no_programadas: '⚡',
+  establecimiento: '🌱',
+  sin_intervencion: '📌',
+};
+
+const MESES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+];
+
+const DIAS_CORTOS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+
+const normalizeIntervencion = (value) => {
+  if (!value) {
+    return {
+      key: 'sin_intervencion',
+      label: INTERVENCION_LABEL.sin_intervencion,
+    };
+  }
+
+  if (typeof value === 'string') {
+    const key = value.trim() || 'sin_intervencion';
+    return {
+      key,
+      label:
+        INTERVENCION_LABEL[key] ??
+        key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+    };
+  }
+
+  if (typeof value === 'object') {
+    const key =
+      value.codigo ||
+      value.slug ||
+      value.tipo ||
+      value.key ||
+      value._id ||
+      value.nombre ||
+      'sin_intervencion';
+
+    const label =
+      value.nombre ||
+      value.label ||
+      INTERVENCION_LABEL[key] ||
+      String(key).replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+
+    return { key: String(key), label };
+  }
+
+  return {
+    key: 'sin_intervencion',
+    label: INTERVENCION_LABEL.sin_intervencion,
+  };
+};
 
 const ErrorBanner = ({ errors }) => {
   if (!errors || errors.length === 0) return null;
@@ -114,7 +200,305 @@ const SectionHeader = ({ title, subtitle, icon, tone = 'green' }) => {
   );
 };
 
-const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proyecto }) => {
+function CalendarioPicker({ value, onChange, disabled = false }) {
+  const hoy = new Date();
+  const selDate = value ? new Date(value + 'T12:00:00') : null;
+
+  const [vistaAnio, setVistaAnio] = useState(
+    selDate ? selDate.getFullYear() : hoy.getFullYear()
+  );
+  const [vistaMes, setVistaMes] = useState(
+    selDate ? selDate.getMonth() : hoy.getMonth()
+  );
+  const [abierto, setAbierto] = useState(false);
+
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!selDate) return;
+    setVistaAnio(selDate.getFullYear());
+    setVistaMes(selDate.getMonth());
+  }, [value]);
+
+  const irMesAnterior = () => {
+    if (vistaMes === 0) {
+      setVistaMes(11);
+      setVistaAnio((y) => y - 1);
+    } else {
+      setVistaMes((m) => m - 1);
+    }
+  };
+
+  const irMesSiguiente = () => {
+    if (vistaMes === 11) {
+      setVistaMes(0);
+      setVistaAnio((y) => y + 1);
+    } else {
+      setVistaMes((m) => m + 1);
+    }
+  };
+
+  const primerDia = new Date(vistaAnio, vistaMes, 1).getDay();
+  const offset = primerDia === 0 ? 6 : primerDia - 1;
+  const diasEnMes = new Date(vistaAnio, vistaMes + 1, 0).getDate();
+
+  const celdas = [];
+  for (let i = 0; i < offset; i++) celdas.push(null);
+  for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
+
+  const esSeleccionado = (d) => {
+    if (!d || !selDate) return false;
+    return (
+      selDate.getFullYear() === vistaAnio &&
+      selDate.getMonth() === vistaMes &&
+      selDate.getDate() === d
+    );
+  };
+
+  const esHoy = (d) => {
+    if (!d) return false;
+    return (
+      hoy.getFullYear() === vistaAnio &&
+      hoy.getMonth() === vistaMes &&
+      hoy.getDate() === d
+    );
+  };
+
+  const seleccionarDia = (d) => {
+    if (!d || disabled) return;
+    const mm = String(vistaMes + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    onChange(`${vistaAnio}-${mm}-${dd}`);
+    setAbierto(false);
+  };
+
+  const labelBoton = selDate
+    ? `${String(selDate.getDate()).padStart(2, '0')}/${String(
+        selDate.getMonth() + 1
+      ).padStart(2, '0')}/${selDate.getFullYear()}`
+    : 'dd/mm/aaaa';
+
+  const s = {
+    wrap: {
+      position: 'relative',
+      width: '100%',
+      overflow: 'visible',
+    },
+    trigger: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      padding: '11px 12px',
+      border: '1px solid #d1d5db',
+      borderRadius: 10,
+      background: disabled ? '#f8fafc' : '#fff',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      fontSize: 14,
+      color: selDate ? '#111827' : '#9ca3af',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      transition: 'border-color 0.15s',
+      letterSpacing: selDate ? 0 : 1,
+    },
+    popup: {
+      position: 'absolute',
+      top: 'calc(100% + 6px)',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 9999,
+      background: '#fff',
+      borderRadius: 14,
+      padding: '16px',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
+      border: '1px solid #e5e7eb',
+      width: 280,
+      userSelect: 'none',
+    },
+    navRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 14,
+    },
+    navBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      border: '1px solid #e5e7eb',
+      background: '#f9fafb',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      color: '#374151',
+    },
+    mesLabel: { fontWeight: 700, fontSize: 15, color: '#111827' },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 },
+    diaHeader: {
+      textAlign: 'center',
+      fontSize: 11,
+      fontWeight: 700,
+      color: '#9ca3af',
+      padding: '4px 0',
+    },
+    celda: (d, sel, hoyFlag) => ({
+      width: '100%',
+      aspectRatio: '1',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+      fontSize: 13,
+      cursor: d ? 'pointer' : 'default',
+      fontWeight: sel ? 700 : hoyFlag ? 600 : 400,
+      background: sel ? '#16a34a' : hoyFlag ? '#f0fdf4' : 'transparent',
+      color: sel ? '#fff' : hoyFlag ? '#16a34a' : d ? '#111827' : 'transparent',
+      border:
+        hoyFlag && !sel ? '1.5px solid #86efac' : '1.5px solid transparent',
+    }),
+    footerRow: {
+      marginTop: 12,
+      paddingTop: 10,
+      borderTop: '1px solid #f1f5f9',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    btnHoy: {
+      fontSize: 12,
+      fontWeight: 600,
+      color: '#16a34a',
+      background: '#f0fdf4',
+      border: '1px solid #86efac',
+      borderRadius: 6,
+      padding: '4px 10px',
+      cursor: 'pointer',
+    },
+    btnLimpiar: {
+      fontSize: 12,
+      fontWeight: 500,
+      color: '#6b7280',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '4px 6px',
+    },
+  };
+
+  return (
+    <div ref={ref} style={s.wrap}>
+      <button
+        type="button"
+        style={s.trigger}
+        disabled={disabled}
+        onClick={() => !disabled && setAbierto((a) => !a)}
+        onFocus={(e) => {
+          if (!disabled) e.currentTarget.style.borderColor = '#16a34a';
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = '#d1d5db';
+        }}
+      >
+        <span>{labelBoton}</span>
+        <Calendar size={15} color="#6b7280" />
+      </button>
+
+      {abierto && (
+        <div style={s.popup}>
+          <div style={s.navRow}>
+            <button type="button" style={s.navBtn} onClick={irMesAnterior}>
+              <ChevronLeft size={14} />
+            </button>
+            <span style={s.mesLabel}>
+              {MESES[vistaMes]} {vistaAnio}
+            </span>
+            <button type="button" style={s.navBtn} onClick={irMesSiguiente}>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          <div style={s.grid}>
+            {DIAS_CORTOS.map((d) => (
+              <div key={d} style={s.diaHeader}>
+                {d}
+              </div>
+            ))}
+
+            {celdas.map((d, i) => {
+              const sel = esSeleccionado(d);
+              const hoyF = esHoy(d);
+
+              return (
+                <div
+                  key={i}
+                  style={s.celda(d, sel, hoyF)}
+                  onClick={() => seleccionarDia(d)}
+                  onMouseEnter={(e) => {
+                    if (d && !sel) e.currentTarget.style.background = '#f0fdf4';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (d && !sel) e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {d ?? ''}
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={s.footerRow}>
+            <button
+              type="button"
+              style={s.btnHoy}
+              onClick={() => {
+                const h = new Date();
+                const iso = `${h.getFullYear()}-${String(
+                  h.getMonth() + 1
+                ).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+                onChange(iso);
+                setAbierto(false);
+              }}
+            >
+              Hoy
+            </button>
+
+            <button
+              type="button"
+              style={s.btnLimpiar}
+              onClick={() => {
+                onChange('');
+                setAbierto(false);
+              }}
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SubproyectoModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  subproyecto = null,
+  proyecto,
+  nextCode = '',
+}) => {
   const modoEditar = !!subproyecto;
 
   const [form, setForm] = useState({
@@ -126,11 +510,6 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
     observaciones: '',
   });
 
-  const [displayFechas, setDisplayFechas] = useState({
-    fecha_inicio: '',
-    fecha_fin_estimada: '',
-  });
-
   const [nucleos, setNucleos] = useState([]);
   const [nucleosSel, setNucleosSel] = useState([]);
   const [personas, setPersonas] = useState([]);
@@ -140,6 +519,18 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
   const [loading, setLoading] = useState(false);
   const [loadData, setLoadData] = useState(false);
   const [formErrors, setFormErrors] = useState([]);
+
+  const initialForm = useMemo(
+    () => ({
+      codigo: '',
+      nombre: '',
+      supervisor: '',
+      fecha_inicio: '',
+      fecha_fin_estimada: '',
+      observaciones: '',
+    }),
+    []
+  );
 
   useEffect(() => {
     if (!isOpen || !proyecto) return;
@@ -167,36 +558,21 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
             codigo: subproyecto.codigo ?? '',
             nombre: subproyecto.nombre ?? '',
             supervisor: subproyecto.supervisor?._id ?? subproyecto.supervisor ?? '',
-            fecha_inicio: subproyecto.fecha_inicio?.slice(0, 10) ?? '',
-            fecha_fin_estimada: subproyecto.fecha_fin_estimada?.slice(0, 10) ?? '',
+            fecha_inicio: toDateInput(subproyecto.fecha_inicio),
+            fecha_fin_estimada: toDateInput(subproyecto.fecha_fin_estimada),
             observaciones: subproyecto.observaciones ?? '',
-          });
-
-          const toDisplay = (iso) => {
-            if (!iso) return '';
-            const [y, m, d] = iso.slice(0, 10).split('-');
-            return `${d}/${m}/${y}`;
-          };
-
-          setDisplayFechas({
-            fecha_inicio: toDisplay(subproyecto.fecha_inicio),
-            fecha_fin_estimada: toDisplay(subproyecto.fecha_fin_estimada),
           });
 
           setNucleosSel(subproyecto.nucleos?.map((n) => n._id ?? n) ?? []);
 
           const asRes = await getAsignaciones({ subproyecto: subproyecto._id });
           setAsignaciones(asRes?.data?.data ?? []);
+          setNuevasAsigs([]);
         } else {
           setForm({
-            codigo: '',
-            nombre: '',
-            supervisor: '',
-            fecha_inicio: '',
-            fecha_fin_estimada: '',
-            observaciones: '',
+            ...initialForm,
+            codigo: nextCode || '',
           });
-          setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
           setNucleosSel([]);
           setAsignaciones([]);
           setNuevasAsigs([]);
@@ -209,7 +585,16 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
     };
 
     cargar();
-  }, [isOpen, proyecto, subproyecto, modoEditar]);
+  }, [isOpen, proyecto, subproyecto, modoEditar, initialForm, nextCode]);
+
+  useEffect(() => {
+    if (!isOpen || modoEditar) return;
+
+    setForm((prev) => ({
+      ...prev,
+      codigo: nextCode || '',
+    }));
+  }, [isOpen, modoEditar, nextCode]);
 
   const toggleNucleo = (id) => {
     setFormErrors([]);
@@ -228,12 +613,15 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
 
     if (yaEnBorrador || yaAsignada) return;
 
+    const intervencionInfo = normalizeIntervencion(actProyecto.intervencion);
+
     setNuevasAsigs((prev) => [
       ...prev,
       {
         actividad_proyecto_id: actProyecto._id,
         nombre: actProyecto.actividad?.nombre ?? 'Actividad',
-        intervencion: actProyecto.intervencion,
+        intervencion_key: intervencionInfo.key,
+        intervencion_label: intervencionInfo.label,
         cantidad_total: actProyecto.cantidad_total,
         cantidad_asignada_global: actProyecto.cantidad_asignada,
         unidad: actProyecto.actividad?.unidad_medida ?? actProyecto.unidad ?? '',
@@ -349,22 +737,17 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
 
   if (!isOpen) return null;
 
-  const INTERVENCION_COLOR = {
-    mantenimiento: { bg: '#f0faf4', border: '#1f8f57', color: '#1f8f57' },
-    no_programadas: { bg: '#eff6ff', border: '#3b82f6', color: '#1d4ed8' },
-    establecimiento: { bg: '#fff5f5', border: '#ef4444', color: '#dc2626' },
-  };
-
-  const TIPO_EMOJI = {
-    mantenimiento: '🔧',
-    no_programadas: '⚡',
-    establecimiento: '🌱',
-  };
-
   const disponiblesPorIntervencion = actDisponibles.reduce((acc, a) => {
-    const tipo = a.intervencion;
-    if (!acc[tipo]) acc[tipo] = [];
-    acc[tipo].push(a);
+    const info = normalizeIntervencion(a.intervencion);
+
+    if (!acc[info.key]) {
+      acc[info.key] = {
+        label: info.label,
+        actividades: [],
+      };
+    }
+
+    acc[info.key].actividades.push(a);
     return acc;
   }, {});
 
@@ -485,7 +868,14 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
               />
 
               <div className="form-group">
-                <label>Código *</label>
+                <label>
+                  Código *{' '}
+                  {!modoEditar && (
+                    <span style={{ color: '#94a3b8', fontWeight: 400 }}>
+                      (automático)
+                    </span>
+                  )}
+                </label>
                 <input
                   type="text"
                   name="codigo"
@@ -496,8 +886,14 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                   }}
                   placeholder="Ej: SUB-001"
                   style={{ textTransform: 'uppercase' }}
-                  disabled={modoEditar}
+                  disabled={!modoEditar}
+                  readOnly={!modoEditar}
                 />
+                {!modoEditar && (
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
+                    El código se genera automáticamente con base en los subproyectos existentes.
+                  </p>
+                )}
                 {modoEditar && (
                   <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
                     El código no puede modificarse después de la creación.
@@ -537,66 +933,38 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                 </select>
               </div>
 
-              <div className="modal-grid">
-                <div className="form-group">
+              <div
+                className="modal-grid"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 16,
+                  overflow: 'visible',
+                }}
+              >
+                <div className="form-group" style={{ overflow: 'visible' }}>
                   <label>Fecha Inicio</label>
-                  <input
-                    type="text"
-                    placeholder="DD/MM/AAAA"
-                    maxLength={10}
-                    value={displayFechas.fecha_inicio}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
-                      let display = raw;
-                      if (raw.length > 4) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2, 4) + '/' + raw.slice(4);
-                      } else if (raw.length > 2) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2);
-                      }
-
-                      setDisplayFechas((p) => ({ ...p, fecha_inicio: display }));
-
-                      if (raw.length === 8) {
-                        const d = raw.slice(0, 2);
-                        const m = raw.slice(2, 4);
-                        const y = raw.slice(4, 8);
-                        setForm((p) => ({ ...p, fecha_inicio: `${y}-${m}-${d}` }));
-                      } else {
-                        setForm((p) => ({ ...p, fecha_inicio: '' }));
-                      }
-                    }}
-                    style={{ letterSpacing: 1 }}
+                  <CalendarioPicker
+                    value={form.fecha_inicio}
+                    onChange={(fecha) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        fecha_inicio: fecha,
+                      }))
+                    }
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ overflow: 'visible' }}>
                   <label>Fecha Fin Estimada</label>
-                  <input
-                    type="text"
-                    placeholder="DD/MM/AAAA"
-                    maxLength={10}
-                    value={displayFechas.fecha_fin_estimada}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
-                      let display = raw;
-                      if (raw.length > 4) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2, 4) + '/' + raw.slice(4);
-                      } else if (raw.length > 2) {
-                        display = raw.slice(0, 2) + '/' + raw.slice(2);
-                      }
-
-                      setDisplayFechas((p) => ({ ...p, fecha_fin_estimada: display }));
-
-                      if (raw.length === 8) {
-                        const d = raw.slice(0, 2);
-                        const m = raw.slice(2, 4);
-                        const y = raw.slice(4, 8);
-                        setForm((p) => ({ ...p, fecha_fin_estimada: `${y}-${m}-${d}` }));
-                      } else {
-                        setForm((p) => ({ ...p, fecha_fin_estimada: '' }));
-                      }
-                    }}
-                    style={{ letterSpacing: 1 }}
+                  <CalendarioPicker
+                    value={form.fecha_fin_estimada}
+                    onChange={(fecha) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        fecha_fin_estimada: fecha,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -719,7 +1087,9 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                         const ap = actDisponibles.find(
                           (x) => x._id === (a.actividad_proyecto?._id ?? a.actividad_proyecto)
                         );
-                        const col = INTERVENCION_COLOR[ap?.intervencion] ?? {};
+
+                        const intervInfo = normalizeIntervencion(ap?.intervencion);
+                        const col = INTERVENCION_COLOR[intervInfo.key] ?? INTERVENCION_COLOR.sin_intervencion;
 
                         return (
                           <div
@@ -744,10 +1114,10 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                                   color: '#0f172a',
                                 }}
                               >
-                                {TIPO_EMOJI[ap?.intervencion]} {ap?.actividad?.nombre}
+                                {TIPO_EMOJI[intervInfo.key] ?? '📌'} {ap?.actividad?.nombre ?? 'Actividad'}
                               </p>
                               <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
-                                Asignado:{' '}
+                                {intervInfo.label} · Asignado:{' '}
                                 <strong>
                                   {a.cantidad_asignada} {ap?.actividad?.unidad_medida ?? ''}
                                 </strong>
@@ -796,8 +1166,8 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                   </div>
                 )}
 
-                {Object.entries(disponiblesPorIntervencion).map(([tipo, acts]) => {
-                  const col = INTERVENCION_COLOR[tipo] ?? {};
+                {Object.entries(disponiblesPorIntervencion).map(([tipo, grupo]) => {
+                  const col = INTERVENCION_COLOR[tipo] ?? INTERVENCION_COLOR.sin_intervencion;
 
                   return (
                     <div key={tipo}>
@@ -812,11 +1182,11 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                           gap: 6,
                         }}
                       >
-                        {TIPO_EMOJI[tipo]} {tipo.replace(/_/g, ' ').toUpperCase()}
+                        {TIPO_EMOJI[tipo] ?? '📌'} {grupo.label}
                       </p>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {acts.map((a) => {
+                        {grupo.actividades.map((a) => {
                           const enBorrador = nuevasAsigs.some(
                             (n) => n.actividad_proyecto_id === a._id
                           );
@@ -862,7 +1232,7 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                                     {a.actividad?.nombre}
                                   </p>
                                   <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
-                                    {a.actividad?.codigo} · {a.actividad?.unidad_medida}
+                                    {grupo.label} · {a.actividad?.codigo} · {a.actividad?.unidad_medida}
                                   </p>
                                 </div>
 
@@ -975,6 +1345,10 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
 
                       {nuevasAsigs.map((a, i) => {
                         const disponible = a.cantidad_total - a.cantidad_asignada_global;
+                        const intervLabel =
+                          a.intervencion_label ??
+                          INTERVENCION_LABEL[a.intervencion_key] ??
+                          'Intervención';
 
                         return (
                           <div
@@ -998,10 +1372,10 @@ const SubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto = null, proy
                                   color: '#0f172a',
                                 }}
                               >
-                                {TIPO_EMOJI[a.intervencion]} {a.nombre}
+                                {TIPO_EMOJI[a.intervencion_key] ?? '📌'} {a.nombre}
                               </p>
                               <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>
-                                Disponible: {disponible.toFixed(2)} {a.unidad}
+                                {intervLabel} · Disponible: {disponible.toFixed(2)} {a.unidad}
                               </p>
                             </div>
 
