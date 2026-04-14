@@ -31,8 +31,10 @@ export default function NuevoProcesoModal({
   initialValues,
   onClose,
   onSubmit,
+  nextCode = '',
 }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const isEdit = title.toLowerCase().includes('editar');
 
   const setField = (field) => (e) =>
     dispatch({ type: 'SET_FIELD', field, value: e.target.value });
@@ -43,19 +45,17 @@ export default function NuevoProcesoModal({
     dispatch({
       type: 'RESET',
       values: {
-        codigo:      initialValues?.codigo      ?? '',
-        nombre:      initialValues?.nombre      ?? '',
+        codigo: isEdit ? (initialValues?.codigo ?? '') : (nextCode || ''),
+        nombre: initialValues?.nombre ?? '',
         descripcion: initialValues?.descripcion ?? '',
-        estado:      typeof estadoValue === 'boolean' ? estadoValue : true,
-        saving:      false,
-        errors:      [],
+        estado: typeof estadoValue === 'boolean' ? estadoValue : true,
+        saving: false,
+        errors: [],
       },
     });
-  }, [isOpen, initialValues]);
+  }, [isOpen, initialValues, isEdit, nextCode]);
 
   if (!isOpen) return null;
-
-  const isEdit = title.toLowerCase().includes('editar');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,13 +64,16 @@ export default function NuevoProcesoModal({
     const locales = [];
     if (!state.codigo.trim()) locales.push('El código es obligatorio.');
     if (!state.nombre.trim()) locales.push('El nombre del proceso es obligatorio.');
-    if (locales.length > 0) { dispatch({ type: 'SET_ERRORS', value: locales }); return; }
+    if (locales.length > 0) {
+      dispatch({ type: 'SET_ERRORS', value: locales });
+      return;
+    }
 
     const payload = {
-      codigo:      state.codigo.trim(),
-      nombre:      state.nombre.trim(),
+      codigo: state.codigo.trim().toUpperCase(),
+      nombre: state.nombre.trim(),
       descripcion: state.descripcion.trim() || undefined,
-      estado:      Boolean(state.estado),
+      estado: Boolean(state.estado),
     };
 
     try {
@@ -80,20 +83,23 @@ export default function NuevoProcesoModal({
       const backendErrors = err?.response?.data?.errors;
       if (Array.isArray(backendErrors) && backendErrors.length > 0) {
         const MENSAJES = {
-          codigo:      'El código es obligatorio.',
-          nombre:      'El nombre del proceso es obligatorio.',
+          codigo: 'El código es obligatorio.',
+          nombre: 'El nombre del proceso es obligatorio.',
           descripcion: 'La descripción no es válida.',
-          estado:      'El estado es obligatorio.',
+          estado: 'El estado es obligatorio.',
         };
         dispatch({
           type: 'SET_ERRORS',
-          value: backendErrors.map(e => {
+          value: backendErrors.map((e) => {
             const campo = e.path ?? e.param ?? e.field ?? '';
             return MENSAJES[campo] ?? e.msg ?? e.message ?? `Campo inválido: ${campo}`;
           }),
         });
       } else {
-        dispatch({ type: 'SET_ERRORS', value: [err?.response?.data?.message || 'No se pudo guardar el proceso.'] });
+        dispatch({
+          type: 'SET_ERRORS',
+          value: [err?.response?.data?.message || 'No se pudo guardar el proceso.'],
+        });
       }
       dispatch({ type: 'SET_SAVING', value: false });
     }
@@ -109,7 +115,6 @@ export default function NuevoProcesoModal({
         aria-modal="true"
         style={{ position: 'relative', zIndex: 1 }}
       >
-        {/* HEADER */}
         <div className="modal-header">
           <div>
             <h3 className="modal-title">{title}</h3>
@@ -120,16 +125,19 @@ export default function NuevoProcesoModal({
           </button>
         </div>
 
-        {/* BODY */}
         <form className="modal-body" onSubmit={handleSubmit}>
-
           <label className="field">
-            <span>Código *</span>
+            <span>
+              Código * {!isEdit && <span style={{ color: '#9ca3af', fontWeight: 400 }}>(automático)</span>}
+            </span>
             <input
               value={state.codigo}
               onChange={setField('codigo')}
-              placeholder="Ej: COSECHA"
-              autoFocus
+              placeholder="Ej: PRO-001"
+              autoFocus={isEdit}
+              readOnly={!isEdit}
+              disabled={!isEdit}
+              style={!isEdit ? { background: '#f1f5f9', color: '#64748b', cursor: 'not-allowed' } : undefined}
             />
           </label>
 
@@ -139,13 +147,13 @@ export default function NuevoProcesoModal({
               value={state.nombre}
               onChange={setField('nombre')}
               placeholder="Ej: Cosecha"
+              autoFocus={!isEdit}
             />
           </label>
 
           <label className="field">
             <span>
-              Descripción{' '}
-              <span style={{ color: '#9ca3af', fontWeight: 400 }}>(opcional)</span>
+              Descripción <span style={{ color: '#9ca3af', fontWeight: 400 }}>(opcional)</span>
             </span>
             <textarea
               value={state.descripcion}
@@ -182,19 +190,35 @@ export default function NuevoProcesoModal({
             </select>
           </label>
 
-          {/* ACCIONES con error banner encima de botones */}
           <div className="modal-actions" style={{ flexDirection: 'column', gap: 10 }}>
             {state.errors.length > 0 && (
-              <div style={{
-                background: '#fef2f2', border: '1px solid #fecaca',
-                borderRadius: 8, padding: '10px 14px',
-                display: 'flex', alignItems: 'flex-start', gap: 8,
-                width: '100%', boxSizing: 'border-box',
-              }}>
+              <div
+                style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              >
                 <AlertCircle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
                 <div style={{ flex: 1 }}>
                   {state.errors.map((msg, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 13, color: '#dc2626', marginBottom: i < state.errors.length - 1 ? 4 : 0 }}>
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 6,
+                        fontSize: 13,
+                        color: '#dc2626',
+                        marginBottom: i < state.errors.length - 1 ? 4 : 0,
+                      }}
+                    >
                       <span style={{ flexShrink: 0 }}>•</span>
                       <span>{msg}</span>
                     </div>
@@ -202,6 +226,7 @@ export default function NuevoProcesoModal({
                 </div>
               </div>
             )}
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, width: '100%' }}>
               <button className="btn-modal-cancel" type="button" onClick={onClose}>
                 Cancelar

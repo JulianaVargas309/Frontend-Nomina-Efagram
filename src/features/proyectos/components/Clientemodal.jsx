@@ -46,11 +46,11 @@ const labelStyle = {
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 const INITIAL_STATE = {
-  codigo:  "",
-  nombre:  "",
-  activo:  "true",
+  codigo: "",
+  nombre: "",
+  activo: "true",
   loading: false,
-  errors:  {},
+  errors: {},
 };
 
 function reducer(state, action) {
@@ -72,25 +72,47 @@ function reducer(state, action) {
   }
 }
 
+export const getNextClienteCode = (clientes = []) => {
+  const usados = clientes
+    .map((c) => String(c?.codigo ?? "").toUpperCase().trim())
+    .filter((codigo) => /^CLI-(\d+)$/.test(codigo))
+    .map((codigo) => Number(codigo.match(/^CLI-(\d+)$/)?.[1] ?? 0))
+    .filter((n) => Number.isFinite(n));
+
+  const maxNumero = usados.length ? Math.max(...usados) : 0;
+
+  return `CLI-${String(maxNumero + 1).padStart(3, "0")}`;
+};
 // ── Componente ────────────────────────────────────────────────────────────────
-const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
+const ClienteModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  cliente = null,
+  nextCode = "",
+}) => {
   const isEdit = Boolean(cliente);
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  // UN solo dispatch — sin renders en cascada
   useEffect(() => {
     if (!isOpen) return;
+
     dispatch({
       type: "RESET",
-      values: isEdit && cliente
-        ? {
-            codigo: cliente.codigo      ?? "",
+      values:
+        isEdit && cliente
+          ? {
+            codigo: cliente.codigo ?? "",
             nombre: cliente.razon_social ?? cliente.nombre ?? "",
             activo: String(cliente.activo ?? true),
           }
-        : {},
+          : {
+            codigo: nextCode || "",
+            nombre: "",
+            activo: "true",
+          },
     });
-  }, [isOpen, cliente]);
+  }, [isOpen, cliente, isEdit, nextCode]);
 
   if (!isOpen) return null;
 
@@ -101,6 +123,7 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
     const errs = {};
     if (!state.codigo.trim()) errs.codigo = "El código es obligatorio";
     if (!state.nombre.trim()) errs.nombre = "El nombre es obligatorio";
+
     if (Object.keys(errs).length > 0) {
       dispatch({ type: "SET_ERRORS", value: errs });
       return;
@@ -110,10 +133,9 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
       dispatch({ type: "SET_LOADING", value: true });
 
       const payload = {
-        // El backend requiere razon_social y nit — los derivamos del nombre y código
         razon_social: state.nombre.trim(),
-        nit:          state.codigo.trim(),   // usamos el código como NIT
-        activo:       state.activo === "true",
+        nit: state.codigo.trim(),
+        activo: state.activo === "true",
       };
 
       if (isEdit) {
@@ -127,17 +149,19 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
 
       onSuccess?.();
       onClose?.();
-
     } catch (err) {
       const serverMsg =
         err?.response?.data?.errors?.[0]?.message ||
-        err?.response?.data?.errors?.[0]?.msg     ||
-        err?.response?.data?.message              ||
-        err?.message                              ||
+        err?.response?.data?.errors?.[0]?.msg ||
+        err?.response?.data?.message ||
+        err?.message ||
         "Error guardando el cliente";
 
       if (err?.response?.status === 409) {
-        dispatch({ type: "SET_ERRORS", value: { codigo: "Este código ya está en uso" } });
+        dispatch({
+          type: "SET_ERRORS",
+          value: { codigo: "Este código ya está en uso" },
+        });
       } else {
         dispatch({ type: "SET_ERRORS", value: { _general: serverMsg } });
       }
@@ -148,9 +172,12 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
     <div
       className="modal-overlay"
       style={{
-        position: "fixed", inset: 0,
+        position: "fixed",
+        inset: 0,
         background: "rgba(15,23,42,0.45)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         zIndex: 1000,
       }}
     >
@@ -167,61 +194,94 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
           overflowY: "auto",
         }}
       >
-        {/* HEADER */}
-        <div style={{
-          padding: "20px 24px 16px",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-        }}>
+        <div
+          style={{
+            padding: "20px 24px 16px",
+            borderBottom: "1px solid #e5e7eb",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+          }}
+        >
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#111827" }}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 700,
+                color: "#111827",
+              }}
+            >
               {isEdit ? "Editar Cliente" : "Nuevo Cliente"}
             </h3>
             <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
-              {isEdit ? "Actualiza los datos del cliente" : "Completa los datos del cliente"}
+              {isEdit
+                ? "Actualiza los datos del cliente"
+                : "Completa los datos del cliente"}
             </p>
           </div>
           <button
             onClick={onClose}
             title="Cerrar"
             style={{
-              background: "none", border: "1px solid #e5e7eb",
-              borderRadius: 7, width: 32, height: 32,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", fontSize: 18, color: "#6b7280", lineHeight: 1,
+              background: "none",
+              border: "1px solid #e5e7eb",
+              borderRadius: 7,
+              width: 32,
+              height: 32,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              fontSize: 18,
+              color: "#6b7280",
+              lineHeight: 1,
             }}
           >
             ×
           </button>
         </div>
 
-        {/* BODY */}
-        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-
+        <div
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
           {state.errors._general && (
-            <div style={{
-              background: "#fef2f2", border: "1px solid #fecaca",
-              borderRadius: 8, padding: "10px 14px",
-              fontSize: 13, color: "#dc2626",
-            }}>
+            <div
+              style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 13,
+                color: "#dc2626",
+              }}
+            >
               {state.errors._general}
             </div>
           )}
 
-          {/* Código */}
           <div>
             <label style={labelStyle}>
-              Código{!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
+              Código
+              {!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
             </label>
             <input
               value={state.codigo}
               onChange={setField("codigo")}
               placeholder="Ej: CLI-001"
-              readOnly={isEdit}
-              style={isEdit ? readOnlyStyle : inputStyle(!!state.errors.codigo)}
-              title={isEdit ? "El código no puede modificarse" : ""}
+              readOnly
+              disabled
+              style={readOnlyStyle}
+              title={
+                isEdit
+                  ? "El código no puede modificarse"
+                  : "El código se genera automáticamente"
+              }
             />
             {state.errors.codigo && (
               <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
@@ -230,7 +290,6 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
             )}
           </div>
 
-          {/* Nombre */}
           <div>
             <label style={labelStyle}>
               Nombre <span style={{ color: "#dc2626" }}>*</span>
@@ -248,33 +307,40 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
             )}
           </div>
 
-          {/* Estado */}
           <div>
             <label style={labelStyle}>Estado</label>
-            <select value={state.activo} onChange={setField("activo")} style={selectStyle}>
+            <select
+              value={state.activo}
+              onChange={setField("activo")}
+              style={selectStyle}
+            >
               <option value="true">Activo</option>
               <option value="false">Inactivo</option>
             </select>
           </div>
-
         </div>
 
-        {/* FOOTER */}
-        <div style={{
-          padding: "14px 24px",
-          borderTop: "1px solid #e5e7eb",
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 10,
-        }}>
+        <div
+          style={{
+            padding: "14px 24px",
+            borderTop: "1px solid #e5e7eb",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+          }}
+        >
           <button
             onClick={onClose}
             disabled={state.loading}
             style={{
-              background: "#f9fafb", color: "#374151",
+              background: "#f9fafb",
+              color: "#374151",
               border: "1px solid #d1d5db",
-              padding: "10px 20px", borderRadius: 8,
-              fontWeight: 600, cursor: "pointer", fontSize: 14,
+              padding: "10px 20px",
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontSize: 14,
             }}
           >
             Cancelar
@@ -285,12 +351,16 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
             disabled={state.loading}
             style={{
               background: state.loading ? "#9ca3af" : "#1f8f57",
-              color: "#fff", border: "none",
-              padding: "10px 24px", borderRadius: 8,
+              color: "#fff",
+              border: "none",
+              padding: "10px 24px",
+              borderRadius: 8,
               fontWeight: 700,
               cursor: state.loading ? "not-allowed" : "pointer",
               fontSize: 14,
-              boxShadow: state.loading ? "none" : "0 4px 12px rgba(31,143,87,0.25)",
+              boxShadow: state.loading
+                ? "none"
+                : "0 4px 12px rgba(31,143,87,0.25)",
             }}
           >
             {state.loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear Cliente"}

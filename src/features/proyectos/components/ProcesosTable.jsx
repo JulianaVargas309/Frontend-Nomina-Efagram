@@ -60,11 +60,12 @@ export default function ProcesosTable({
   setSearch,
   onAdd,
   onUpdate,
-  onDelete
+  onDelete,
+  nextCode = '',
 }) {
-  const [openCreate,    setOpenCreate]    = useState(false);
-  const [editProceso,   setEditProceso]   = useState(null);
-  const [detalleProceso,setDetalleProceso]= useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [editProceso, setEditProceso] = useState(null);
+  const [detalleProceso, setDetalleProceso] = useState(null);
 
   const getId = (p) => p?._id ?? p?.id;
 
@@ -76,12 +77,10 @@ export default function ProcesosTable({
 
   return (
     <div className="zonas-card">
-      {/* HEADER */}
       <div className="zonas-card-header">
         <h2 className="zonas-card-title">Catálogo de Procesos</h2>
       </div>
 
-      {/* BARRA DE BÚSQUEDA + BOTÓN */}
       <div style={{ display: 'flex', gap: '12px', padding: '0 0 16px 0', alignItems: 'center' }}>
         <div className="zonas-search" style={{ flex: 1 }}>
           <Search size={16} />
@@ -97,7 +96,6 @@ export default function ProcesosTable({
         </button>
       </div>
 
-      {/* TABLA */}
       <div className="zonas-table-scroll">
         <table className="zonas-table-grid">
           <thead>
@@ -198,6 +196,7 @@ export default function ProcesosTable({
         isOpen={openCreate}
         title="Nuevo proceso"
         initialValues={{ codigo: '', nombre: '', descripcion: '', estado: true }}
+        nextCode={nextCode}
         onClose={() => setOpenCreate(false)}
         onSubmit={async (values) => {
           await onAdd?.(values);
@@ -209,15 +208,17 @@ export default function ProcesosTable({
         isOpen={!!editProceso}
         title="Editar proceso"
         initialValues={{
-          codigo:      editProceso?.codigo      ?? '',
-          nombre:      editProceso?.nombre      ?? '',
+          codigo: editProceso?.codigo ?? '',
+          nombre: editProceso?.nombre ?? '',
           descripcion: editProceso?.descripcion ?? '',
-          estado: typeof editProceso?.activo === 'boolean'
-            ? editProceso.activo
-            : typeof editProceso?.estado === 'boolean'
-              ? editProceso.estado
-              : editProceso?.estado === 'Activo' || editProceso?.estado === 'activo',
+          estado:
+            typeof editProceso?.activo === 'boolean'
+              ? editProceso.activo
+              : typeof editProceso?.estado === 'boolean'
+                ? editProceso.estado
+                : editProceso?.estado === 'Activo' || editProceso?.estado === 'activo',
         }}
+        nextCode=""
         onClose={() => setEditProceso(null)}
         onSubmit={async (values) => {
           await onUpdate?.(getId(editProceso), values);

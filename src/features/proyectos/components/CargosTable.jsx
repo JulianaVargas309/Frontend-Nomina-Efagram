@@ -37,6 +37,15 @@ function CargoDetalleModal({ isOpen, cargo, onClose }) {
   );
 }
 
+const getNextCargoCode = (cargos = []) => {
+  const usados = cargos
+    .map((c) => Number(c?.codigo))
+    .filter((n) => Number.isFinite(n));
+
+  const maxNumero = usados.length ? Math.max(...usados) : 0;
+  return String(maxNumero + 1);
+};
+
 export default function CargosTable({
   cargos = [],
   search = '',
@@ -45,11 +54,12 @@ export default function CargosTable({
   onUpdate,
   onDelete,
 }) {
-  const [openCreate,   setOpenCreate]   = useState(false);
-  const [editCargo,    setEditCargo]    = useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [editCargo, setEditCargo] = useState(null);
   const [detalleCargo, setDetalleCargo] = useState(null);
 
   const getId = (c) => c?._id ?? c?.id;
+  const nextCode = getNextCargoCode(cargos);
 
   const handleDelete = async (cargo) => {
     if (window.confirm(`¿Estás seguro de eliminar el cargo "${cargo?.nombre}"?`)) {
@@ -59,7 +69,6 @@ export default function CargosTable({
 
   return (
     <div className="zonas-card">
-
       {/* HEADER */}
       <div className="zonas-card-header">
         <h2 className="zonas-card-title">Catálogo de Cargos</h2>
@@ -168,7 +177,8 @@ export default function CargosTable({
       <NuevoCargoModal
         isOpen={openCreate}
         title="Nuevo Cargo"
-        initialValues={{ codigo: '', nombre: '', activo: true }}
+        cargo={null}
+        nextCode={nextCode}
         onClose={() => setOpenCreate(false)}
         onSubmit={async (values) => {
           await onAdd?.(values);
@@ -180,11 +190,8 @@ export default function CargosTable({
       <NuevoCargoModal
         isOpen={!!editCargo}
         title="Editar Cargo"
-        initialValues={{
-          codigo: editCargo?.codigo ?? '',
-          nombre: editCargo?.nombre ?? '',
-          activo: editCargo?.activo !== false,
-        }}
+        cargo={editCargo}
+        nextCode=""
         onClose={() => setEditCargo(null)}
         onSubmit={async (values) => {
           await onUpdate?.(getId(editCargo), values);

@@ -59,6 +59,17 @@ function IntervencionDetalleModal({ isOpen, intervencion, onClose }) {
   );
 }
 
+const getNextIntervencionCode = (intervenciones = []) => {
+  const usados = intervenciones
+    .map((i) => String(i?.codigo ?? '').toUpperCase().trim())
+    .filter((codigo) => /^INT-(\d+)$/.test(codigo))
+    .map((codigo) => Number(codigo.match(/^INT-(\d+)$/)?.[1] ?? 0))
+    .filter((n) => Number.isFinite(n));
+
+  const maxNumero = usados.length ? Math.max(...usados) : 0;
+  return `INT-${String(maxNumero + 1).padStart(3, '0')}`;
+};
+
 export default function IntervencionesTable({
   intervenciones = [],
   search = '',
@@ -72,6 +83,7 @@ export default function IntervencionesTable({
   const [detalleIntervencion, setDetalleIntervencion] = useState(null);
 
   const getId = (i) => i?._id ?? i?.id;
+  const nextCode = getNextIntervencionCode(intervenciones);
 
   return (
     <div className="zonas-card">
@@ -192,6 +204,7 @@ export default function IntervencionesTable({
         isOpen={openCreate}
         title="Nueva intervención"
         initialValues={{ codigo: '', nombre: '', proceso: '', activo: true, descripcion: '' }}
+        nextCode={nextCode}
         onClose={() => setOpenCreate(false)}
         onSubmit={async (values) => {
           await onAdd?.(values);
@@ -210,6 +223,7 @@ export default function IntervencionesTable({
           activo:      editIntervencion?.activo      ?? true,
           descripcion: editIntervencion?.descripcion ?? '',
         }}
+        nextCode=""
         onClose={() => setEditIntervencion(null)}
         onSubmit={async (values) => {
           await onUpdate?.(getId(editIntervencion), values);

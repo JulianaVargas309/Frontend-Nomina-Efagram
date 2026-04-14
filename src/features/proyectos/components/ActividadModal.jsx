@@ -64,7 +64,26 @@ const labelStyle = {
   marginBottom: 6,
 };
 
-const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) => {
+// ── Función para generar el siguiente código ───────────────────────────────
+export const getNextActividadCode = (actividades = []) => {
+  const usados = actividades
+    .map((a) => String(a?.codigo ?? "").toUpperCase().trim())
+    .filter((codigo) => /^ACT-(\d+)$/.test(codigo))
+    .map((codigo) => Number(codigo.match(/^ACT-(\d+)$/)?.[1] ?? 0))
+    .filter((n) => Number.isFinite(n));
+
+  const maxNumero = usados.length ? Math.max(...usados) : 0;
+
+  return `ACT-${String(maxNumero + 1).padStart(3, "0")}`;
+};
+
+const ActividadModal = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  actividadEditar = null,
+  nextCode = "" 
+}) => {
   const isEdit = Boolean(actividadEditar);
 
   const [form, setForm] = useState(FORM_INICIAL);
@@ -106,11 +125,14 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
         descripcion: actividadEditar.descripcion ?? "",
       });
     } else {
-      setForm(FORM_INICIAL);
+      setForm({
+        ...FORM_INICIAL,
+        codigo: nextCode || "",
+      });
     }
 
     setErrors({});
-  }, [isOpen, actividadEditar, isEdit]);
+  }, [isOpen, actividadEditar, isEdit, nextCode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -309,7 +331,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
                 >
                   <Hash size={16} color="#3b82f6" strokeWidth={1} />
                 </div>
-                Código {!isEdit && <span style={{ color: "#dc2626" }}>*</span>}
+                Código {!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
               </label>
 
               <input
@@ -317,8 +339,14 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
                 value={form.codigo}
                 onChange={handleChange}
                 placeholder="Ej: ACT-001"
-                readOnly={isEdit}
-                style={isEdit ? readOnlyInputStyle : inputStyle(!!errors.codigo)}
+                readOnly
+                disabled
+                style={readOnlyInputStyle}
+                title={
+                  isEdit
+                    ? "El código no puede modificarse"
+                    : "El código se genera automáticamente"
+                }
               />
               {errors.codigo && (
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
