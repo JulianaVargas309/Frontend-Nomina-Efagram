@@ -18,6 +18,19 @@ const fmtFecha = (iso) =>
 
 const ESTADO_LABEL = { ACTIVO:'Activo', BORRADOR:'Borrador', CERRADO:'Cerrado', CANCELADO:'Cancelado' };
 
+// ── Genera el siguiente código basado en los contratos existentes ─
+const generarNextCode = (contratos) => {
+  if (!contratos.length) return 'CON-001';
+  const numeros = contratos
+    .map(c => {
+      const m = (c.codigo ?? '').match(/CON-(\d+)/i);
+      return m ? parseInt(m[1], 10) : 0;
+    })
+    .filter(n => !isNaN(n));
+  const max = numeros.length > 0 ? Math.max(...numeros) : 0;
+  return `CON-${String(max + 1).padStart(3, '0')}`;
+};
+
 const StatCard = ({ icon, label, value, color, bg }) => {
   const Icon = icon;
   return (
@@ -41,6 +54,9 @@ export default function ContratosPage() {
   const [deletingId, setDeletingId] = useState(null);
 
   const [modal, setModal] = useState({ open: false, modo: 'crear', contrato: null });
+
+  // ── Código siguiente calculado automáticamente ────────────────
+  const nextCode = useMemo(() => generarNextCode(contratos), [contratos]);
 
   const abrirCrear  = ()  => setModal({ open: true, modo: 'crear',  contrato: null });
   const abrirVer    = (c) => setModal({ open: true, modo: 'ver',    contrato: c });
@@ -245,6 +261,9 @@ export default function ContratosPage() {
                             </button>
                           )}
                         </div>
+
+
+                        
                       </td>
                     </tr>
                   );
@@ -261,6 +280,7 @@ export default function ContratosPage() {
         contrato={modal.contrato}
         onClose={cerrarModal}
         onSuccess={cargar}
+        nextCode={nextCode}
       />
     </DashboardLayout>
   );

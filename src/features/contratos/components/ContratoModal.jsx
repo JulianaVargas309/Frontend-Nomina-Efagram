@@ -76,24 +76,19 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     codigo: '', subproyecto: '', finca: '',
     fecha_inicio: '', fecha_fin: '',
     fecha_inicio_proyecto: '', fecha_fin_proyecto: '',
-    observaciones: '', estado: 'ACTIVO',
+    observaciones: '', estado: 'PENDIENTE',
   });
 
   const [actividadesDisponibles, setActividadesDisponibles] = useState([]);
   const [loadingActividades,     setLoadingActividades]     = useState(false);
   const [actividadesSel,         setActividadesSel]         = useState([]);
 
-  // ✅ NUEVO: lotes embebidos del contrato
   const [lotes,     setLotes]     = useState([]);
   const [nuevoLote, setNuevoLote] = useState('');
 
-  // ── Lista de cuadrillas a crear ──
   const [cuadrillas, setCuadrillas] = useState([nuevaCuadrillaVacia(0)]);
-
-  // ── Cuadrillas existentes (modo editar) ──
   const [cuadrillasExistentes, setCuadrillasExistentes] = useState([]);
 
-  // ── Personas ──
   const [todasPersonas,   setTodasPersonas]   = useState([]);
   const [loadingPersonas, setLoadingPersonas] = useState(false);
 
@@ -103,7 +98,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   const [error,  setError]  = useState(null);
   const [tab,    setTab]    = useState('datos');
 
-  // ── Cargar catálogos ──────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
@@ -115,7 +109,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     })();
   }, [isOpen]);
 
-  // ── Cargar personas al abrir tab cuadrilla ────────────────────
   const cargarPersonas = useCallback(async () => {
     if (todasPersonas.length > 0) return;
     try {
@@ -130,7 +123,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     if (tab === 'cuadrilla') cargarPersonas();
   }, [tab, cargarPersonas]);
 
-  // ── Pre-llenar en editar/ver ──────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     if (contrato && (modo === 'editar' || modo === 'ver')) {
@@ -146,10 +138,9 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio_proyecto: toDateInput(contrato.fecha_inicio_proyecto),
         fecha_fin_proyecto:    toDateInput(contrato.fecha_fin_proyecto),
         observaciones: contrato.observaciones ?? '',
-        estado:        contrato.estado ?? 'ACTIVO',
+        estado:        contrato.estado ?? 'PENDIENTE',
       });
 
-      // ✅ Cargar lotes embebidos existentes
       setLotes(
         Array.isArray(contrato.lotes)
           ? contrato.lotes.map((l) => ({ nombre: l.nombre, _id: l._id }))
@@ -179,17 +170,21 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     if (!isOpen) return;
     if (modo !== 'crear') return;
 
-    setForm((prev) => ({
-      ...prev,
-      codigo: nextCode || '',
-    }));
+    // ── CAMBIO: aplica nextCode cuando llega del padre ────────────
+    if (nextCode) {
+      setForm((prev) => ({
+        ...prev,
+        codigo: nextCode,
+        estado: 'PENDIENTE',
+      }));
+    }
   }, [isOpen, modo, nextCode]);
 
   const resetForm = () => {
     setForm({ codigo: nextCode || '', subproyecto:'', finca:'',
               fecha_inicio:'', fecha_fin:'',
               fecha_inicio_proyecto:'', fecha_fin_proyecto:'',
-              observaciones:'', estado:'ACTIVO' });
+              observaciones:'', estado:'PENDIENTE' });
     setLotes([]);
     setNuevoLote('');
     setActividadesDisponibles([]);
@@ -218,7 +213,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     cargarActividadesDisponibles(subId, contrato?._id ?? contrato?.id ?? null);
   };
 
-  // ✅ NUEVO: agregar lote a la lista
   const handleAgregarLote = () => {
     const nombre = nuevoLote.trim();
     if (!nombre) return;
@@ -226,12 +220,10 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     setNuevoLote('');
   };
 
-  // ✅ NUEVO: eliminar lote por índice
   const handleEliminarLote = (idx) => {
     setLotes((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // ✅ NUEVO: agregar lote con Enter
   const handleLoteKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -239,7 +231,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     }
   };
 
-  // ── Actividades ───────────────────────────────────────────────
   const agregarActividad = (disp) => {
     if (!disp || typeof disp !== 'object') return;
     const actId = disp.actividad?._id ?? '';
@@ -265,7 +256,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     return null;
   };
 
-  // ── Helpers cuadrillas ────────────────────────────────────────
   const actualizarCuadrilla = (idx, campo, valor) =>
     setCuadrillas(prev => prev.map((c, i) => i === idx ? { ...c, [campo]: valor } : c));
 
@@ -322,7 +312,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     });
   };
 
-  // ── Guardar ───────────────────────────────────────────────────
   const handleSave = async () => {
     setError(null);
 
@@ -386,7 +375,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio_proyecto: form.fecha_inicio_proyecto || null,
         fecha_fin_proyecto:    form.fecha_fin_proyecto    || null,
         observaciones: form.observaciones.trim(),
-        estado:        form.estado,
+        estado:        modo === 'editar' ? form.estado : 'PENDIENTE',
       };
 
       if (modo === 'editar' && contrato) {
@@ -409,7 +398,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   const esVer    = modo === 'ver';
   const valorTotal = actividadesSel.reduce((s, a) => s + (Number(a.cantidad)||0) * (Number(a.precio_unitario)||0), 0);
 
-  // ══ MODO VER ══════════════════════════════════════════════════
   if (esVer) {
     const c = contrato;
     const lotesContrato = Array.isArray(c.lotes) ? c.lotes : [];
@@ -506,7 +494,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     );
   }
 
-  // ══ MODO CREAR / EDITAR ════════════════════════════════════════
   const totalMiembros = cuadrillas.reduce((s, c) => s + c.miembros.length, 0);
   const TABS = [
     { key: 'datos',       label: 'datos',       icon: ClipboardList,  texto: 'Datos' },
@@ -517,7 +504,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   return (
     <div className="modal-overlay">
       <div className="modal-contrato" onClick={e => e.stopPropagation()} style={{ maxWidth: 860, width: '100%' }}>
-
         <div className="modal-contrato-header">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 7, background: modo === 'editar' ? 'rgba(234,179,8,0.12)' : 'rgba(31,143,87,0.12)' }}>
@@ -528,7 +514,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
 
-        {/* Tabs */}
         <div style={{ display:'flex', borderBottom:'1px solid #e6e8ef', padding:'0 24px' }}>
           {TABS.map(t => {
             const TabIcon = t.icon;
@@ -548,8 +533,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         </div>
 
         <div className="modal-body">
-
-          {/* ══ TAB DATOS ══════════════════════════════════════════ */}
           {tab === 'datos' && (
             <>
               <div className="form-section">
@@ -571,25 +554,36 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                     <label>
                       Código * {modo === 'crear' && <span style={{ color: '#94a3b8', fontWeight: 400 }}>(automático)</span>}
                     </label>
+                    {/* ── CAMBIO: en modo crear el campo es visible y editable como respaldo ── */}
                     <input
                       placeholder="Ej: CON-001"
                       value={form.codigo}
-                      disabled
-                      readOnly
-                      style={{ background:'#f8fafc', color:'#0f172a', textTransform:'uppercase' }}
-                      onChange={e => setForm(p => ({ ...p, codigo: e.target.value }))}
+                      readOnly={modo === 'editar'}
+                      disabled={modo === 'editar'}
+                      style={{
+                        background: modo === 'editar' ? '#f8fafc' : '#fff',
+                        color: '#0f172a',
+                        textTransform: 'uppercase',
+                        cursor: modo === 'editar' ? 'not-allowed' : 'text',
+                      }}
+                      onChange={e => setForm(p => ({ ...p, codigo: e.target.value.toUpperCase() }))}
                     />
                   </div>
                   <div className="form-field">
                     <label>Estado</label>
-                    <select value={form.estado} onChange={e => setForm(p => ({ ...p, estado: e.target.value }))}>
-                      <option value="ACTIVO">Activo</option>
-                      <option value="BORRADOR">Borrador</option>
+                    <select
+                      value={form.estado}
+                      disabled={modo === 'crear'}
+                      onChange={e => setForm(p => ({ ...p, estado: e.target.value }))}
+                      style={modo === 'crear' ? { background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' } : undefined}
+                    >
+                      <option value="PENDIENTE">Pendiente</option>
+                      <option value="APROBADO">Aprobado</option>
+                      <option value="RECHAZADO">Rechazado</option>
                       <option value="CERRADO">Cerrado</option>
                       <option value="CANCELADO">Cancelado</option>
                     </select>
                   </div>
-
                 </div>
               </div>
 
@@ -603,13 +597,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                   </select>
                 </div>
 
-                {/* ✅ NUEVO: Sección de lotes embebidos */}
                 <div className="form-field" style={{ marginTop: 16 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Layers size={13} /> Lotes * — {lotes.length} definido(s)
                   </label>
 
-                  {/* Input + botón agregar */}
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       value={nuevoLote}
@@ -640,7 +632,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                     Presiona Enter o el botón para agregar. El código se genera automáticamente.
                   </p>
 
-                  {/* Lista de lotes agregados */}
                   {lotes.length > 0 && (
                     <div
                       style={{
@@ -704,7 +695,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             </>
           )}
 
-          {/* ══ TAB ACTIVIDADES ════════════════════════════════════ */}
           {tab === 'actividades' && (
             <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
               {!form.subproyecto ? (
@@ -829,10 +819,8 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             </div>
           )}
 
-          {/* ══ TAB CUADRILLAS ═════════════════════════════════════ */}
           {tab === 'cuadrilla' && (
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-
               {modo === 'editar' && cuadrillasExistentes.length > 0 && (
                 <div style={{ background:'#f0faf4', border:'1.5px solid #1f8f57', borderRadius:12, padding:'14px 16px' }}>
                   <p style={{ margin:'0 0 8px', fontSize:13, fontWeight:700, color:'#1f8f57' }}>✅ Cuadrillas asignadas actualmente</p>
