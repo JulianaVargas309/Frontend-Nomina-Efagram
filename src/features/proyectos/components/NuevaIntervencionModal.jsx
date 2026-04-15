@@ -24,7 +24,10 @@ export default function NuevaIntervencionModal({
   initialValues,
   onClose,
   onSubmit,
+  nextCode = '',
 }) {
+  const isEdit = title.toLowerCase().includes('editar');
+
   const [codigo,      setCodigo]      = useState(initialValues?.codigo      ?? '');
   const [nombre,      setNombre]      = useState(initialValues?.nombre      ?? '');
   const [proceso,     setProceso]     = useState(resolveProcesoId(initialValues?.proceso));
@@ -34,6 +37,19 @@ export default function NuevaIntervencionModal({
   const [errors,      setErrors]      = useState([]);
 
   const [procesos, setProcesos] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setCodigo(isEdit ? (initialValues?.codigo ?? '') : (nextCode || ''));
+    setNombre(initialValues?.nombre ?? '');
+    setProceso(resolveProcesoId(initialValues?.proceso));
+    setActivo(resolveActivo(initialValues?.activo ?? initialValues?.estado));
+    setDescripcion(initialValues?.descripcion ?? '');
+    setSaving(false);
+    setErrors([]);
+  }, [isOpen, initialValues, isEdit, nextCode]);
+
   useEffect(() => {
     if (!isOpen) return;
     getProcesos()
@@ -48,8 +64,6 @@ export default function NuevaIntervencionModal({
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const isEdit = title.toLowerCase().includes('editar');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,12 +131,17 @@ export default function NuevaIntervencionModal({
         <div className="modal-body">
 
           <label className="field">
-            <span>Código *</span>
+            <span>
+              Código * {!isEdit && <span style={{ color: '#9ca3af', fontWeight: 400 }}>(automático)</span>}
+            </span>
             <input
               value={codigo}
               onChange={(e) => { setCodigo(e.target.value.toUpperCase()); setErrors([]); }}
               placeholder="Ej: INT-001"
               autoFocus
+              readOnly={!isEdit}
+              disabled={!isEdit}
+              style={!isEdit ? { background: '#f1f5f9', color: '#64748b', cursor: 'not-allowed' } : undefined}
             />
           </label>
 

@@ -3,7 +3,7 @@ import {
   getActividades,
   deleteActividad
 } from "../services/actividadesService";
-import ActividadModal from "../components/ActividadModal";
+import ActividadModal, { getNextActividadCode } from "../components/ActividadModal";
 import "../../../assets/styles/actividades.css";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
 import { ClipboardList, GitBranch, Pencil, Trash2, Search, DollarSign } from "lucide-react";
@@ -287,6 +287,7 @@ const CatalogoActividadesPage = () => {
             cargarActividades();
           }}
           actividadEditar={actividadEditar}
+          nextCode={actividadEditar ? "" : getNextActividadCode(actividades)}
         />
       </div>
     </DashboardLayout>
