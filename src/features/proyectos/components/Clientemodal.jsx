@@ -12,7 +12,7 @@ const normalizeList = (res) => {
 
 const padClienteNumber = (value) => String(value).padStart(3, "0");
 
-const getNextClienteCode = (clientes = [], prefijo = "CLI") => {
+export const getNextClienteCode = (clientes = [], prefijo = "CLI") => {
   const maxNumber = clientes.reduce((acc, item) => {
     const code = String(item?.codigo || "").trim().toUpperCase();
     const match = code.match(/(\d+)$/);

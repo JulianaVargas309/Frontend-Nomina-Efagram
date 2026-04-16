@@ -33,7 +33,7 @@ const normalizeList = (res) => {
 
 const padActividadNumber = (value) => String(value).padStart(3, "0");
 
-const getNextActividadCode = (actividades = [], prefijo = "ACT") => {
+export const getNextActividadCode = (actividades = [], prefijo = "ACT") => {
   const maxNumber = actividades.reduce((acc, item) => {
     const code = String(item?.codigo || "").trim().toUpperCase();
     const match = code.match(/(\d+)$/);
