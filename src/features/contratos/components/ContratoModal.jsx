@@ -667,19 +667,63 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                 <div className="form-row" style={{ marginTop: 12 }}>
                   <div className="form-field">
                     <label>Fecha de inicio *</label>
-                    <input
-                      type="date"
-                      value={form.fecha_inicio}
-                      onChange={e => setForm(p => ({ ...p, fecha_inicio: e.target.value }))}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="date"
+                        value={form.fecha_inicio}
+                        onChange={e => setForm(p => ({ ...p, fecha_inicio: e.target.value }))}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: 6,
+                          fontSize: 14,
+                          background: '#fff',
+                          cursor: 'pointer',
+                        }}
+                      />
+                      <Calendar
+                        size={16}
+                        style={{
+                          position: 'absolute',
+                          right: 10,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#6b7280',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="form-field">
                     <label>Fecha de fin</label>
-                    <input
-                      type="date"
-                      value={form.fecha_fin}
-                      onChange={e => setForm(p => ({ ...p, fecha_fin: e.target.value }))}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="date"
+                        value={form.fecha_fin}
+                        onChange={e => setForm(p => ({ ...p, fecha_fin: e.target.value }))}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: 6,
+                          fontSize: 14,
+                          background: '#fff',
+                          cursor: 'pointer',
+                        }}
+                      />
+                      <Calendar
+                        size={16}
+                        style={{
+                          position: 'absolute',
+                          right: 10,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#6b7280',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
