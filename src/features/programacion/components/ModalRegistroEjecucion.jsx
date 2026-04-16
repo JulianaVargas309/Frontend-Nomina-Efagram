@@ -212,10 +212,10 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
       prev.map((d, i) =>
         i === index
           ? {
-              ...d,
-              motivo_detencion: valor,
-              motivo_detencion_otro: valor === 'otro' ? d.motivo_detencion_otro : '',
-            }
+            ...d,
+            motivo_detencion: valor,
+            motivo_detencion_otro: valor === 'otro' ? d.motivo_detencion_otro : '',
+          }
           : d
       )
     );
