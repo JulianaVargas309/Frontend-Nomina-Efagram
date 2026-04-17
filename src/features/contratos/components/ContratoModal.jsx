@@ -104,7 +104,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   const [form, setForm] = useState({
     codigo: '', subproyecto: '', finca: '',
     fecha_inicio: '', fecha_fin: '',
-    observaciones: '', estado: 'ACTIVO',
+    observaciones: '', estado: 'PENDIENTE',
   });
 
   const [actividadesDisponibles, setActividadesDisponibles] = useState([]);
@@ -201,7 +201,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio: toDateInput(contrato.fecha_inicio),
         fecha_fin: toDateInput(contrato.fecha_fin),
         observaciones: contrato.observaciones ?? '',
-        estado: contrato.estado ?? 'ACTIVO',
+        estado: contrato.estado ?? 'PENDIENTE',
       });
 
       setLotes(
@@ -235,7 +235,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio: '',
         fecha_fin: '',
         observaciones: '',
-        estado: 'ACTIVO',
+        estado: 'PENDIENTE',
       });
 
       setLotes([]);
@@ -261,7 +261,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       fecha_inicio: '',
       fecha_fin: '',
       observaciones: '',
-      estado: 'ACTIVO',
+      estado: 'PENDIENTE',
     });
     setLotes([]);
     setNuevoLote('');
@@ -459,13 +459,18 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio: form.fecha_inicio,
         fecha_fin: form.fecha_fin || null,
         observaciones: form.observaciones.trim(),
-        estado: form.estado,
+        estado: modo === 'crear' ? 'PENDIENTE' : form.estado,
       };
 
       if (modo === 'editar' && contrato) {
         await updateContrato(contrato._id ?? contrato.id, payload);
       } else {
-        await createContrato(payload);
+        const res = await createContrato(payload);
+        // Pasar el ID del contrato creado al callback
+        const newContratoId = res?._id ?? res?.id;
+        onSuccess?.(newContratoId);
+        onClose();
+        return;
       }
 
       onSuccess?.();
@@ -654,11 +659,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                   </div>
                   <div className="form-field">
                     <label>Estado</label>
-                    <select value={form.estado} onChange={e => setForm(p => ({ ...p, estado: e.target.value }))}>
-                      <option value="ACTIVO">Activo</option>
-                      <option value="BORRADOR">Borrador</option>
-                      <option value="CERRADO">Cerrado</option>
-                      <option value="CANCELADO">Cancelado</option>
+                    <select
+                      value={form.estado}
+                      disabled
+                    >
+                      <option value="PENDIENTE">Pendiente</option>
                     </select>
                   </div>
                 </div>

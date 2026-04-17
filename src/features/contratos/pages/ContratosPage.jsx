@@ -7,16 +7,16 @@ import '../../../assets/styles/contratos.css';
 
 // ── helpers ──────────────────────────────────────────────────────
 const normalizeList = (res) => {
-  if (Array.isArray(res))             return res;
-  if (Array.isArray(res?.data))       return res.data;
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.data)) return res.data;
   if (Array.isArray(res?.data?.data)) return res.data.data;
   return [];
 };
 
 const fmtFecha = (iso) =>
-  iso ? new Date(iso).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+  iso ? new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-const ESTADO_LABEL = { ACTIVO:'Activo', BORRADOR:'Borrador', CERRADO:'Cerrado', CANCELADO:'Cancelado' };
+const ESTADO_LABEL = { PENDIENTE: 'Pendiente', RECHAZADA: 'Rechazada', ACTIVA: 'Activa' };
 
 // ── Genera el siguiente código basado en los contratos existentes ─
 const generarNextCode = (contratos) => {
@@ -47,10 +47,10 @@ const StatCard = ({ icon, label, value, color, bg }) => {
 };
 
 export default function ContratosPage() {
-  const [contratos,  setContratos]  = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState(null);
-  const [busqueda,   setBusqueda]   = useState('');
+  const [contratos, setContratos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
   const [deletingId, setDeletingId] = useState(null);
 
   const [modal, setModal] = useState({ open: false, modo: 'crear', contrato: null });
@@ -58,17 +58,30 @@ export default function ContratosPage() {
   // ── Código siguiente calculado automáticamente ────────────────
   const nextCode = useMemo(() => generarNextCode(contratos), [contratos]);
 
-  const abrirCrear  = ()  => setModal({ open: true, modo: 'crear',  contrato: null });
-  const abrirVer    = (c) => setModal({ open: true, modo: 'ver',    contrato: c });
+  const abrirCrear = () => setModal({ open: true, modo: 'crear', contrato: null });
+  const abrirVer = (c) => setModal({ open: true, modo: 'ver', contrato: c });
   const abrirEditar = (c) => setModal({ open: true, modo: 'editar', contrato: c });
-  const cerrarModal = ()  => setModal(prev => ({ ...prev, open: false }));
+  const cerrarModal = () => setModal(prev => ({ ...prev, open: false }));
 
-  const cargar = async () => {
+  const cargar = async (newContratoId = null) => {
     try {
       setLoading(true);
       setError(null);
+      if (newContratoId) {
+        setUltimoCreado(newContratoId);
+      }
       const res = await getContratos();
-      setContratos(normalizeList(res));
+      let lista = normalizeList(res);
+      // Forzar PENDIENTE en contratos recién creados
+      if (newContratoId) {
+        lista = lista.map(c => {
+          if ((c._id ?? c.id) === newContratoId) {
+            return { ...c, estado: 'PENDIENTE' };
+          }
+          return c;
+        });
+      }
+      setContratos(lista);
     } catch (e) {
       console.error(e);
       setError('No se pudieron cargar los contratos.');
@@ -96,21 +109,21 @@ export default function ContratosPage() {
     const q = busqueda.trim().toLowerCase();
     if (!q) return contratos;
     return contratos.filter(c => {
-      const cod   = (c.codigo ?? '').toLowerCase();
+      const cod = (c.codigo ?? '').toLowerCase();
       const finca = (c.finca?.nombre ?? '').toLowerCase();
       const cuads = (c.cuadrillas ?? []).map(cu => (cu?.nombre ?? '').toLowerCase()).join(' ');
       return cod.includes(q) || finca.includes(q) || cuads.includes(q);
     });
   }, [contratos, busqueda]);
 
-  const activos    = contratos.filter(c => c.estado === 'ACTIVO').length;
-  const borradores = contratos.filter(c => c.estado === 'BORRADOR').length;
-  const cerrados   = contratos.filter(c => c.estado === 'CERRADO' || c.estado === 'CANCELADO').length;
+  const pendientes = contratos.filter(c => c.estado === 'PENDIENTE').length;
+  const activas = contratos.filter(c => c.estado === 'ACTIVA').length;
+  const rechazadas = contratos.filter(c => c.estado === 'RECHAZADA').length;
 
   const Chips = ({ items, getLabel }) => {
     const MAX = 2;
     const visible = items.slice(0, MAX);
-    const extra   = items.length - MAX;
+    const extra = items.length - MAX;
     return (
       <div className="chips-wrap">
         {visible.map((it, i) => (
@@ -138,10 +151,10 @@ export default function ContratosPage() {
         </div>
 
         <div className="contratos-stats">
-          <StatCard icon={FileText}    label="Total"      value={contratos.length} color="#3b82f6" bg="rgba(59,130,246,0.1)" />
-          <StatCard icon={CheckCircle} label="Activos"    value={activos}          color="#1f8f57" bg="rgba(31,143,87,0.1)"  />
-          <StatCard icon={Clock}       label="Borradores" value={borradores}       color="#ca8a04" bg="rgba(234,179,8,0.1)"  />
-          <StatCard icon={XCircle}     label="Cerrados"   value={cerrados}         color="#64748b" bg="rgba(100,116,139,0.1)" />
+          <StatCard icon={FileText} label="Total" value={contratos.length} color="#3b82f6" bg="rgba(59,130,246,0.1)" />
+          <StatCard icon={Clock} label="Pendientes" value={pendientes} color="#ca8a04" bg="rgba(234,179,8,0.1)" />
+          <StatCard icon={CheckCircle} label="Activas" value={activas} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
+          <StatCard icon={XCircle} label="Rechazadas" value={rechazadas} color="#dc2626" bg="rgba(220,38,38,0.1)" />
         </div>
 
         <div className="contratos-toolbar">
@@ -263,7 +276,7 @@ export default function ContratosPage() {
                         </div>
 
 
-                        
+
                       </td>
                     </tr>
                   );
