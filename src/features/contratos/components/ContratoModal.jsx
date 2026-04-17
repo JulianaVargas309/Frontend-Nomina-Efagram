@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   FileText, MapPin, Layers, Wrench, Users,
   Search, X, Plus, PlusCircle, Pencil, Calendar, GitBranch, DollarSign,
@@ -22,6 +22,18 @@ const normalizeList = (res) => {
   return [];
 };
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : '');
+const formatIsoToDisplay = (iso) => {
+  if (!iso) return '';
+  const [yyyy, mm, dd] = iso.slice(0, 10).split('-');
+  return `${dd}/${mm}/${yyyy}`;
+};
+const parseDisplayToIso = (value) => {
+  const parts = value.split('/').map((p) => p.trim());
+  if (parts.length !== 3) return '';
+  const [dd, mm, yyyy] = parts;
+  if (!/^[0-9]{1,2}$/.test(dd) || !/^[0-9]{1,2}$/.test(mm) || !/^[0-9]{4}$/.test(yyyy)) return '';
+  return `${yyyy.padStart(4, '0')}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+};
 const fmt = (n) => Number(n).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 // ── Generador automático basado en contratos existentes ──
 const generarCodigoContrato = (contratos = []) => {
@@ -107,6 +119,13 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     observaciones: '', estado: 'PENDIENTE',
   });
 
+  const [displayFechas, setDisplayFechas] = useState({
+    fecha_inicio: '',
+    fecha_fin: '',
+  });
+  const fechaInicioPickerRef = useRef(null);
+  const fechaFinPickerRef = useRef(null);
+
   const [actividadesDisponibles, setActividadesDisponibles] = useState([]);
   const [loadingActividades, setLoadingActividades] = useState(false);
   const [actividadesSel, setActividadesSel] = useState([]);
@@ -185,6 +204,90 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   useEffect(() => {
     if (tab === 'cuadrilla') cargarPersonas();
   }, [tab, cargarPersonas]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setDisplayFechas({
+      fecha_inicio: formatIsoToDisplay(form.fecha_inicio),
+      fecha_fin: formatIsoToDisplay(form.fecha_fin),
+    });
+  }, [isOpen, contrato, modo]);
+
+  const renderDatePickerField = (label, field, pickerRef) => (
+    <div className="form-field">
+      <label>{label}</label>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="DD/MM/AAAA"
+          value={displayFechas[field]}
+          onChange={(e) => {
+            const value = e.target.value;
+            setDisplayFechas((prev) => ({ ...prev, [field]: value }));
+            const iso = parseDisplayToIso(value);
+            if (iso) {
+              setForm((prev) => ({ ...prev, [field]: iso }));
+            }
+          }}
+          style={{
+            width: '100%',
+            padding: '8px 44px 8px 12px',
+            border: '1px solid #d1d5db',
+            borderRadius: 10,
+            fontSize: 14,
+            background: '#fff',
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            if (pickerRef.current?.showPicker) {
+              pickerRef.current.showPicker();
+            } else {
+              pickerRef.current?.focus();
+            }
+          }}
+          style={{
+            position: 'absolute',
+            right: 8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            border: '1px solid #e2e8f0',
+            background: '#f8fafc',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#6366f1',
+          }}
+        >
+          <Calendar size={16} />
+        </button>
+        <input
+          ref={pickerRef}
+          type="date"
+          value={form[field] || ''}
+          onChange={(e) => {
+            const iso = e.target.value;
+            setForm((prev) => ({ ...prev, [field]: iso }));
+            setDisplayFechas((prev) => ({ ...prev, [field]: formatIsoToDisplay(iso) }));
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0,
+            pointerEvents: 'none',
+            width: 0,
+            height: 0,
+          }}
+          tabIndex={-1}
+        />
+      </div>
+    </div>
+  );
 
   // ── Pre-llenar en editar/ver ──────────────────────────────────
   useEffect(() => {
@@ -670,66 +773,8 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
                 {/* ✅ NUEVO: Fechas del contrato */}
                 <div className="form-row" style={{ marginTop: 12 }}>
-                  <div className="form-field">
-                    <label>Fecha de inicio *</label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="date"
-                        value={form.fecha_inicio}
-                        onChange={e => setForm(p => ({ ...p, fecha_inicio: e.target.value }))}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 6,
-                          fontSize: 14,
-                          background: '#fff',
-                          cursor: 'pointer',
-                        }}
-                      />
-                      <Calendar
-                        size={16}
-                        style={{
-                          position: 'absolute',
-                          right: 10,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          color: '#6b7280',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="form-field">
-                    <label>Fecha de fin</label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="date"
-                        value={form.fecha_fin}
-                        onChange={e => setForm(p => ({ ...p, fecha_fin: e.target.value }))}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 6,
-                          fontSize: 14,
-                          background: '#fff',
-                          cursor: 'pointer',
-                        }}
-                      />
-                      <Calendar
-                        size={16}
-                        style={{
-                          position: 'absolute',
-                          right: 10,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          color: '#6b7280',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </div>
-                  </div>
+                  {renderDatePickerField('Fecha de inicio *', 'fecha_inicio', fechaInicioPickerRef)}
+                  {renderDatePickerField('Fecha de fin', 'fecha_fin', fechaFinPickerRef)}
                 </div>
               </div>
 
