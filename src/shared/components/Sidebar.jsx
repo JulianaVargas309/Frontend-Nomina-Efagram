@@ -194,8 +194,8 @@ export default function Sidebar() {
                         >
                             <AlertTriangle size={16} />Novedades
                         </div>
-                        
-                       
+
+
                     </div>
                 )}
 

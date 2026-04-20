@@ -25,11 +25,11 @@ export const endpoints = {
     getAll: '/actividades',
   },
   contratos: {
-    getAll:    '/contratos',
-    getOne:    (id) => `/contratos/${id}`,
-    create:    '/contratos',
-    update:    (id) => `/contratos/${id}`,
-    delete:    (id) => `/contratos/${id}`,
+    getAll: '/contratos',
+    getOne: (id) => `/contratos/${id}`,
+    create: '/contratos',
+    update: (id) => `/contratos/${id}`,
+    delete: (id) => `/contratos/${id}`,
     trabajadoresDisponibles: (id) => `/contratos/${id}/trabajadores-disponibles`,
   },
 };
