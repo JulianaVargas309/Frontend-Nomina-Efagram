@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Briefcase, Eye, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import NuevoCargoModal from './NuevoCargoModal';
 
@@ -37,6 +37,27 @@ function CargoDetalleModal({ isOpen, cargo, onClose }) {
   );
 }
 
+const generarCodigoCargo = (cargos = []) => {
+  if (!Array.isArray(cargos) || cargos.length === 0) {
+    return 'CAR-001';
+  }
+
+  let max = 0;
+
+  cargos.forEach((c) => {
+    const codigo = String(c?.codigo || '').trim().toUpperCase();
+    const match = codigo.match(/^CAR-(\d+)$/);
+    if (!match) return;
+
+    const numero = parseInt(match[1], 10);
+    if (!isNaN(numero) && numero > max) {
+      max = numero;
+    }
+  });
+
+  return `CAR-${String(max + 1).padStart(3, '0')}`;
+};
+
 export default function CargosTable({
   cargos = [],
   search = '',
@@ -45,11 +66,15 @@ export default function CargosTable({
   onUpdate,
   onDelete,
 }) {
-  const [openCreate,   setOpenCreate]   = useState(false);
-  const [editCargo,    setEditCargo]    = useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [editCargo, setEditCargo] = useState(null);
   const [detalleCargo, setDetalleCargo] = useState(null);
 
   const getId = (c) => c?._id ?? c?.id;
+
+  const codigoSiguiente = useMemo(() => {
+    return generarCodigoCargo(cargos);
+  }, [cargos]);
 
   const handleDelete = async (cargo) => {
     if (window.confirm(`¿Estás seguro de eliminar el cargo "${cargo?.nombre}"?`)) {
@@ -59,7 +84,6 @@ export default function CargosTable({
 
   return (
     <div className="zonas-card">
-
       {/* HEADER */}
       <div className="zonas-card-header">
         <h2 className="zonas-card-title">Catálogo de Cargos</h2>
@@ -166,9 +190,11 @@ export default function CargosTable({
 
       {/* Modal crear */}
       <NuevoCargoModal
+        key={openCreate ? `create-${codigoSiguiente}` : 'create-closed'}
         isOpen={openCreate}
         title="Nuevo Cargo"
-        initialValues={{ codigo: '', nombre: '', activo: true }}
+        nextCode={codigoSiguiente}
+        initialValues={{ codigo: codigoSiguiente, nombre: '', activo: true }}
         onClose={() => setOpenCreate(false)}
         onSubmit={async (values) => {
           await onAdd?.(values);

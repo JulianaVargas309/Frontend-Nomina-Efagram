@@ -1,5 +1,31 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { createCliente, updateCliente } from "../services/Clientesservice";
+import httpClient from "../../../core/api/httpClient";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const normalizeList = (res) => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.data?.data)) return res.data.data;
+  return [];
+};
+
+const padClienteNumber = (value) => String(value).padStart(3, "0");
+
+export const getNextClienteCode = (clientes = [], prefijo = "CLI") => {
+  const maxNumber = clientes.reduce((acc, item) => {
+    const code = String(item?.codigo || "").trim().toUpperCase();
+    const match = code.match(/(\d+)$/);
+    if (!match) return acc;
+
+    const current = Number(match[1]);
+    if (Number.isNaN(current)) return acc;
+
+    return Math.max(acc, current);
+  }, 0);
+
+  return `${prefijo}-${padClienteNumber(maxNumber + 1)}`;
+};
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const inputStyle = (hasError = false) => ({
@@ -20,6 +46,8 @@ const readOnlyStyle = {
   background: "#f1f5f9",
   color: "#64748b",
   cursor: "not-allowed",
+  fontWeight: 600,
+  letterSpacing: 1,
 };
 
 const selectStyle = {
@@ -46,11 +74,11 @@ const labelStyle = {
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 const INITIAL_STATE = {
-  codigo:  "",
-  nombre:  "",
-  activo:  "true",
+  codigo: "",
+  nombre: "",
+  activo: "true",
   loading: false,
-  errors:  {},
+  errors: {},
 };
 
 function reducer(state, action) {
@@ -76,21 +104,50 @@ function reducer(state, action) {
 const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
   const isEdit = Boolean(cliente);
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const [clientesActuales, setClientesActuales] = useState([]);
 
-  // UN solo dispatch — sin renders en cascada
+  // Cargar clientes existentes al abrir el modal
+  useEffect(() => {
+    if (!isOpen || isEdit) return;
+
+    const cargarClientes = async () => {
+      try {
+        const res = await httpClient.get("/clientes");
+        const lista = normalizeList(res?.data);
+        setClientesActuales(lista);
+      } catch (err) {
+        console.error("Error cargando clientes:", err);
+        setClientesActuales([]);
+      }
+    };
+
+    cargarClientes();
+  }, [isOpen, isEdit]);
+
+  // Reset / carga inicial del formulario
   useEffect(() => {
     if (!isOpen) return;
-    dispatch({
-      type: "RESET",
-      values: isEdit && cliente
-        ? {
-            codigo: cliente.codigo      ?? "",
-            nombre: cliente.razon_social ?? cliente.nombre ?? "",
-            activo: String(cliente.activo ?? true),
-          }
-        : {},
-    });
-  }, [isOpen, cliente]);
+
+    if (isEdit && cliente) {
+      dispatch({
+        type: "RESET",
+        values: {
+          codigo: cliente.codigo ?? "",
+          nombre: cliente.razon_social ?? cliente.nombre ?? "",
+          activo: String(cliente.activo ?? true),
+        },
+      });
+    } else {
+      dispatch({
+        type: "RESET",
+        values: {
+          codigo: getNextClienteCode(clientesActuales, "CLI"),
+          nombre: "",
+          activo: "true",
+        },
+      });
+    }
+  }, [isOpen, cliente, isEdit, clientesActuales]);
 
   if (!isOpen) return null;
 
@@ -101,6 +158,7 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
     const errs = {};
     if (!state.codigo.trim()) errs.codigo = "El código es obligatorio";
     if (!state.nombre.trim()) errs.nombre = "El nombre es obligatorio";
+
     if (Object.keys(errs).length > 0) {
       dispatch({ type: "SET_ERRORS", value: errs });
       return;
@@ -110,10 +168,9 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
       dispatch({ type: "SET_LOADING", value: true });
 
       const payload = {
-        // El backend requiere razon_social y nit — los derivamos del nombre y código
         razon_social: state.nombre.trim(),
-        nit:          state.codigo.trim(),   // usamos el código como NIT
-        activo:       state.activo === "true",
+        nit: state.codigo.trim(),
+        activo: state.activo === "true",
       };
 
       if (isEdit) {
@@ -127,19 +184,24 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
 
       onSuccess?.();
       onClose?.();
-
     } catch (err) {
       const serverMsg =
         err?.response?.data?.errors?.[0]?.message ||
-        err?.response?.data?.errors?.[0]?.msg     ||
-        err?.response?.data?.message              ||
-        err?.message                              ||
+        err?.response?.data?.errors?.[0]?.msg ||
+        err?.response?.data?.message ||
+        err?.message ||
         "Error guardando el cliente";
 
       if (err?.response?.status === 409) {
-        dispatch({ type: "SET_ERRORS", value: { codigo: "Este código ya está en uso" } });
+        dispatch({
+          type: "SET_ERRORS",
+          value: { codigo: "Este código ya está en uso" },
+        });
       } else {
-        dispatch({ type: "SET_ERRORS", value: { _general: serverMsg } });
+        dispatch({
+          type: "SET_ERRORS",
+          value: { _general: serverMsg },
+        });
       }
     }
   };
@@ -148,9 +210,12 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
     <div
       className="modal-overlay"
       style={{
-        position: "fixed", inset: 0,
+        position: "fixed",
+        inset: 0,
         background: "rgba(15,23,42,0.45)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         zIndex: 1000,
       }}
     >
@@ -168,29 +233,55 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
         }}
       >
         {/* HEADER */}
-        <div style={{
-          padding: "20px 24px 16px",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-        }}>
+        <div
+          style={{
+            padding: "20px 24px 16px",
+            borderBottom: "1px solid #e5e7eb",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+          }}
+        >
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#111827" }}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 700,
+                color: "#111827",
+              }}
+            >
               {isEdit ? "Editar Cliente" : "Nuevo Cliente"}
             </h3>
-            <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
-              {isEdit ? "Actualiza los datos del cliente" : "Completa los datos del cliente"}
+            <p
+              style={{
+                margin: "3px 0 0",
+                fontSize: 13,
+                color: "#6b7280",
+              }}
+            >
+              {isEdit
+                ? "Actualiza los datos del cliente"
+                : "Completa los datos del cliente"}
             </p>
           </div>
+
           <button
             onClick={onClose}
             title="Cerrar"
             style={{
-              background: "none", border: "1px solid #e5e7eb",
-              borderRadius: 7, width: 32, height: 32,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", fontSize: 18, color: "#6b7280", lineHeight: 1,
+              background: "none",
+              border: "1px solid #e5e7eb",
+              borderRadius: 7,
+              width: 32,
+              height: 32,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              fontSize: 18,
+              color: "#6b7280",
+              lineHeight: 1,
             }}
           >
             ×
@@ -198,14 +289,25 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
         </div>
 
         {/* BODY */}
-        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-
+        <div
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
           {state.errors._general && (
-            <div style={{
-              background: "#fef2f2", border: "1px solid #fecaca",
-              borderRadius: 8, padding: "10px 14px",
-              fontSize: 13, color: "#dc2626",
-            }}>
+            <div
+              style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 13,
+                color: "#dc2626",
+              }}
+            >
               {state.errors._general}
             </div>
           )}
@@ -213,21 +315,36 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
           {/* Código */}
           <div>
             <label style={labelStyle}>
-              Código{!isEdit && <span style={{ color: "#dc2626" }}> *</span>}
+              Código <span style={{ color: "#dc2626" }}>*</span>
             </label>
             <input
               value={state.codigo}
-              onChange={setField("codigo")}
-              placeholder="Ej: CLI-001"
-              readOnly={isEdit}
-              style={isEdit ? readOnlyStyle : inputStyle(!!state.errors.codigo)}
-              title={isEdit ? "El código no puede modificarse" : ""}
+              placeholder="Código generado automáticamente"
+              readOnly
+              disabled
+              style={readOnlyStyle}
+              title="El código se genera automáticamente"
             />
             {state.errors.codigo && (
-              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  fontSize: 12,
+                  color: "#dc2626",
+                }}
+              >
                 {state.errors.codigo}
               </p>
             )}
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: 12,
+                color: "#94a3b8",
+              }}
+            >
+              El código se genera automáticamente
+            </p>
           </div>
 
           {/* Nombre */}
@@ -242,7 +359,13 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
               style={inputStyle(!!state.errors.nombre)}
             />
             {state.errors.nombre && (
-              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  fontSize: 12,
+                  color: "#dc2626",
+                }}
+              >
                 {state.errors.nombre}
               </p>
             )}
@@ -251,30 +374,39 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
           {/* Estado */}
           <div>
             <label style={labelStyle}>Estado</label>
-            <select value={state.activo} onChange={setField("activo")} style={selectStyle}>
+            <select
+              value={state.activo}
+              onChange={setField("activo")}
+              style={selectStyle}
+            >
               <option value="true">Activo</option>
               <option value="false">Inactivo</option>
             </select>
           </div>
-
         </div>
 
         {/* FOOTER */}
-        <div style={{
-          padding: "14px 24px",
-          borderTop: "1px solid #e5e7eb",
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 10,
-        }}>
+        <div
+          style={{
+            padding: "14px 24px",
+            borderTop: "1px solid #e5e7eb",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+          }}
+        >
           <button
             onClick={onClose}
             disabled={state.loading}
             style={{
-              background: "#f9fafb", color: "#374151",
+              background: "#f9fafb",
+              color: "#374151",
               border: "1px solid #d1d5db",
-              padding: "10px 20px", borderRadius: 8,
-              fontWeight: 600, cursor: "pointer", fontSize: 14,
+              padding: "10px 20px",
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontSize: 14,
             }}
           >
             Cancelar
@@ -285,12 +417,16 @@ const ClienteModal = ({ isOpen, onClose, onSuccess, cliente = null }) => {
             disabled={state.loading}
             style={{
               background: state.loading ? "#9ca3af" : "#1f8f57",
-              color: "#fff", border: "none",
-              padding: "10px 24px", borderRadius: 8,
+              color: "#fff",
+              border: "none",
+              padding: "10px 24px",
+              borderRadius: 8,
               fontWeight: 700,
               cursor: state.loading ? "not-allowed" : "pointer",
               fontSize: 14,
-              boxShadow: state.loading ? "none" : "0 4px 12px rgba(31,143,87,0.25)",
+              boxShadow: state.loading
+                ? "none"
+                : "0 4px 12px rgba(31,143,87,0.25)",
             }}
           >
             {state.loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear Cliente"}

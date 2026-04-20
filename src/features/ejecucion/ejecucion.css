@@ -623,11 +623,6 @@
 .nrm-select   { cursor: pointer; }
 .nrm-textarea { resize: vertical; min-height: 72px; }
 
-.nrm-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
 
 .nrm-error {
   background-color: #fef2f2;

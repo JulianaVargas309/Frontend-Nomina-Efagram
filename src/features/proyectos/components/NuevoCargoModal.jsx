@@ -2,11 +2,11 @@ import { useEffect, useReducer } from 'react';
 import { X } from 'lucide-react';
 
 const INITIAL_STATE = {
-  codigo:  '',
-  nombre:  '',
-  activo:  true,
-  saving:  false,
-  error:   null,
+  codigo: '',
+  nombre: '',
+  activo: true,
+  saving: false,
+  error: null,
 };
 
 function reducer(state, action) {
@@ -26,48 +26,47 @@ function reducer(state, action) {
 
 export default function NuevoCargoModal({
   isOpen,
-  title = 'Nuevo Cargo',
-  initialValues,
   onClose,
   onSubmit,
+  cargo = null,
+  initialValues = null,
+  title = 'Nuevo Cargo',
+  nextCode = '',
 }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   const setField = (field) => (e) =>
     dispatch({ type: 'SET_FIELD', field, value: e.target.value });
 
-  // UN solo dispatch — sin renders en cascada
   useEffect(() => {
     if (!isOpen) return;
-    const activoValue = initialValues?.activo ?? initialValues?.estado;
+
+    const values = cargo || initialValues || {};
     dispatch({
       type: 'RESET',
       values: {
-        codigo: initialValues?.codigo ?? '',
-        nombre: initialValues?.nombre ?? '',
-        activo: typeof activoValue === 'boolean' ? activoValue : true,
-        saving: false,
-        error:  null,
+        codigo: values.codigo || nextCode || '',
+        nombre: values.nombre || '',
+        activo: Boolean(values.activo ?? true),
       },
     });
-  }, [isOpen, initialValues]);
+  }, [isOpen, cargo, initialValues, nextCode]);
 
   if (!isOpen) return null;
 
   const isEdit = title.toLowerCase().includes('editar');
 
-  // Solo dígitos en el código
-  const handleCodigo = (e) => {
-    const val = e.target.value.replace(/\D/g, '');
-    dispatch({ type: 'SET_FIELD', field: 'codigo', value: val });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     dispatch({ type: 'SET_ERROR', value: null });
 
-    if (!state.codigo.toString().trim() || !state.nombre.trim()) {
-      dispatch({ type: 'SET_ERROR', value: 'Código y nombre son obligatorios' });
+    // En modo edición, validar código. En modo creación, el código viene automático
+    if (isEdit && !String(state.codigo).trim()) {
+      dispatch({ type: 'SET_ERROR', value: 'Código es obligatorio' });
+      return;
+    }
+    if (!state.nombre.trim()) {
+      dispatch({ type: 'SET_ERROR', value: 'El nombre del cargo es obligatorio' });
       return;
     }
 
@@ -82,7 +81,10 @@ export default function NuevoCargoModal({
       await onSubmit?.(payload);
     } catch (err) {
       console.error(err);
-      dispatch({ type: 'SET_ERROR', value: err?.response?.data?.message || 'No se pudo guardar' });
+      dispatch({
+        type: 'SET_ERROR',
+        value: err?.response?.data?.message || 'No se pudo guardar',
+      });
       dispatch({ type: 'SET_SAVING', value: false });
     }
   };
@@ -106,20 +108,29 @@ export default function NuevoCargoModal({
         </div>
 
         <form className="modal-body" onSubmit={handleSubmit}>
-
-          {/* Código — solo números */}
           <label className="field">
-            <span>Código *</span>
+            <span>
+              Código * {!cargo && <span style={{ color: '#9ca3af', fontWeight: 400 }}>(automático)</span>}
+            </span>
             <input
               value={state.codigo}
-              onChange={handleCodigo}
-              placeholder="Ej: 1"
-              inputMode="numeric"
-              autoFocus
+              onChange={setField('codigo')}
+              placeholder="Ej: 001"
+              readOnly
+              disabled={!cargo}
+              title={!cargo ? 'El código se genera automáticamente' : 'El código no puede modificarse'}
+              style={
+                !cargo
+                  ? {
+                    background: '#f1f5f9',
+                    color: '#64748b',
+                    cursor: 'not-allowed',
+                  }
+                  : undefined
+              }
             />
           </label>
 
-          {/* Nombre */}
           <label className="field">
             <span>Nombre *</span>
             <input
@@ -129,13 +140,16 @@ export default function NuevoCargoModal({
             />
           </label>
 
-          {/* Estado */}
           <label className="field">
             <span>Estado</span>
             <select
               value={state.activo ? 'true' : 'false'}
               onChange={(e) =>
-                dispatch({ type: 'SET_FIELD', field: 'activo', value: e.target.value === 'true' })
+                dispatch({
+                  type: 'SET_FIELD',
+                  field: 'activo',
+                  value: e.target.value === 'true',
+                })
               }
             >
               <option value="true">Activo</option>

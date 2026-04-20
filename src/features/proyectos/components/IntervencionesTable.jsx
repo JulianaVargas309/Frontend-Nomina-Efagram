@@ -67,8 +67,9 @@ export default function IntervencionesTable({
   onUpdate,
   onDelete,
 }) {
-  const [openCreate,          setOpenCreate]          = useState(false);
-  const [editIntervencion,    setEditIntervencion]    = useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [createInitialValues, setCreateInitialValues] = useState(null);
+  const [editIntervencion, setEditIntervencion] = useState(null);
   const [detalleIntervencion, setDetalleIntervencion] = useState(null);
 
   const getId = (i) => i?._id ?? i?.id;
@@ -90,7 +91,30 @@ export default function IntervencionesTable({
             placeholder="Buscar intervención..."
           />
         </div>
-        <button className="btn-primary" onClick={() => setOpenCreate(true)}>
+        <button
+          className="btn-primary"
+          onClick={() => {
+            const max = intervenciones.reduce((acc, i) => {
+              const codigo = String(i?.codigo || "").toUpperCase();
+              const match = codigo.match(/^INT-(\d+)$/);
+              if (!match) return acc;
+              const num = parseInt(match[1], 10);
+              return num > acc ? num : acc;
+            }, 0);
+
+            const nuevoCodigo = `INT-${String(max + 1).padStart(3, "0")}`;
+
+            setCreateInitialValues({
+              codigo: nuevoCodigo,
+              nombre: "",
+              proceso: "",
+              activo: true,
+              descripcion: ""
+            });
+
+            setOpenCreate(true);
+          }}
+        >
           <Plus size={16} />
           Nueva Intervención
         </button>
@@ -117,7 +141,7 @@ export default function IntervencionesTable({
               </tr>
             ) : (
               intervenciones.map((i) => {
-                const id       = getId(i);
+                const id = getId(i);
                 const isActive = Boolean(i?.activo);
 
                 return (
@@ -191,11 +215,21 @@ export default function IntervencionesTable({
         key={openCreate ? 'create' : 'create-closed'}
         isOpen={openCreate}
         title="Nueva intervención"
-        initialValues={{ codigo: '', nombre: '', proceso: '', activo: true, descripcion: '' }}
-        onClose={() => setOpenCreate(false)}
+        initialValues={createInitialValues ?? {
+          codigo: '',
+          nombre: '',
+          proceso: '',
+          activo: true,
+          descripcion: ''
+        }}
+        onClose={() => {
+          setOpenCreate(false);
+          setCreateInitialValues(null);
+        }}
         onSubmit={async (values) => {
           await onAdd?.(values);
           setOpenCreate(false);
+          setCreateInitialValues(null);
         }}
       />
 
@@ -204,10 +238,10 @@ export default function IntervencionesTable({
         isOpen={!!editIntervencion}
         title="Editar intervención"
         initialValues={{
-          codigo:      editIntervencion?.codigo      ?? '',
-          nombre:      editIntervencion?.nombre      ?? '',
-          proceso:     editIntervencion?.proceso     ?? '',
-          activo:      editIntervencion?.activo      ?? true,
+          codigo: editIntervencion?.codigo ?? '',
+          nombre: editIntervencion?.nombre ?? '',
+          proceso: editIntervencion?.proceso ?? '',
+          activo: editIntervencion?.activo ?? true,
           descripcion: editIntervencion?.descripcion ?? '',
         }}
         onClose={() => setEditIntervencion(null)}

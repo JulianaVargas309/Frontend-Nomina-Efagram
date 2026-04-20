@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getClientes, deleteCliente } from "../services/Clientesservice";
-import ClienteModal from "../components/Clientemodal";
+import ClienteModal, { getNextClienteCode } from "../components/Clientemodal";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
 import "../../../assets/styles/proyectos.css";
 import {
@@ -446,6 +446,7 @@ const ClientesPage = () => {
         <ClienteModal
           isOpen={modal.open && (modal.tipo === "crear" || modal.tipo === "editar")}
           cliente={modal.tipo === "editar" ? modal.cliente : null}
+          nextCode={modal.tipo === "crear" ? getNextClienteCode(clientes) : ""}
           onClose={cerrarModal}
           onSuccess={() => {
             const accion = modal.tipo === "editar" ? "actualizado" : "creado";

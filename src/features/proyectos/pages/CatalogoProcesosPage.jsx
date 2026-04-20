@@ -10,6 +10,17 @@ import {
 } from '../services/procesosService';
 import '../../territorial/territorial.css';
 
+const getNextProcesoCode = (procesos = []) => {
+  const usados = procesos
+    .map((p) => String(p?.codigo ?? '').toUpperCase().trim())
+    .filter((codigo) => /^PRO-(\d+)$/.test(codigo))
+    .map((codigo) => Number(codigo.match(/^PRO-(\d+)$/)?.[1] ?? 0))
+    .filter((n) => Number.isFinite(n));
+
+  const maxNumero = usados.length ? Math.max(...usados) : 0;
+  return `PRO-${String(maxNumero + 1).padStart(3, '0')}`;
+};
+
 export default function CatalogoProcesosPage() {
   const [procesos, setProcesos] = useState([]);
   const [search, setSearch] = useState('');
@@ -52,6 +63,8 @@ export default function CatalogoProcesosPage() {
     });
   }, [procesos, search]);
 
+  const nextCode = useMemo(() => getNextProcesoCode(procesos), [procesos]);
+
   const getId = (p) => p?._id ?? p?.id;
 
   const handleAdd = async (payload) => {
@@ -82,7 +95,6 @@ export default function CatalogoProcesosPage() {
   return (
     <DashboardLayout>
       <div className="territorial-wrapper">
-        
         <ProcesosStats procesos={procesos} />
 
         {loading ? (
@@ -97,6 +109,7 @@ export default function CatalogoProcesosPage() {
             onAdd={handleAdd}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+            nextCode={nextCode}
           />
         )}
       </div>

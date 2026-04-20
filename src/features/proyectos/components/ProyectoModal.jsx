@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createProyecto, updateProyecto } from "../services/proyectosService";
 import { getPersonas } from "../services/personalService";
 import { getZonas } from "../../territorial/services/zonas.service";
@@ -7,6 +7,7 @@ import "../../../assets/styles/proyectos.css";
 import {
   Folder,
   Calendar,
+  CalendarDays,
   User,
   Tag,
   TrendingUp,
@@ -15,6 +16,7 @@ import {
   MapPin,
   PlusCircle,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : "");
@@ -196,12 +198,67 @@ const ErrorBanner = ({ errors }) => {
   );
 };
 
+const padProyectoNumber = (value) => String(value).padStart(3, "0");
+
+const formatIsoToDisplay = (iso) => {
+  if (!iso) return "";
+  const [year, month, day] = iso.slice(0, 10).split("-");
+  return `${day}/${month}/${year}`;
+};
+
+const formatDisplayToDateParts = (value) => {
+  const raw = String(value || "").replace(/[^0-9]/g, "").slice(0, 8);
+
+  let display = raw;
+  if (raw.length > 4) {
+    display = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4)}`;
+  } else if (raw.length > 2) {
+    display = `${raw.slice(0, 2)}/${raw.slice(2)}`;
+  }
+
+  if (raw.length !== 8) {
+    return { display, iso: "" };
+  }
+
+  const day = raw.slice(0, 2);
+  const month = raw.slice(2, 4);
+  const year = raw.slice(4, 8);
+
+  const date = new Date(`${year}-${month}-${day}T00:00:00`);
+  const isValid =
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === Number(year) &&
+    date.getMonth() + 1 === Number(month) &&
+    date.getDate() === Number(day);
+
+  return {
+    display,
+    iso: isValid ? `${year}-${month}-${day}` : "",
+  };
+};
+
+const getNextProyectoCode = (proyectos = [], prefijo = "PRY") => {
+  const maxNumber = proyectos.reduce((acc, item) => {
+    const code = String(item?.codigo || "").trim().toUpperCase();
+    const match = code.match(/(\d+)$/);
+    if (!match) return acc;
+
+    const current = Number(match[1]);
+    if (Number.isNaN(current)) return acc;
+
+    return Math.max(acc, current);
+  }, 0);
+
+  return `${prefijo}-${padProyectoNumber(maxNumber + 1)}`;
+};
+
 const ProyectoModal = ({
   isOpen,
   onClose,
   onSuccess,
   proyecto = null,
   modo = "crear",
+  proyectosActuales = [],
 }) => {
   const modoEditar = modo === "editar";
   const modoVer = modo === "ver";
@@ -212,6 +269,9 @@ const ProyectoModal = ({
   const [loadingData, setLoadingData] = useState(false);
   const [intervenciones, setIntervenciones] = useState([]);
   const [formErrors, setFormErrors] = useState([]);
+
+  const fechaInicioPickerRef = useRef(null);
+  const fechaFinPickerRef = useRef(null);
 
   const initialForm = useMemo(
     () => ({
@@ -252,15 +312,9 @@ const ProyectoModal = ({
         descripcion: proyecto.descripcion ?? "",
       });
 
-      const toDisplay = (iso) => {
-        if (!iso) return "";
-        const [y, m, d] = iso.slice(0, 10).split("-");
-        return `${d}/${m}/${y}`;
-      };
-
       setDisplayFechas({
-        fecha_inicio: toDisplay(proyecto.fecha_inicio),
-        fecha_fin_estimada: toDisplay(proyecto.fecha_fin_estimada),
+        fecha_inicio: formatIsoToDisplay(proyecto.fecha_inicio),
+        fecha_fin_estimada: formatIsoToDisplay(proyecto.fecha_fin_estimada),
       });
 
       const bloquesMigrados = [];
@@ -297,8 +351,14 @@ const ProyectoModal = ({
 
       setIntervenciones(bloquesMigrados);
     } else {
-      setForm(initialForm);
-      setDisplayFechas({ fecha_inicio: "", fecha_fin_estimada: "" });
+      setForm({
+        ...initialForm,
+        codigo: getNextProyectoCode(proyectosActuales, "PRY"),
+      });
+      setDisplayFechas({
+        fecha_inicio: "",
+        fecha_fin_estimada: "",
+      });
       setIntervenciones([]);
     }
 
@@ -324,7 +384,7 @@ const ProyectoModal = ({
 
       cargar();
     }
-  }, [isOpen, modo, proyecto, modoEditar, modoVer, initialForm]);
+  }, [isOpen, modo, proyecto, modoEditar, modoVer, initialForm, proyectosActuales]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -334,6 +394,109 @@ const ProyectoModal = ({
       [name]: name === "avance" ? Number(value) : value,
     }));
   };
+
+  const renderDateField = ({ label, field, pickerRef }) => (
+    <div className="form-group">
+      <label>{label}</label>
+
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="text"
+          placeholder="DD/MM/AAAA"
+          maxLength={10}
+          value={displayFechas[field]}
+          onChange={(e) => {
+            const { display, iso } = formatDisplayToDateParts(e.target.value);
+
+            setDisplayFechas((prev) => ({
+              ...prev,
+              [field]: display,
+            }));
+
+            setForm((prev) => ({
+              ...prev,
+              [field]: iso,
+            }));
+          }}
+          style={{
+            width: "100%",
+            paddingRight: 44,
+            letterSpacing: 1,
+          }}
+        />
+
+        <button
+          type="button"
+          onClick={() => {
+            if (pickerRef.current?.showPicker) {
+              pickerRef.current.showPicker();
+            } else {
+              pickerRef.current?.focus();
+            }
+          }}
+          style={{
+            position: "absolute",
+            right: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            border: "1px solid #e2e8f0",
+            background: "#f8fafc",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "#6366f1",
+            transition: "all .2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#eef2ff";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#f8fafc";
+          }}
+          title={`Seleccionar ${label}`}
+        >
+          <CalendarDays size={16} />
+        </button>
+
+        <input
+          ref={pickerRef}
+          type="date"
+          value={form[field] || ""}
+          onChange={(e) => {
+            const iso = e.target.value;
+
+            setForm((prev) => ({
+              ...prev,
+              [field]: iso,
+            }));
+
+            setDisplayFechas((prev) => ({
+              ...prev,
+              [field]: formatIsoToDisplay(iso),
+            }));
+          }}
+          style={{
+            position: "absolute",
+            opacity: 0,
+            pointerEvents: "none",
+            width: 0,
+            height: 0,
+          }}
+          tabIndex={-1}
+        />
+      </div>
+    </div>
+  );
 
   const buildPayload = () => {
     const actividadesPorIntervencion = {};
@@ -381,7 +544,7 @@ const ProyectoModal = ({
     const errores = [];
 
     if (!form.codigo.trim()) {
-      errores.push("El código del proyecto es obligatorio (ej: PRY-001).");
+      errores.push("El código del proyecto es obligatorio.");
     }
 
     if (!form.nombre.trim()) {
@@ -521,9 +684,7 @@ const ProyectoModal = ({
       "Sin cliente";
 
     const responsableNombre = proyecto.responsable
-      ? (`${proyecto.responsable.nombres ?? ""} ${
-          proyecto.responsable.apellidos ?? ""
-        }`.trim() || "—")
+      ? (`${proyecto.responsable.nombres ?? ""} ${proyecto.responsable.apellidos ?? ""}`.trim() || "—")
       : "—";
 
     return (
@@ -1103,26 +1264,30 @@ const ProyectoModal = ({
             <ErrorBanner errors={formErrors} />
 
             <div className="form-group">
-              <label>Código *</label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Lock size={13} /> Código *
+              </label>
               <input
                 name="codigo"
                 value={form.codigo}
-                onChange={handleChange}
-                placeholder="Ej: PRY-001"
-                style={{ textTransform: "uppercase" }}
-                disabled={modoEditar}
+                placeholder="Código generado automáticamente"
+                style={{
+                  textTransform: "uppercase",
+                  background: "#f8fafc",
+                  color: "#475569",
+                  cursor: "not-allowed",
+                }}
+                disabled
               />
-              {modoEditar && (
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    fontSize: 12,
-                    color: "#94a3b8",
-                  }}
-                >
-                  El código no puede modificarse después de la creación.
-                </p>
-              )}
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  fontSize: 12,
+                  color: "#94a3b8",
+                }}
+              >
+                El código se genera automáticamente.
+              </p>
             </div>
 
             <div className="form-group">
@@ -1177,10 +1342,9 @@ const ProyectoModal = ({
               </select>
               <p
                 style={{
-                  margin: "6px 0 0",
+                  margin: "4px 0 0",
                   fontSize: 12,
-                  color: "#8b97a8",
-                  lineHeight: 1.4,
+                  color: "#64748b",
                 }}
               >
                 La zona determina los núcleos disponibles para los subproyectos.
@@ -1195,85 +1359,17 @@ const ProyectoModal = ({
                 gap: 16,
               }}
             >
-              <div className="form-group">
-                <label>Fecha Inicio</label>
-                <input
-                  type="text"
-                  placeholder="dd/mm/aaaa"
-                  maxLength={10}
-                  value={displayFechas.fecha_inicio}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-                    let display = raw;
+              {renderDateField({
+                label: "Fecha Inicio",
+                field: "fecha_inicio",
+                pickerRef: fechaInicioPickerRef,
+              })}
 
-                    if (raw.length > 4) {
-                      display =
-                        raw.slice(0, 2) +
-                        "/" +
-                        raw.slice(2, 4) +
-                        "/" +
-                        raw.slice(4);
-                    } else if (raw.length > 2) {
-                      display = raw.slice(0, 2) + "/" + raw.slice(2);
-                    }
-
-                    setDisplayFechas((p) => ({ ...p, fecha_inicio: display }));
-
-                    if (raw.length === 8) {
-                      const d = raw.slice(0, 2);
-                      const m = raw.slice(2, 4);
-                      const y = raw.slice(4, 8);
-                      setForm((p) => ({ ...p, fecha_inicio: `${y}-${m}-${d}` }));
-                    } else {
-                      setForm((p) => ({ ...p, fecha_inicio: "" }));
-                    }
-                  }}
-                  style={{ letterSpacing: 1 }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Fecha Fin Estimada</label>
-                <input
-                  type="text"
-                  placeholder="dd/mm/aaaa"
-                  maxLength={10}
-                  value={displayFechas.fecha_fin_estimada}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-                    let display = raw;
-
-                    if (raw.length > 4) {
-                      display =
-                        raw.slice(0, 2) +
-                        "/" +
-                        raw.slice(2, 4) +
-                        "/" +
-                        raw.slice(4);
-                    } else if (raw.length > 2) {
-                      display = raw.slice(0, 2) + "/" + raw.slice(2);
-                    }
-
-                    setDisplayFechas((p) => ({
-                      ...p,
-                      fecha_fin_estimada: display,
-                    }));
-
-                    if (raw.length === 8) {
-                      const d = raw.slice(0, 2);
-                      const m = raw.slice(2, 4);
-                      const y = raw.slice(4, 8);
-                      setForm((p) => ({
-                        ...p,
-                        fecha_fin_estimada: `${y}-${m}-${d}`,
-                      }));
-                    } else {
-                      setForm((p) => ({ ...p, fecha_fin_estimada: "" }));
-                    }
-                  }}
-                  style={{ letterSpacing: 1 }}
-                />
-              </div>
+              {renderDateField({
+                label: "Fecha Fin Estimada",
+                field: "fecha_fin_estimada",
+                pickerRef: fechaFinPickerRef,
+              })}
             </div>
 
             <div className="form-group">
@@ -1296,13 +1392,25 @@ const ProyectoModal = ({
               setIntervenciones={setIntervenciones}
             />
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className="form-group">
               <label>Descripción</label>
               <textarea
                 name="descripcion"
                 value={form.descripcion}
                 onChange={handleChange}
-                placeholder="Descripción opcional..."
+                placeholder="Descripción opcional."
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Avance: {form.avance}%</label>
+              <input
+                type="range"
+                name="avance"
+                min="0"
+                max="100"
+                value={form.avance}
+                onChange={handleChange}
               />
             </div>
           </div>
@@ -1311,50 +1419,56 @@ const ProyectoModal = ({
         <div
           style={{
             flexShrink: 0,
-            padding: "18px 24px 20px",
+            padding: "16px 24px 20px",
             borderTop: "1px solid #f0f2f5",
             background: "#fff",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 12,
           }}
         >
-          <button
-            onClick={onClose}
-            disabled={loading}
-            style={{
-              background: "#f1f5f9",
-              color: "#475569",
-              border: "none",
-              padding: "14px 22px",
-              borderRadius: 14,
-              fontWeight: 800,
-              cursor: "pointer",
-              fontSize: 14,
-              minWidth: 120,
-            }}
-          >
-            Cancelar
-          </button>
+          <ErrorBanner errors={formErrors} />
 
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
+          <div
             style={{
-              background: loading ? "#94a3b8" : "#1f8f57",
-              color: "#fff",
-              border: "none",
-              padding: "14px 24px",
-              borderRadius: 14,
-              fontWeight: 800,
-              cursor: loading ? "not-allowed" : "pointer",
-              fontSize: 14,
-              minWidth: 180,
-              boxShadow: loading ? "none" : "0 6px 16px rgba(31,143,87,0.28)",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 10,
+              flexWrap: "wrap",
             }}
           >
-            {loading ? "Guardando..." : modoEditar ? "Guardar Cambios" : "Crear Proyecto"}
-          </button>
+            <button
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                background: "#f1f5f9",
+                color: "#475569",
+                border: "none",
+                padding: "12px 20px",
+                borderRadius: 10,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              Cancelar
+            </button>
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              style={{
+                background: loading ? "#94a3b8" : "#1f8f57",
+                color: "#fff",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: 10,
+                fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                fontSize: 14,
+                boxShadow: loading ? "none" : "0 4px 12px rgba(31,143,87,0.25)",
+              }}
+            >
+              {loading ? "Guardando..." : modoEditar ? "Guardar Cambios" : "Crear Proyecto"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

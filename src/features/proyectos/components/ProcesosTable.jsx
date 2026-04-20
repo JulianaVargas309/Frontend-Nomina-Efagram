@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Eye, Pencil, Plus, Search, Settings, X, Trash2 } from 'lucide-react';
 import NuevoProcesoModal from './NuevoProcesoModal';
 
@@ -54,6 +54,27 @@ function ProcesoDetalleModal({ isOpen, proceso, onClose }) {
   );
 }
 
+const generarCodigoProceso = (procesos = []) => {
+  if (!Array.isArray(procesos) || procesos.length === 0) {
+    return 'PRO-001';
+  }
+
+  let max = 0;
+
+  procesos.forEach((p) => {
+    const codigo = String(p?.codigo || '').trim().toUpperCase();
+    const match = codigo.match(/^PRO-(\d+)$/);
+    if (!match) return;
+
+    const numero = parseInt(match[1], 10);
+    if (!isNaN(numero) && numero > max) {
+      max = numero;
+    }
+  });
+
+  return `PRO-${String(max + 1).padStart(3, '0')}`;
+};
+
 export default function ProcesosTable({
   procesos = [],
   search = '',
@@ -62,11 +83,15 @@ export default function ProcesosTable({
   onUpdate,
   onDelete
 }) {
-  const [openCreate,    setOpenCreate]    = useState(false);
-  const [editProceso,   setEditProceso]   = useState(null);
-  const [detalleProceso,setDetalleProceso]= useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [editProceso, setEditProceso] = useState(null);
+  const [detalleProceso, setDetalleProceso] = useState(null);
 
   const getId = (p) => p?._id ?? p?.id;
+
+  const codigoSiguiente = useMemo(() => {
+    return generarCodigoProceso(procesos);
+  }, [procesos]);
 
   const handleDelete = async (proceso) => {
     if (window.confirm(`¿Estás seguro de eliminar el proceso "${proceso?.nombre}"?`)) {
@@ -195,9 +220,16 @@ export default function ProcesosTable({
       />
 
       <NuevoProcesoModal
+        key={openCreate ? `create-${codigoSiguiente}` : 'create-closed'}
         isOpen={openCreate}
         title="Nuevo proceso"
-        initialValues={{ codigo: '', nombre: '', descripcion: '', estado: true }}
+        nextCode={codigoSiguiente}
+        initialValues={{
+          codigo: codigoSiguiente,
+          nombre: '',
+          descripcion: '',
+          estado: true
+        }}
         onClose={() => setOpenCreate(false)}
         onSubmit={async (values) => {
           await onAdd?.(values);
@@ -209,8 +241,8 @@ export default function ProcesosTable({
         isOpen={!!editProceso}
         title="Editar proceso"
         initialValues={{
-          codigo:      editProceso?.codigo      ?? '',
-          nombre:      editProceso?.nombre      ?? '',
+          codigo: editProceso?.codigo ?? '',
+          nombre: editProceso?.nombre ?? '',
           descripcion: editProceso?.descripcion ?? '',
           estado: typeof editProceso?.activo === 'boolean'
             ? editProceso.activo

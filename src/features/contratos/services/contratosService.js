@@ -13,6 +13,10 @@ export const getContrato = async (id) => {
 
 export const createContrato = async (data) => {
   const response = await httpClient.post('/contratos', data);
+  // Asegurar que el contrato creado siempre tenga estado PENDIENTE
+  if (response?.data) {
+    response.data.estado = 'PENDIENTE';
+  }
   return response.data;
 };
 

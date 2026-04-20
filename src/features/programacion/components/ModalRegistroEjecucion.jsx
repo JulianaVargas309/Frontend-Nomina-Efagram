@@ -10,6 +10,7 @@ import {
   PauseCircle
 } from 'lucide-react';
 import programacionService from '../services/programacionService';
+import { getContrato } from '../../contratos/services/contratosService';
 
 const ESTADO_COLOR = {
   COMPLETADO: { bg: '#dcfce7', color: '#16a34a', label: 'Completado' },
@@ -71,8 +72,54 @@ const normalizarDia = (d) => {
     tiempo_detenido: d.tiempo_detenido ?? 0,
     motivo_detencion: d.motivo_detencion ?? '',
     motivo_detencion_otro: d.motivo_detencion_otro ?? '',
+    cuadrillas_detenidas: d.cuadrillas_detenidas ?? '',
     estado: d.estado || 'PENDIENTE',
   };
+};
+
+const formatDateKey = (value) => {
+  const d = new Date(value);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`;
+};
+
+const createSemanaCompleta = (programacion, registros) => {
+  if (!programacion?.fecha_inicial || !programacion?.fecha_final) {
+    return registros.map(normalizarDia);
+  }
+
+  const inicio = toDateOnly(programacion.fecha_inicial);
+  const fin = toDateOnly(programacion.fecha_final);
+  const registroPorFecha = new Map(
+    (registros || []).map((item) => [formatDateKey(item.fecha), item])
+  );
+
+  const dias = [];
+  for (let current = new Date(inicio); current <= fin; current.setDate(current.getDate() + 1)) {
+    const fechaKey = formatDateKey(current);
+    const registro = registroPorFecha.get(fechaKey);
+
+    if (registro) {
+      dias.push(normalizarDia(registro));
+    } else {
+      dias.push(
+        normalizarDia({
+          _id: null,
+          fecha: new Date(current).toISOString(),
+          cantidad_ejecutada: 0,
+          observaciones: '',
+          tiempo_detenido: 0,
+          motivo_detencion: '',
+          motivo_detencion_otro: '',
+          cuadrillas_detenidas: '',
+          estado: 'PENDIENTE',
+        })
+      );
+    }
+  }
+
+  return dias;
 };
 
 export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }) {
@@ -82,6 +129,7 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [metaPrograma, setMetaPrograma] = useState(null);
+  const [cuadrillasDisponibles, setCuadrillasDisponibles] = useState([]);
 
   useEffect(() => {
     if (isOpen && programacion?._id) {
@@ -95,11 +143,12 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
       setLoading(true);
       setError(null);
 
+      // Cargar registros diarios
       const response = await programacionService.getRegistrosDiarios(programacion._id);
       const data = response?.data || response || {};
       const diasData = Array.isArray(data?.dias) ? data.dias : [];
 
-      setDias(diasData.map(normalizarDia));
+      setDias(createSemanaCompleta(programacion, diasData));
 
       setMetaPrograma({
         cantidad_proyectada: data?.cantidad_proyectada ?? programacion?.cantidad_proyectada ?? 0,
@@ -108,8 +157,28 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
         registro_hoy_pendiente: data?.registro_hoy_pendiente ?? null,
         hoy: data?.hoy ?? null,
       });
+
+      // Cargar cuadrillas del contrato si existe
+      if (programacion?.contrato?._id) {
+        try {
+          console.log('Cargando cuadrillas para contrato:', programacion.contrato._id);
+          const contratoResponse = await getContrato(programacion.contrato._id);
+          const contrato = contratoResponse?.data || contratoResponse;
+          console.log('Contrato obtenido:', contrato);
+          const cuadrillas = contrato?.cuadrillas || [];
+          console.log('Cuadrillas encontradas:', cuadrillas);
+          setCuadrillasDisponibles(cuadrillas.map(c => ({ value: c.nombre || c._id, label: c.nombre || `Cuadrilla ${c._id}` })));
+        } catch (err) {
+          console.warn('Error al cargar cuadrillas:', err);
+          setCuadrillasDisponibles([]);
+        }
+      } else {
+        console.log('No hay contrato._id en programacion:', programacion);
+        setCuadrillasDisponibles([]);
+      }
     } catch (err) {
-      setError(err?.message || err?.error || 'Error al cargar registros diarios');
+      console.error('Error al cargar registros:', err);
+      setError(err?.message || err?.error || err?.toString() || 'Error al cargar registros diarios');
     } finally {
       setLoading(false);
     }
@@ -122,21 +191,20 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
       prev.map((d, i) =>
         i === index
           ? {
-              ...d,
-              cantidad_ejecutada: cantidad,
-            }
+            ...d,
+            cantidad_ejecutada: cantidad,
+          }
           : d
       )
     );
   };
 
-  const handleCambiarObservaciones = (index, valor) => {
-    setDias(prev => prev.map((d, i) => (i === index ? { ...d, observaciones: valor } : d)));
-  };
-
-  const handleCambiarTiempoDetenido = (index, valor) => {
-    const horas = parseFloat(valor) || 0;
-    setDias(prev => prev.map((d, i) => (i === index ? { ...d, tiempo_detenido: horas } : d)));
+  const handleCambiarFecha = (index, valor) => {
+    setDias(prev =>
+      prev.map((d, i) =>
+        i === index ? { ...d, fecha: valor } : d
+      )
+    );
   };
 
   const handleCambiarMotivoDetencion = (index, valor) => {
@@ -144,10 +212,10 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
       prev.map((d, i) =>
         i === index
           ? {
-              ...d,
-              motivo_detencion: valor,
-              motivo_detencion_otro: valor === 'otro' ? d.motivo_detencion_otro : '',
-            }
+            ...d,
+            motivo_detencion: valor,
+            motivo_detencion_otro: valor === 'otro' ? d.motivo_detencion_otro : '',
+          }
           : d
       )
     );
@@ -156,6 +224,428 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
   const handleCambiarMotivoPersonalizado = (index, valor) => {
     setDias(prev =>
       prev.map((d, i) => (i === index ? { ...d, motivo_detencion_otro: valor } : d))
+    );
+  };
+
+  const handleCambiarCuadrillasDetenidas = (index, valor) => {
+    setDias(prev =>
+      prev.map((d, i) =>
+        i === index ? { ...d, cuadrillas_detenidas: valor } : d
+      )
+    );
+  };
+
+  const renderDiaCard = (dia, index) => {
+    const est = dia.estado || 'PENDIENTE';
+    const estInfo = ESTADO_COLOR[est] || ESTADO_COLOR.PENDIENTE;
+    const fechaObj = new Date(dia.fecha);
+    const nombreDia =
+      dia.dia_semana ||
+      ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fechaObj.getDay()];
+    const borde = dia.es_hoy
+      ? '2px solid #3b82f6'
+      : dia.es_pasado
+        ? '1.5px solid #e5e7eb'
+        : '1.5px solid #dbeafe';
+    const fondo = dia.es_hoy ? '#eff6ff' : dia.es_futuro ? '#f8fbff' : '#ffffff';
+
+    return (
+      <div
+        key={dia._id || index}
+        style={{
+          border: borde,
+          borderRadius: 12,
+          background: fondo,
+          padding: '16px',
+          boxShadow: dia.es_hoy ? '0 0 0 3px rgba(59,130,246,0.08)' : '0 1px 4px rgba(0,0,0,0.05)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 12,
+            gap: 8,
+          }}
+        >
+          <div>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: '#111827' }}>
+              {nombreDia}
+            </p>
+            <div
+              style={{
+                margin: '3px 0 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <Calendar size={11} style={{ color: '#6b7280' }} />
+              <input
+                type="date"
+                value={dia.fecha ? new Date(dia.fecha).toISOString().split('T')[0] : ''}
+                onChange={(e) => handleCambiarFecha(index, e.target.value)}
+                disabled={guardando}
+                style={{
+                  fontSize: 12,
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  padding: '2px 4px',
+                  outline: 'none',
+                  background: '#fff',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </div>
+            <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {dia.es_hoy && (
+                <span
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: 99,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: '#dbeafe',
+                    color: '#1d4ed8',
+                  }}
+                >
+                  HOY
+                </span>
+              )}
+              {dia.es_pasado && (
+                <span
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: 99,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: '#f3f4f6',
+                    color: '#4b5563',
+                  }}
+                >
+                  PASADO
+                </span>
+              )}
+              {dia.es_futuro && (
+                <span
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: 99,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: '#ede9fe',
+                    color: '#6d28d9',
+                  }}
+                >
+                  FUTURO
+                </span>
+              )}
+            </div>
+          </div>
+          <span
+            style={{
+              padding: '4px 10px',
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 600,
+              background: estInfo.bg,
+              color: estInfo.color,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {estInfo.label}
+          </span>
+        </div>
+
+        {((!dia._id && (dia.es_hoy || dia.es_pasado)) || (est === 'PENDIENTE' && dia.es_pasado)) && (
+          <div
+            style={{
+              marginBottom: 10,
+              padding: '8px 12px',
+              borderRadius: 10,
+              background: '#fef3c7',
+              color: '#92400e',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Registro diario no completado para este día.
+          </div>
+        )}
+
+        <div style={{ marginBottom: 10 }}>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#6b7280',
+              marginBottom: 5,
+            }}
+          >
+            <Hash size={11} />
+            Cantidad ejecutada
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={dia.cantidad_ejecutada || ''}
+            onChange={(e) => handleCambiarCantidad(index, e.target.value)}
+            disabled={guardando}
+            placeholder="0"
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1.5px solid #d1d5db',
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#111827',
+              outline: 'none',
+              boxSizing: 'border-box',
+              background: '#fff',
+            }}
+          />
+        </div>
+
+        <div>
+          <label
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#6b7280',
+              marginBottom: 5,
+            }}
+          >
+            Observaciones
+          </label>
+          <textarea
+            value={dia.observaciones || ''}
+            onChange={(e) => handleCambiarObservaciones(index, e.target.value)}
+            disabled={guardando}
+            rows={2}
+            placeholder="Notas del día..."
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1.5px solid #d1d5db',
+              borderRadius: 8,
+              fontSize: 12,
+              color: '#374151',
+              resize: 'vertical',
+              outline: 'none',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              background: '#fff',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            margin: '12px 0 10px',
+            borderTop: '1px dashed #e5e7eb',
+            paddingTop: 10,
+          }}
+        >
+          <p
+            style={{
+              margin: '0 0 8px',
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#b45309',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            <PauseCircle size={12} />
+            Jornada detenida
+          </p>
+
+          <div style={{ marginBottom: 8 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6b7280',
+                marginBottom: 5,
+              }}
+            >
+              Tiempo detenido (horas)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="24"
+              step="0.5"
+              value={dia.tiempo_detenido || ''}
+              onChange={(e) => handleCambiarTiempoDetenido(index, e.target.value)}
+              disabled={guardando}
+              placeholder="0"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1.5px solid #fcd34d',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 600,
+                color: '#92400e',
+                outline: 'none',
+                boxSizing: 'border-box',
+                background: '#fffbeb',
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: dia.motivo_detencion === 'otro' ? 8 : 0 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6b7280',
+                marginBottom: 5,
+              }}
+            >
+              Motivo de detención
+            </label>
+            <select
+              value={dia.motivo_detencion || ''}
+              onChange={(e) => handleCambiarMotivoDetencion(index, e.target.value)}
+              disabled={guardando}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1.5px solid #fcd34d',
+                borderRadius: 8,
+                fontSize: 12,
+                color: dia.motivo_detencion ? '#92400e' : '#9ca3af',
+                outline: 'none',
+                boxSizing: 'border-box',
+                background: '#fffbeb',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+              }}
+            >
+              {MOTIVOS_DETENCION.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {dia.motivo_detencion === 'otro' && (
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#6b7280',
+                  marginBottom: 5,
+                }}
+              >
+                Especificar motivo
+              </label>
+              <input
+                type="text"
+                value={dia.motivo_detencion_otro || ''}
+                onChange={(e) => handleCambiarMotivoPersonalizado(index, e.target.value)}
+                disabled={guardando}
+                placeholder="Describe el motivo..."
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1.5px solid #fcd34d',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: '#92400e',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  background: '#fffbeb',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </div>
+          )}
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6b7280',
+                marginBottom: 5,
+              }}
+            >
+              Cuadrillas detenidas (opcional)
+            </label>
+            <div
+              style={{
+                border: '1.5px solid #fcd34d',
+                borderRadius: 8,
+                background: '#fffbeb',
+                padding: '8px 12px',
+                maxHeight: '120px',
+                overflowY: 'auto',
+              }}
+            >
+              {cuadrillasDisponibles.map((cuadrilla) => {
+                const seleccionadas = (dia.cuadrillas_detenidas || '').split(',').map(s => s.trim()).filter(s => s);
+                const isChecked = seleccionadas.includes(cuadrilla.value);
+                return (
+                  <label
+                    key={cuadrilla.value}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontSize: 12,
+                      color: '#92400e',
+                      marginBottom: 4,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const nuevasSeleccionadas = e.target.checked
+                          ? [...seleccionadas, cuadrilla.value]
+                          : seleccionadas.filter(s => s !== cuadrilla.value);
+                        handleCambiarCuadrillasDetenidas(index, nuevasSeleccionadas.join(', '));
+                      }}
+                      disabled={guardando}
+                      style={{
+                        margin: 0,
+                        accentColor: '#92400e',
+                      }}
+                    />
+                    {cuadrilla.label}
+                  </label>
+                );
+              })}
+              {cuadrillasDisponibles.length === 0 && (
+                <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
+                  No hay cuadrillas disponibles para este contrato
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -169,14 +659,17 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
       setGuardando(true);
       setError(null);
 
-      const registrosActualizar = dias.map(d => ({
-        id: d._id,
-        cantidad_ejecutada: d.cantidad_ejecutada ?? 0,
-        observaciones: d.observaciones ?? '',
-        tiempo_detenido: d.tiempo_detenido ?? 0,
-        motivo_detencion: d.motivo_detencion ?? '',
-        motivo_detencion_otro: d.motivo_detencion_otro ?? '',
-      }));
+      const registrosActualizar = dias
+        .filter((d) => !!d._id)
+        .map((d) => ({
+          id: d._id,
+          cantidad_ejecutada: d.cantidad_ejecutada ?? 0,
+          observaciones: d.observaciones ?? '',
+          tiempo_detenido: d.tiempo_detenido ?? 0,
+          motivo_detencion: d.motivo_detencion ?? '',
+          motivo_detencion_otro: d.motivo_detencion_otro ?? '',
+          cuadrillas_detenidas: d.cuadrillas_detenidas ?? '',
+        }));
 
       const response = await programacionService.updateMultiplesRegistros(registrosActualizar);
 
@@ -188,7 +681,8 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
         throw new Error(response?.message || 'No se pudo guardar');
       }
     } catch (err) {
-      setError(err?.message || err?.error || 'Error al guardar registros');
+      console.error('Error al guardar:', err);
+      setError(err?.message || err?.error || err?.toString() || 'Error desconocido al guardar registros');
     } finally {
       setGuardando(false);
     }
@@ -256,6 +750,7 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
               {programacion?.fecha_inicial && (
                 <> · {fmtFecha(programacion.fecha_inicial)} → {fmtFecha(programacion.fecha_final)}</>
               )}
+              · Hoy: {new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
 
@@ -360,340 +855,7 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
                 gap: 14,
               }}
             >
-              {dias.map((dia, index) => {
-                const est = dia.estado || 'PENDIENTE';
-                const estInfo = ESTADO_COLOR[est] || ESTADO_COLOR.PENDIENTE;
-                const fechaObj = new Date(dia.fecha);
-
-                const nombreDia =
-                  dia.dia_semana ||
-                  ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fechaObj.getDay()];
-
-                const borde = dia.es_hoy
-                  ? '2px solid #3b82f6'
-                  : dia.es_pasado
-                  ? '1.5px solid #e5e7eb'
-                  : '1.5px solid #dbeafe';
-
-                const fondo = dia.es_hoy ? '#eff6ff' : dia.es_futuro ? '#f8fbff' : '#ffffff';
-
-                return (
-                  <div
-                    key={dia._id || index}
-                    style={{
-                      border: borde,
-                      borderRadius: 12,
-                      background: fondo,
-                      padding: '16px',
-                      boxShadow: dia.es_hoy ? '0 0 0 3px rgba(59,130,246,0.08)' : '0 1px 4px rgba(0,0,0,0.05)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        marginBottom: 12,
-                        gap: 8,
-                      }}
-                    >
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: '#111827' }}>
-                          {nombreDia}
-                        </p>
-
-                        <p
-                          style={{
-                            margin: '3px 0 0',
-                            fontSize: 12,
-                            color: '#6b7280',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}
-                        >
-                          <Calendar size={11} />
-                          {fechaObj.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
-                        </p>
-
-                        <div style={{ marginTop: 6 }}>
-                          {dia.es_hoy && (
-                            <span
-                              style={{
-                                padding: '3px 8px',
-                                borderRadius: 99,
-                                fontSize: 10,
-                                fontWeight: 700,
-                                background: '#dbeafe',
-                                color: '#1d4ed8',
-                                marginRight: 6,
-                              }}
-                            >
-                              HOY
-                            </span>
-                          )}
-
-                          {dia.es_pasado && (
-                            <span
-                              style={{
-                                padding: '3px 8px',
-                                borderRadius: 99,
-                                fontSize: 10,
-                                fontWeight: 700,
-                                background: '#f3f4f6',
-                                color: '#4b5563',
-                                marginRight: 6,
-                              }}
-                            >
-                              PASADO
-                            </span>
-                          )}
-
-                          {dia.es_futuro && (
-                            <span
-                              style={{
-                                padding: '3px 8px',
-                                borderRadius: 99,
-                                fontSize: 10,
-                                fontWeight: 700,
-                                background: '#ede9fe',
-                                color: '#6d28d9',
-                              }}
-                            >
-                              FUTURO
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <span
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: 99,
-                          fontSize: 11,
-                          fontWeight: 600,
-                          background: estInfo.bg,
-                          color: estInfo.color,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {estInfo.label}
-                      </span>
-                    </div>
-
-                    <div style={{ marginBottom: 10 }}>
-                      <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: '#6b7280',
-                          marginBottom: 5,
-                        }}
-                      >
-                        <Hash size={11} />
-                        Cantidad ejecutada
-                      </label>
-
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={dia.cantidad_ejecutada || ''}
-                        onChange={(e) => handleCambiarCantidad(index, e.target.value)}
-                        disabled={guardando}
-                        placeholder="0"
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: '1.5px solid #d1d5db',
-                          borderRadius: 8,
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: '#111827',
-                          outline: 'none',
-                          boxSizing: 'border-box',
-                          background: '#fff',
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        style={{
-                          display: 'block',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: '#6b7280',
-                          marginBottom: 5,
-                        }}
-                      >
-                        Observaciones
-                      </label>
-
-                      <textarea
-                        value={dia.observaciones || ''}
-                        onChange={(e) => handleCambiarObservaciones(index, e.target.value)}
-                        disabled={guardando}
-                        rows={2}
-                        placeholder="Notas del día..."
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: '1.5px solid #d1d5db',
-                          borderRadius: 8,
-                          fontSize: 12,
-                          color: '#374151',
-                          resize: 'vertical',
-                          outline: 'none',
-                          boxSizing: 'border-box',
-                          fontFamily: 'inherit',
-                          background: '#fff',
-                        }}
-                      />
-                    </div>
-
-                    <div
-                      style={{
-                        margin: '12px 0 10px',
-                        borderTop: '1px dashed #e5e7eb',
-                        paddingTop: 10,
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: '0 0 8px',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: '#b45309',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <PauseCircle size={12} />
-                        Jornada detenida
-                      </p>
-
-                      <div style={{ marginBottom: 8 }}>
-                        <label
-                          style={{
-                            display: 'block',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: '#6b7280',
-                            marginBottom: 5,
-                          }}
-                        >
-                          Tiempo detenido (horas)
-                        </label>
-
-                        <input
-                          type="number"
-                          min="0"
-                          max="24"
-                          step="0.5"
-                          value={dia.tiempo_detenido || ''}
-                          onChange={(e) => handleCambiarTiempoDetenido(index, e.target.value)}
-                          disabled={guardando}
-                          placeholder="0"
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            border: '1.5px solid #fcd34d',
-                            borderRadius: 8,
-                            fontSize: 14,
-                            fontWeight: 600,
-                            color: '#92400e',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                            background: '#fffbeb',
-                          }}
-                        />
-                      </div>
-
-                      <div style={{ marginBottom: dia.motivo_detencion === 'otro' ? 8 : 0 }}>
-                        <label
-                          style={{
-                            display: 'block',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: '#6b7280',
-                            marginBottom: 5,
-                          }}
-                        >
-                          Motivo de detención
-                        </label>
-
-                        <select
-                          value={dia.motivo_detencion || ''}
-                          onChange={(e) => handleCambiarMotivoDetencion(index, e.target.value)}
-                          disabled={guardando}
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            border: '1.5px solid #fcd34d',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            color: dia.motivo_detencion ? '#92400e' : '#9ca3af',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                            background: '#fffbeb',
-                            fontFamily: 'inherit',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {MOTIVOS_DETENCION.map((m) => (
-                            <option key={m.value} value={m.value}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {dia.motivo_detencion === 'otro' && (
-                        <div>
-                          <label
-                            style={{
-                              display: 'block',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: '#6b7280',
-                              marginBottom: 5,
-                            }}
-                          >
-                            Especificar motivo
-                          </label>
-
-                          <input
-                            type="text"
-                            value={dia.motivo_detencion_otro || ''}
-                            onChange={(e) => handleCambiarMotivoPersonalizado(index, e.target.value)}
-                            disabled={guardando}
-                            placeholder="Describe el motivo..."
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: '1.5px solid #fcd34d',
-                              borderRadius: 8,
-                              fontSize: 12,
-                              color: '#92400e',
-                              outline: 'none',
-                              boxSizing: 'border-box',
-                              background: '#fffbeb',
-                              fontFamily: 'inherit',
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {dias.map(renderDiaCard)}
             </div>
           )}
         </div>

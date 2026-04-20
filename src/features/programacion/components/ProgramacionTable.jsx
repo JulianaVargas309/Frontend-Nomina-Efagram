@@ -1,4 +1,4 @@
-import { Trash2, Eye, Zap } from 'lucide-react';
+import { Trash2, Eye, Zap, AlertCircle } from 'lucide-react';
 import BarraProgreso from './BarraProgreso';
 
 const renderEstadoHoy = (prog) => {
@@ -106,8 +106,12 @@ export default function ProgramacionTable({
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={() => onRegistrarEjecucion(prog)}
-                  title="Registrar ejecución diaria"
+                  title="Ver progreso diario y detalles"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
+                  {(prog?.registro_hoy_estado === 'PENDIENTE' || !prog?.registro_hoy_estado) && (
+                    <AlertCircle size={14} />
+                  )}
                   <Eye size={16} />
                   Detalles
                 </button>
