@@ -51,8 +51,11 @@ export default function CatalogoUsuariosPage() {
     const getId = (usuario) => usuario?._id ?? usuario?.id;
 
     const handleAdd = async (payload) => {
+        console.log('📤 Enviando usuario con payload:', payload);
         const created = await createUsuario(payload);
+        console.log('📥 Respuesta del backend:', created);
         const obj = created?.data ?? created;
+        console.log('🔍 Objeto procesado:', obj);
 
         if (obj && (obj._id || obj.id)) {
             setUsuarios((prev) => [obj, ...prev]);

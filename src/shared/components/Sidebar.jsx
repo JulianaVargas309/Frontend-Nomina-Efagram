@@ -4,8 +4,9 @@ import {
     LayoutDashboard, BarChart3, Play, Folder,
     Users, CheckSquare, ChevronDown, Layers, Building,
     AlertTriangle, Calendar, Clock,
-    Settings, MapPin, Wrench, GitBranch, FileText, Activity, Briefcase, Upload
+    Settings, MapPin, Wrench, GitBranch, FileText, Activity, Briefcase, Upload, LogOut
 } from "lucide-react";
+import { useAuth } from "../../app/providers/useAuth";
 import "./sidebar.css";
 
 const SIDEBAR_SCROLL_KEY = "efagram_sidebar_scroll_top";
@@ -15,6 +16,14 @@ export default function Sidebar() {
     const navigate = useNavigate();
     const location = useLocation();
     const sidebarRef = useRef(null);
+    const { user, logout } = useAuth();
+
+    const handleLogout = async () => {
+        if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            await logout();
+            navigate('/login', { replace: true });
+        }
+    };
 
     const isEjecucion = location.pathname.startsWith("/ejecucion");
     const isProyectos = location.pathname.startsWith("/proyectos");
@@ -358,8 +367,45 @@ export default function Sidebar() {
             </div>
 
             <div className="sidebar-footer">
-                <div className="user-avatar">J</div>
-                <div><strong>Julianavida1309</strong><span>Administrador</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                    <div className="user-avatar">{user?.nombre?.[0]?.toUpperCase() || 'U'}</div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                        <strong style={{ display: 'block', fontSize: 13, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {user?.nombre || 'Usuario'}
+                        </strong>
+                        <span style={{ display: 'block', fontSize: 11, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {user?.rol || 'usuario'}
+                        </span>
+                    </div>
+                </div>
+                <button
+                    onClick={handleLogout}
+                    title="Cerrar sesión"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'transparent',
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        flexShrink: 0
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                        e.currentTarget.style.color = '#f87171';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#94a3b8';
+                    }}
+                >
+                    <LogOut size={18} />
+                </button>
             </div>
 
         </aside>
