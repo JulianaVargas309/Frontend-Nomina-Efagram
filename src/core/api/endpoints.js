@@ -16,10 +16,18 @@ export const endpoints = {
     create: '/clientes',
   },
   usuarios: {
-    getAll: 'https://backend-nomina-efagram.onrender.com/api/v1/Users',
-    create: 'https://backend-nomina-efagram.onrender.com/api/v1/Users',
-    update: (id) => `https://backend-nomina-efagram.onrender.com/api/v1/Users/${id}`,
-    delete: (id) => `https://backend-nomina-efagram.onrender.com/api/v1/Users/${id}`,
+    getAll: '/users', // GET con query params: page, limit, search, rol, activo
+    getOne: (id) => `/users/${id}`,
+    create: '/users',
+    update: (id) => `/users/${id}`,
+    updatePassword: (id) => `/users/${id}/password`,
+    updateRoles: (id) => `/users/${id}/roles`,
+    activate: (id) => `/users/${id}/activate`,
+    deactivate: (id) => `/users/${id}/deactivate`,
+    delete: (id) => `/users/${id}`,
+    rolesList: '/users/roles/list',
+    rolePermissions: (rol) => `/users/roles/${rol}/permissions`,
+    stats: '/users/stats/dashboard',
   },
   actividades: {
     getAll: '/actividades',

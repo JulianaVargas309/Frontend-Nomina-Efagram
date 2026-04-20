@@ -62,7 +62,7 @@ export default function NuevoProcesoModal({
     dispatch({ type: 'SET_ERRORS', value: [] });
 
     const locales = [];
-    if (!state.codigo.trim()) locales.push('El código es obligatorio.');
+    if (!state.codigo || !String(state.codigo).trim()) locales.push('El código es obligatorio.');
     if (!state.nombre.trim()) locales.push('El nombre del proceso es obligatorio.');
     if (locales.length > 0) {
       dispatch({ type: 'SET_ERRORS', value: locales });
@@ -70,7 +70,7 @@ export default function NuevoProcesoModal({
     }
 
     const payload = {
-      codigo: state.codigo.trim().toUpperCase(),
+      codigo: String(state.codigo).trim().toUpperCase(),
       nombre: state.nombre.trim(),
       descripcion: state.descripcion.trim() || undefined,
       estado: Boolean(state.estado),

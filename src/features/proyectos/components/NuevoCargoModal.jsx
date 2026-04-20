@@ -29,6 +29,7 @@ export default function NuevoCargoModal({
   onClose,
   onSubmit,
   cargo = null,
+  initialValues = null,
   title = 'Nuevo Cargo',
   nextCode = '',
 }) {
@@ -40,21 +41,16 @@ export default function NuevoCargoModal({
   useEffect(() => {
     if (!isOpen) return;
 
+    const values = cargo || initialValues || {};
     dispatch({
       type: 'RESET',
-      values: cargo
-        ? {
-            codigo: cargo.codigo ?? '',
-            nombre: cargo.nombre ?? '',
-            activo: Boolean(cargo.activo ?? true),
-          }
-        : {
-            codigo: nextCode || '',
-            nombre: '',
-            activo: true,
-          },
+      values: {
+        codigo: values.codigo || nextCode || '',
+        nombre: values.nombre || '',
+        activo: Boolean(values.activo ?? true),
+      },
     });
-  }, [isOpen, cargo, nextCode]);
+  }, [isOpen, cargo, initialValues, nextCode]);
 
   if (!isOpen) return null;
 

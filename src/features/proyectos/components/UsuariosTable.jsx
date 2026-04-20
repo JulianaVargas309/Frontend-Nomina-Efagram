@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Eye, Pencil, Trash2, Plus, Search, Users } from 'lucide-react';
 import UsuarioModal from './UsuarioModal';
 
-export default function UsuariosTable({ usuarios = [], search = '', setSearch, onAdd, onUpdate, onDelete }) {
+export default function UsuariosTable({ usuarios = [], search = '', setSearch, onAdd, onUpdate, onDelete, userRole = 'SUPERVISOR' }) {
     const [openCreate, setOpenCreate] = useState(false);
     const [editUsuario, setEditUsuario] = useState(null);
 
     const getId = (u) => u?._id ?? u?.id;
+    const isAdmin = userRole === 'ADMIN_SISTEMA';
 
     return (
         <div style={{ width: '100%', display: 'grid', gap: 16 }}>
@@ -68,7 +69,19 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
                                             </div>
                                         </td>
                                         <td style={{ padding: '14px 18px', color: '#475569' }}>{usuario.email ?? '-'}</td>
-                                        <td style={{ padding: '14px 18px', color: '#475569' }}>{String(usuario.rol ?? 'usuario').toUpperCase()}</td>
+                                        <td style={{ padding: '14px 18px' }}>
+                                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                {Array.isArray(usuario.roles) && usuario.roles.length > 0 ? (
+                                                    usuario.roles.map((rol) => (
+                                                        <span key={rol} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 500, background: rol === 'ADMIN_SISTEMA' ? 'rgba(220,38,38,0.12)' : 'rgba(37,99,235,0.12)', color: rol === 'ADMIN_SISTEMA' ? '#991b1b' : '#1e40af' }}>
+                                                            {rol === 'ADMIN_SISTEMA' ? '👑 Admin' : rol === 'SUPERVISOR' ? '📋 Supervisor' : rol}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span style={{ color: '#64748b' }}>-</span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td style={{ padding: '14px 18px' }}>
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, fontSize: 12, color: isActive ? '#166534' : '#991b1b', background: isActive ? 'rgba(22,101,52,0.12)' : 'rgba(220,38,38,0.12)' }}>
                                                 {isActive ? 'Activo' : 'Inactivo'}
@@ -79,9 +92,15 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
                                                 <button title="Editar" onClick={() => setEditUsuario(usuario)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer' }}>
                                                     <Pencil size={16} />
                                                 </button>
-                                                <button title="Eliminar" onClick={() => onDelete?.(id)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer' }}>
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                {isAdmin && (
+                                                    <button title="Eliminar" onClick={() => {
+                                                        if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+                                                            onDelete?.(id);
+                                                        }
+                                                    }} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', cursor: 'pointer', color: '#dc2626' }}>
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -95,12 +114,13 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
             <UsuarioModal
                 isOpen={openCreate}
                 title="Nuevo usuario"
-                initialValues={{ nombre: '', email: '', rol: 'usuario', estado: 'Activo', permisos: [] }}
+                initialValues={{ nombre: '', email: '', roles: [], activo: true }}
                 onClose={() => setOpenCreate(false)}
                 onSubmit={async (values) => {
                     await onAdd?.(values);
                     setOpenCreate(false);
                 }}
+                userRole={userRole}
             />
 
             <UsuarioModal
@@ -112,6 +132,7 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
                     await onUpdate?.(getId(editUsuario), values);
                     setEditUsuario(null);
                 }}
+                userRole={userRole}
             />
         </div>
     );
