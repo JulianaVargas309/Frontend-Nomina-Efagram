@@ -281,6 +281,13 @@ export default function Sidebar() {
                         </div>
 
                         <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-usuarios")}`}
+                            onClick={() => navigatePreservingSidebar("/configuracion/catalogo-usuarios")}
+                        >
+                            <Users size={16} />Catálogo Usuarios
+                        </div>
+
+                        <div
                             className={`submenu-item ${isActiveSub("/configuracion/catalogo-actividades")}`}
                             onClick={() => navigatePreservingSidebar("/configuracion/catalogo-actividades")}
                         >

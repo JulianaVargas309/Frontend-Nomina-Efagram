@@ -15,6 +15,12 @@ export const endpoints = {
     getAll: '/clientes',
     create: '/clientes',
   },
+  usuarios: {
+    getAll: 'https://backend-nomina-efagram.onrender.com/api/v1/Users',
+    create: 'https://backend-nomina-efagram.onrender.com/api/v1/Users',
+    update: (id) => `https://backend-nomina-efagram.onrender.com/api/v1/Users/${id}`,
+    delete: (id) => `https://backend-nomina-efagram.onrender.com/api/v1/Users/${id}`,
+  },
   actividades: {
     getAll: '/actividades',
   },
