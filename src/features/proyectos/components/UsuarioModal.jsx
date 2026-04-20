@@ -149,13 +149,13 @@ export default function UsuarioModal({
                     <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
                         <label style={{ display: 'grid', gap: 6, fontSize: 14, color: '#334155', fontWeight: 600 }}>
                             Rol *
-                            <select 
-                                value={rol} 
+                            <select
+                                value={rol}
                                 onChange={(e) => {
                                     setRol(e.target.value);
                                     setShowPermisosCustom(false);
                                     setErrors([]);
-                                }} 
+                                }}
                                 style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14, background: '#fff', cursor: 'pointer', color: '#334155', fontWeight: 500 }}
                             >
                                 <option value="ADMIN_SISTEMA">Administrador del Sistema</option>
@@ -164,9 +164,9 @@ export default function UsuarioModal({
                         </label>
                         <label style={{ display: 'grid', gap: 6, fontSize: 14, color: '#334155', fontWeight: 600 }}>
                             Estado *
-                            <select 
-                                value={estado} 
-                                onChange={(e) => { setEstado(e.target.value); setErrors([]); }} 
+                            <select
+                                value={estado}
+                                onChange={(e) => { setEstado(e.target.value); setErrors([]); }}
                                 style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14, background: '#fff', cursor: 'pointer', color: '#334155', fontWeight: 500 }}
                             >
                                 <option value="Activo">Activo</option>
@@ -218,8 +218,8 @@ export default function UsuarioModal({
                             />
                         )}
                         <small style={{ color: '#64748b' }}>
-                            {showPermisosCustom 
-                                ? 'Ingrese permisos separados por coma.' 
+                            {showPermisosCustom
+                                ? 'Ingrese permisos separados por coma.'
                                 : 'Selecciona los permisos que tendrá este usuario.'}
                         </small>
                     </div>
