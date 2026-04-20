@@ -2,12 +2,12 @@ import { useEffect, useReducer } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 
 const INITIAL_STATE = {
-  codigo:      '',
-  nombre:      '',
+  codigo: '',
+  nombre: '',
   descripcion: '',
-  estado:      true,
-  saving:      false,
-  errors:      [],
+  estado: true,
+  saving: false,
+  errors: [],
 };
 
 function reducer(state, action) {

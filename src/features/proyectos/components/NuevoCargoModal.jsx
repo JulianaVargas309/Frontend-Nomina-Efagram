@@ -117,10 +117,10 @@ export default function NuevoCargoModal({
               style={
                 !cargo
                   ? {
-                      background: '#f1f5f9',
-                      color: '#64748b',
-                      cursor: 'not-allowed',
-                    }
+                    background: '#f1f5f9',
+                    color: '#64748b',
+                    cursor: 'not-allowed',
+                  }
                   : undefined
               }
             />
