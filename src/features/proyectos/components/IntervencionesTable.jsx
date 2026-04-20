@@ -68,6 +68,7 @@ export default function IntervencionesTable({
   onDelete,
 }) {
   const [openCreate, setOpenCreate] = useState(false);
+  const [createInitialValues, setCreateInitialValues] = useState(null);
   const [editIntervencion, setEditIntervencion] = useState(null);
   const [detalleIntervencion, setDetalleIntervencion] = useState(null);
 
@@ -103,7 +104,7 @@ export default function IntervencionesTable({
 
             const nuevoCodigo = `INT-${String(max + 1).padStart(3, "0")}`;
 
-            setEditIntervencion({
+            setCreateInitialValues({
               codigo: nuevoCodigo,
               nombre: "",
               proceso: "",
@@ -214,17 +215,21 @@ export default function IntervencionesTable({
         key={openCreate ? 'create' : 'create-closed'}
         isOpen={openCreate}
         title="Nueva intervención"
-        initialValues={{
-          codigo: editIntervencion?.codigo ?? '',
+        initialValues={createInitialValues ?? {
+          codigo: '',
           nombre: '',
           proceso: '',
           activo: true,
           descripcion: ''
         }}
-        onClose={() => setOpenCreate(false)}
+        onClose={() => {
+          setOpenCreate(false);
+          setCreateInitialValues(null);
+        }}
         onSubmit={async (values) => {
           await onAdd?.(values);
           setOpenCreate(false);
+          setCreateInitialValues(null);
         }}
       />
 
