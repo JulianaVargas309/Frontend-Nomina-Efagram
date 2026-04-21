@@ -215,6 +215,7 @@ export default function IntervencionesTable({
         key={openCreate ? 'create' : 'create-closed'}
         isOpen={openCreate}
         title="Nueva intervención"
+        nextCode={codigoSiguiente}
         initialValues={createInitialValues ?? {
           codigo: '',
           nombre: '',

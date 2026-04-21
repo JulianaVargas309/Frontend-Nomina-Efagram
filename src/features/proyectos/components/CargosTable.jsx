@@ -190,6 +190,7 @@ export default function CargosTable({
         key={openCreate ? `create-${codigoSiguiente}` : 'create-closed'}
         isOpen={openCreate}
         title="Nuevo Cargo"
+        nextCode={codigoSiguiente}
         initialValues={{ codigo: codigoSiguiente, nombre: '', activo: true }}
         onClose={() => setOpenCreate(false)}
         onSubmit={async (values) => {

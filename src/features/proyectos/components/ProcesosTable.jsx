@@ -223,6 +223,7 @@ export default function ProcesosTable({
         key={openCreate ? `create-${codigoSiguiente}` : 'create-closed'}
         isOpen={openCreate}
         title="Nuevo proceso"
+        nextCode={codigoSiguiente}
         initialValues={{
           codigo: codigoSiguiente,
           nombre: '',

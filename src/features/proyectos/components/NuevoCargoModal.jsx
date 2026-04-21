@@ -62,14 +62,25 @@ export default function NuevoCargoModal({
     e.preventDefault();
     dispatch({ type: 'SET_ERROR', value: null });
 
+    // En modo edición, validar código. En modo creación, el código viene automático
+    if (isEdit && !String(state.codigo).trim()) {
+      dispatch({ type: 'SET_ERROR', value: 'Código es obligatorio' });
+      return;
+    }
+    if (!state.nombre.trim()) {
+      dispatch({ type: 'SET_ERROR', value: 'El nombre del cargo es obligatorio' });
+      return;
+    }
+
+    // Validar que código sea número válido
     const codigoNum = Number(state.codigo);
-    if (!state.nombre.trim() || !codigoNum || codigoNum <= 0) {
-      dispatch({ type: 'SET_ERROR', value: 'Código y nombre son obligatorios. El código debe ser un número mayor a 0' });
+    if (!codigoNum || codigoNum <= 0) {
+      dispatch({ type: 'SET_ERROR', value: 'El código debe ser un número mayor a 0' });
       return;
     }
 
     const payload = {
-      codigo: Number(state.codigo) || 0,
+      codigo: codigoNum,
       nombre: state.nombre.trim(),
       activo: Boolean(state.activo),
     };

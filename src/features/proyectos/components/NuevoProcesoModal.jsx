@@ -62,7 +62,10 @@ export default function NuevoProcesoModal({
     dispatch({ type: 'SET_ERRORS', value: [] });
 
     const locales = [];
-    if (!state.codigo || !String(state.codigo).trim()) locales.push('El código es obligatorio.');
+    // En modo edición, validar código. En modo creación, el código viene automático
+    if (isEdit && (!state.codigo || !String(state.codigo).trim())) {
+      locales.push('El código es obligatorio.');
+    }
     if (!state.nombre.trim()) locales.push('El nombre del proceso es obligatorio.');
     if (locales.length > 0) {
       dispatch({ type: 'SET_ERRORS', value: locales });
