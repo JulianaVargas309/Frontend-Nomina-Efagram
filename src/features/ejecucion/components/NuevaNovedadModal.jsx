@@ -118,14 +118,14 @@ export default function NuevaNovedadModal({
           fetchJSON(`${BASE_URL}/personas`),
           getCuadrillas(),
         ]);
-        
+
         // Asegurar que ts es un array antes de hacer filter
         const trabajadoresList = Array.isArray(ts) ? ts : [];
         setTrabajadores(trabajadoresList.filter((p) => p.estado === 'ACTIVO'));
-        
+
         // Normalizar respuesta de cuadrillas
-        const cuadList = Array.isArray(cuadData) ? cuadData : 
-                         Array.isArray(cuadData?.data) ? cuadData.data : [];
+        const cuadList = Array.isArray(cuadData) ? cuadData :
+          Array.isArray(cuadData?.data) ? cuadData.data : [];
         setCuadrillas(cuadList);
       } catch (e) {
         console.error('Error cargando datos:', e);

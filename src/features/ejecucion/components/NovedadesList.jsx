@@ -7,7 +7,7 @@ const fmt = (val) => {
   if (typeof val === 'object') {
     if (val.nombreCompleto) return val.nombreCompleto;
     if (val.nombres) return `${val.nombres} ${val.apellidos ?? ''}`.trim();
-    if (val.nombre)  return val.nombre;
+    if (val.nombre) return val.nombre;
     return '';
   }
   return String(val);
@@ -17,17 +17,17 @@ const fmt = (val) => {
 // 'ACCIDENTE' → 'ACCIDENTE_TRABAJO', 'FALTA' → 'AUSENCIA'
 const TipoBadge = ({ tipo }) => {
   const colores = {
-    PERMISO:           { bg: '#fef3c7', border: '#f59e0b', color: '#92400e' },
-    INCAPACIDAD:       { bg: '#fef2f2', border: '#fca5a5', color: '#dc2626' },
+    PERMISO: { bg: '#fef3c7', border: '#f59e0b', color: '#92400e' },
+    INCAPACIDAD: { bg: '#fef2f2', border: '#fca5a5', color: '#dc2626' },
     ACCIDENTE_TRABAJO: { bg: '#fef2f2', border: '#f87171', color: '#b91c1c' },
-    AUSENCIA:          { bg: '#f0f7ff', border: '#93c5fd', color: '#1d4ed8' },
-    LLUVIA:            { bg: '#eff6ff', border: '#93c5fd', color: '#1e40af' },
-    INSUMOS:           { bg: '#f0fdf4', border: '#86efac', color: '#166534' },
-    HERRAMIENTAS:      { bg: '#fdf4ff', border: '#d8b4fe', color: '#7e22ce' },
-    SUSPENSION:        { bg: '#fff7ed', border: '#fdba74', color: '#9a3412' },
-    VACACIONES:        { bg: '#ecfdf5', border: '#6ee7b7', color: '#065f46' },
-    LICENCIA:          { bg: '#f5f3ff', border: '#c4b5fd', color: '#5b21b6' },
-    OTRO:              { bg: '#f3f4f6', border: '#d1d5db', color: '#6b7280' },
+    AUSENCIA: { bg: '#f0f7ff', border: '#93c5fd', color: '#1d4ed8' },
+    LLUVIA: { bg: '#eff6ff', border: '#93c5fd', color: '#1e40af' },
+    INSUMOS: { bg: '#f0fdf4', border: '#86efac', color: '#166534' },
+    HERRAMIENTAS: { bg: '#fdf4ff', border: '#d8b4fe', color: '#7e22ce' },
+    SUSPENSION: { bg: '#fff7ed', border: '#fdba74', color: '#9a3412' },
+    VACACIONES: { bg: '#ecfdf5', border: '#6ee7b7', color: '#065f46' },
+    LICENCIA: { bg: '#f5f3ff', border: '#c4b5fd', color: '#5b21b6' },
+    OTRO: { bg: '#f3f4f6', border: '#d1d5db', color: '#6b7280' },
   };
   const c = colores[tipo] ?? colores['OTRO'];
   return (
@@ -42,13 +42,13 @@ const TipoBadge = ({ tipo }) => {
 };
 
 const EstadoBadge = ({ estado }) => {
-  if (estado === 'APROBADA')  return <span className="nov-badge-resuelta">Aprobada</span>;
+  if (estado === 'APROBADA') return <span className="nov-badge-resuelta">Aprobada</span>;
   if (estado === 'RECHAZADA') return <span className="nov-badge-alta">Rechazada</span>;
   return <span className="nov-badge-pendiente">Pendiente</span>;
 };
 
 export default function NovedadesList({ novedades = [], onAdd, onUpdate, onDelete }) {
-  const [openCreate,  setOpenCreate]  = useState(false);
+  const [openCreate, setOpenCreate] = useState(false);
   const [editNovedad, setEditNovedad] = useState(null);
 
   const getId = (n) => n?._id ?? n?.id;
@@ -63,16 +63,16 @@ export default function NovedadesList({ novedades = [], onAdd, onUpdate, onDelet
   };
 
   const toEditValues = (n) => ({
-    fecha:               n?.fecha ? String(n.fecha).slice(0, 10) : '',
-    trabajador:          n?.trabajador?._id ?? n?.trabajador ?? '',
-    tipo:                n?.tipo ?? 'PERMISO',
-    descripcion:         n?.descripcion ?? '',
-    dias:                n?.dias ?? '',
-    horas:               n?.horas ?? '',
-    cuadrilla:           n?.cuadrilla?._id ?? n?.cuadrilla ?? '',
-    afecta_nomina:       n?.afecta_nomina ?? false,
+    fecha: n?.fecha ? String(n.fecha).slice(0, 10) : '',
+    trabajador: n?.trabajador?._id ?? n?.trabajador ?? '',
+    tipo: n?.tipo ?? 'PERMISO',
+    descripcion: n?.descripcion ?? '',
+    dias: n?.dias ?? '',
+    horas: n?.horas ?? '',
+    cuadrilla: n?.cuadrilla?._id ?? n?.cuadrilla ?? '',
+    afecta_nomina: n?.afecta_nomina ?? false,
     requiere_aprobacion: n?.requiere_aprobacion ?? false,
-    estado:              n?.estado ?? 'PENDIENTE',
+    estado: n?.estado ?? 'PENDIENTE',
   });
 
   return (
@@ -93,7 +93,7 @@ export default function NovedadesList({ novedades = [], onAdd, onUpdate, onDelet
           <div className="ejecucion-empty">No hay novedades para mostrar</div>
         ) : (
           novedades.map((n) => {
-            const id       = getId(n);
+            const id = getId(n);
             const aprobada = n?.estado === 'APROBADA';
             return (
               <div key={id} className={`nov-item ${aprobada ? 'nov-item-resuelta' : ''}`}>
@@ -119,8 +119,8 @@ export default function NovedadesList({ novedades = [], onAdd, onUpdate, onDelet
                   <p className="nov-descripcion">{n?.descripcion ?? ''}</p>
                   <div className="nov-meta">
                     {fmt(n?.trabajador) && <span>{fmt(n.trabajador)}</span>}
-                    {n?.dias  != null   && <span>{n.dias} día(s)</span>}
-                    {n?.fecha           && <span>{String(n.fecha).slice(0, 10)}</span>}
+                    {n?.dias != null && <span>{n.dias} día(s)</span>}
+                    {n?.fecha && <span>{String(n.fecha).slice(0, 10)}</span>}
                   </div>
                 </div>
 
