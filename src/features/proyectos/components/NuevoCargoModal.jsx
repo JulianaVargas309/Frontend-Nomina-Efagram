@@ -43,7 +43,7 @@ export default function NuevoCargoModal({
 
     const values = initialValues || cargo || {};
     const codigoValue = values.codigo || nextCode;
-    
+
     dispatch({
       type: 'RESET',
       values: {
