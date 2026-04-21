@@ -39,23 +39,20 @@ function CargoDetalleModal({ isOpen, cargo, onClose }) {
 
 const generarCodigoCargo = (cargos = []) => {
   if (!Array.isArray(cargos) || cargos.length === 0) {
-    return 'CAR-001';
+    return 1;
   }
 
   let max = 0;
 
   cargos.forEach((c) => {
-    const codigo = String(c?.codigo || '').trim().toUpperCase();
-    const match = codigo.match(/^CAR-(\d+)$/);
-    if (!match) return;
-
-    const numero = parseInt(match[1], 10);
+    const codigo = c?.codigo;
+    const numero = parseInt(codigo, 10);
     if (!isNaN(numero) && numero > max) {
       max = numero;
     }
   });
 
-  return `CAR-${String(max + 1).padStart(3, '0')}`;
+  return max + 1;
 };
 
 export default function CargosTable({

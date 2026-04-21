@@ -41,11 +41,13 @@ export default function NuevoCargoModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    const values = cargo || initialValues || {};
+    const values = initialValues || cargo || {};
+    const codigoValue = values.codigo || nextCode;
+    
     dispatch({
       type: 'RESET',
       values: {
-        codigo: values.codigo || nextCode || '',
+        codigo: codigoValue,
         nombre: values.nombre || '',
         activo: Boolean(values.activo ?? true),
       },
@@ -60,13 +62,14 @@ export default function NuevoCargoModal({
     e.preventDefault();
     dispatch({ type: 'SET_ERROR', value: null });
 
-    if (!String(state.codigo).trim() || !state.nombre.trim()) {
-      dispatch({ type: 'SET_ERROR', value: 'Código y nombre son obligatorios' });
+    const codigoNum = Number(state.codigo);
+    if (!state.nombre.trim() || !codigoNum || codigoNum <= 0) {
+      dispatch({ type: 'SET_ERROR', value: 'Código y nombre son obligatorios. El código debe ser un número mayor a 0' });
       return;
     }
 
     const payload = {
-      codigo: Number(state.codigo),
+      codigo: Number(state.codigo) || 0,
       nombre: state.nombre.trim(),
       activo: Boolean(state.activo),
     };
@@ -110,19 +113,14 @@ export default function NuevoCargoModal({
             <input
               value={state.codigo}
               onChange={setField('codigo')}
-              placeholder="Ej: 001"
+              placeholder="Ej: 1, 2, 3..."
               readOnly
-              disabled={!cargo}
-              title={!cargo ? 'El código se genera automáticamente' : 'El código no puede modificarse'}
-              style={
-                !cargo
-                  ? {
-                    background: '#f1f5f9',
-                    color: '#64748b',
-                    cursor: 'not-allowed',
-                  }
-                  : undefined
-              }
+              title={isEdit ? 'El código no puede modificarse' : 'El código se genera automáticamente'}
+              style={{
+                background: '#f1f5f9',
+                color: '#64748b',
+                cursor: 'not-allowed',
+              }}
             />
           </label>
 
