@@ -71,7 +71,7 @@ export default function NuevoCargoModal({
     }
 
     const payload = {
-      codigo: Number(state.codigo),
+      codigo: String(state.codigo).trim(),
       nombre: state.nombre.trim(),
       activo: Boolean(state.activo),
     };

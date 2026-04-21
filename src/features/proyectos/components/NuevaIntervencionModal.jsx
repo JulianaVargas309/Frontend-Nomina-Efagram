@@ -70,7 +70,8 @@ export default function NuevaIntervencionModal({
     setErrors([]);
 
     const locales = [];
-    if (!codigo.trim()) locales.push('El código es obligatorio.');
+    // En modo edición, validar código. En modo creación, el código viene automático
+    if (isEdit && !codigo.trim()) locales.push('El código es obligatorio.');
     if (!nombre.trim()) locales.push('El nombre de la intervención es obligatorio.');
     if (!proceso)       locales.push('Debes seleccionar un proceso.');
     if (locales.length > 0) { setErrors(locales); return; }
