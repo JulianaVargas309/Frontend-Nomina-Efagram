@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, X } from 'lucide-react';
+import { getCuadrillas } from '../../contratos/services/contratosService';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api/v1';
 const getToken = () => localStorage.getItem('efagram_token') ?? '';
@@ -83,11 +84,14 @@ export default function NuevaNovedadModal({
   const [tipo, setTipo] = useState('PERMISO');
   const [descripcion, setDescripcion] = useState('');
   const [dias, setDias] = useState('');
+  const [horas, setHoras] = useState('');
+  const [cuadrilla, setCuadrilla] = useState('');
   const [afecta_nomina, setAfectaNomina] = useState(false);
   const [requiere_aprobacion, setRequiereAprobacion] = useState(false);
   const [estado, setEstado] = useState('PENDIENTE');
 
   const [trabajadores, setTrabajadores] = useState([]);
+  const [cuadrillas, setCuadrillas] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -99,6 +103,8 @@ export default function NuevaNovedadModal({
     setTipo(initialValues?.tipo ?? 'PERMISO');
     setDescripcion(initialValues?.descripcion ?? '');
     setDias(String(initialValues?.dias ?? ''));
+    setHoras(String(initialValues?.horas ?? ''));
+    setCuadrilla(initialValues?.cuadrilla?._id ?? initialValues?.cuadrilla ?? '');
     setAfectaNomina(initialValues?.afecta_nomina ?? false);
     setRequiereAprobacion(initialValues?.requiere_aprobacion ?? false);
     setEstado(initialValues?.estado ?? 'PENDIENTE');
@@ -106,10 +112,29 @@ export default function NuevaNovedadModal({
     setSaving(false);
 
     setLoadingData(true);
-    fetchJSON(`${BASE_URL}/personas`)
-      .then((ts) => setTrabajadores(ts.filter((p) => p.estado === 'ACTIVO')))
-      .catch((e) => console.error(e))
-      .finally(() => setLoadingData(false));
+    (async () => {
+      try {
+        const [ts, cuadData] = await Promise.all([
+          fetchJSON(`${BASE_URL}/personas`),
+          getCuadrillas(),
+        ]);
+        
+        // Asegurar que ts es un array antes de hacer filter
+        const trabajadoresList = Array.isArray(ts) ? ts : [];
+        setTrabajadores(trabajadoresList.filter((p) => p.estado === 'ACTIVO'));
+        
+        // Normalizar respuesta de cuadrillas
+        const cuadList = Array.isArray(cuadData) ? cuadData : 
+                         Array.isArray(cuadData?.data) ? cuadData.data : [];
+        setCuadrillas(cuadList);
+      } catch (e) {
+        console.error('Error cargando datos:', e);
+        setTrabajadores([]);
+        setCuadrillas([]);
+      } finally {
+        setLoadingData(false);
+      }
+    })();
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -125,6 +150,8 @@ export default function NuevaNovedadModal({
     if (!fecha) locales.push('La fecha es obligatoria.');
     if (!trabajador) locales.push('Debes seleccionar un trabajador.');
     if (!descripcion.trim()) locales.push('La descripción es obligatoria.');
+    if (!horas || Number(horas) <= 0) locales.push('Las horas son obligatorias y deben ser mayores a 0.');
+    if (!cuadrilla) locales.push('La cuadrilla es obligatoria.');
     if (locales.length > 0) return setErrors(locales);
 
     const payload = {
@@ -132,6 +159,8 @@ export default function NuevaNovedadModal({
       trabajador,
       tipo,
       descripcion: descripcion.trim(),
+      horas: Number(horas),
+      cuadrilla,
       afecta_nomina,
       requiere_aprobacion,
       estado,
@@ -285,6 +314,26 @@ export default function NuevaNovedadModal({
                 <label className="nrm-label">Días <span className="nrm-opt">(opcional)</span></label>
                 <input className="nrm-input" type="number" min="0" step="0.5"
                   value={dias} onChange={(e) => setDias(e.target.value)} placeholder="Ej: 0.5" />
+              </div>
+            </div>
+
+            <div className="nrm-row">
+              <div className="nrm-field">
+                <label className="nrm-label">Horas <span className="nrm-req">*</span></label>
+                <input className="nrm-input" type="number" min="0" step="0.5"
+                  value={horas} onChange={(e) => setHoras(e.target.value)} placeholder="Ej: 8" />
+              </div>
+              <div className="nrm-field">
+                <label className="nrm-label">Cuadrilla <span className="nrm-req">*</span></label>
+                <select className="nrm-select" value={cuadrilla}
+                  onChange={(e) => setCuadrilla(e.target.value)} disabled={loadingData}>
+                  <option value="">{loadingData ? 'Cargando...' : '-- Selecciona una cuadrilla --'}</option>
+                  {cuadrillas.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.nombre ?? `Cuadrilla ${c._id?.slice(-6)}`}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

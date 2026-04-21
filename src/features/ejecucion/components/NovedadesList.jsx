@@ -68,6 +68,8 @@ export default function NovedadesList({ novedades = [], onAdd, onUpdate, onDelet
     tipo:                n?.tipo ?? 'PERMISO',
     descripcion:         n?.descripcion ?? '',
     dias:                n?.dias ?? '',
+    horas:               n?.horas ?? '',
+    cuadrilla:           n?.cuadrilla?._id ?? n?.cuadrilla ?? '',
     afecta_nomina:       n?.afecta_nomina ?? false,
     requiere_aprobacion: n?.requiere_aprobacion ?? false,
     estado:              n?.estado ?? 'PENDIENTE',
