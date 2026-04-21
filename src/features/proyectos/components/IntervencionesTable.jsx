@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Eye, Pencil, Trash2, Plus, Search, Activity, X } from 'lucide-react';
 import NuevaIntervencionModal from './NuevaIntervencionModal';
 
@@ -74,6 +74,27 @@ export default function IntervencionesTable({
 
   const getId = (i) => i?._id ?? i?.id;
 
+  const codigoSiguiente = useMemo(() => {
+    if (!Array.isArray(intervenciones) || intervenciones.length === 0) {
+      return 'INT-001';
+    }
+
+    let max = 0;
+
+    intervenciones.forEach((i) => {
+      const codigo = String(i?.codigo || '').trim().toUpperCase();
+      const match = codigo.match(/^INT-(\d+)$/);
+      if (!match) return;
+
+      const numero = parseInt(match[1], 10);
+      if (!isNaN(numero) && numero > max) {
+        max = numero;
+      }
+    });
+
+    return `INT-${String(max + 1).padStart(3, '0')}`;
+  }, [intervenciones]);
+
   return (
     <div className="zonas-card">
       {/* HEADER */}
@@ -94,18 +115,8 @@ export default function IntervencionesTable({
         <button
           className="btn-primary"
           onClick={() => {
-            const max = intervenciones.reduce((acc, i) => {
-              const codigo = String(i?.codigo || "").toUpperCase();
-              const match = codigo.match(/^INT-(\d+)$/);
-              if (!match) return acc;
-              const num = parseInt(match[1], 10);
-              return num > acc ? num : acc;
-            }, 0);
-
-            const nuevoCodigo = `INT-${String(max + 1).padStart(3, "0")}`;
-
             setCreateInitialValues({
-              codigo: nuevoCodigo,
+              codigo: codigoSiguiente,
               nombre: "",
               proceso: "",
               activo: true,
