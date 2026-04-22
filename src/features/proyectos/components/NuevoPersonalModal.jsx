@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { CalendarDays, X } from 'lucide-react';
 import httpClient from '../../../core/api/httpClient';
 
-const CARGOS = ['Operario', 'Supervisor', 'Auxiliar', 'Capataz', 'Jefe de Campo'];
+// ← ELIMINADO: const CARGOS = [...] ya no se usa, ahora viene del endpoint /cargos
 const TIPOS_CONTRATO = ['INDEFINIDO', 'FIJO', 'OBRA_LABOR', 'APRENDIZ', 'TEMPORAL'];
 
 const normalizeList = (axiosRes) => {
@@ -92,6 +92,167 @@ const formatDisplayToIso = (value) => {
   };
 };
 
+// ─── Componente SearchableSelect ───────────────────────────────────────────────
+function SearchableSelect({ value, onChange, options, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const wrapperRef = useRef(null);
+  const searchRef = useRef(null);
+
+  const filtered = options.filter((o) =>
+    o.label.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    setQuery('');
+    setTimeout(() => searchRef.current?.focus(), 30);
+  }, [open]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: '100%',
+          padding: '8px 12px',
+          border: '1px solid #e2e8f0',
+          borderRadius: 8,
+          background: '#fff',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 14,
+          color: selected ? '#1e293b' : '#94a3b8',
+          textAlign: 'left',
+        }}
+      >
+        <span
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {selected ? selected.label : placeholder}
+        </span>
+        <span
+          style={{
+            fontSize: 10,
+            marginLeft: 8,
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform .15s',
+            color: '#94a3b8',
+          }}
+        >
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            background: '#fff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            overflow: 'hidden',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+          }}
+        >
+          <div style={{ padding: 8, borderBottom: '1px solid #f1f5f9' }}>
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Buscar…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+              style={{
+                width: '100%',
+                padding: '6px 10px',
+                fontSize: 13,
+                border: '1px solid #e2e8f0',
+                borderRadius: 6,
+                background: '#f8fafc',
+                boxSizing: 'border-box',
+                outline: 'none',
+                color: '#1e293b',
+              }}
+            />
+          </div>
+          <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+            {/* Opción vacía */}
+            <div
+              onClick={() => { onChange(''); setOpen(false); }}
+              style={{
+                padding: '8px 12px',
+                fontSize: 13,
+                cursor: 'pointer',
+                color: !value ? '#6366f1' : '#94a3b8',
+                background: !value ? '#eef2ff' : 'transparent',
+              }}
+            >
+              {placeholder}
+            </div>
+
+            {filtered.length === 0 ? (
+              <div style={{ padding: '10px 12px', fontSize: 13, color: '#94a3b8' }}>
+                Sin resultados
+              </div>
+            ) : (
+              filtered.map((o) => (
+                <div
+                  key={o.value}
+                  onClick={() => { onChange(o.value); setOpen(false); }}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    background: value === o.value ? '#eef2ff' : 'transparent',
+                    color: value === o.value ? '#6366f1' : '#1e293b',
+                    transition: 'background .1s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (value !== o.value)
+                      e.currentTarget.style.background = '#f8fafc';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (value !== o.value)
+                      e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {o.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ───────────────────────────────────────────────────────────────────────────────
+
 export default function NuevoPersonalModal({
   isOpen,
   title = 'Nuevo Personal',
@@ -105,6 +266,8 @@ export default function NuevoPersonalModal({
   const [fincas, setFincas] = useState([]);
   const [procesos, setProcesos] = useState([]);
   const [supervisores, setSupervisores] = useState([]);
+  // ← NUEVO: estado para los cargos dinámicos desde /cargos
+  const [cargos, setCargos] = useState([]);
 
   const fechaIngresoPickerRef = useRef(null);
 
@@ -118,9 +281,15 @@ export default function NuevoPersonalModal({
       httpClient.get('/fincas').catch(() => ({ data: [] })),
       httpClient.get('/procesos').catch(() => ({ data: [] })),
       httpClient.get('/personas').catch(() => ({ data: [] })),
-    ]).then(([fRes, pRes, sRes]) => {
+      // ← NUEVO: se agrega /cargos al Promise.all
+      httpClient.get('/cargos').catch(() => ({ data: [] })),
+    ]).then(([fRes, pRes, sRes, cRes]) => {
       setFincas(normalizeList(fRes?.data ?? fRes));
       setProcesos(normalizeList(pRes?.data ?? pRes));
+      // ← NUEVO: solo cargos activos
+      setCargos(
+        normalizeList(cRes?.data ?? cRes).filter((c) => c?.activo !== false)
+      );
       const todas = normalizeList(sRes?.data ?? sRes);
       setSupervisores(
         todas.filter(
@@ -293,16 +462,20 @@ export default function NuevoPersonalModal({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {/* ← CAMBIO: select estático reemplazado por SearchableSelect dinámico */}
             <label className="field">
               <span>Cargo</span>
-              <select value={state.cargo} onChange={setField('cargo')}>
-                <option value="">— Selecciona cargo —</option>
-                {CARGOS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={state.cargo}
+                onChange={(val) =>
+                  dispatch({ type: 'SET_FIELD', field: 'cargo', value: val })
+                }
+                placeholder="— Selecciona cargo —"
+                options={cargos.map((c) => ({
+                  value: c.nombre,
+                  label: c.nombre,
+                }))}
+              />
             </label>
             <label className="field">
               <span>Tipo Contrato</span>
@@ -414,42 +587,52 @@ export default function NuevoPersonalModal({
             </label>
           </div>
 
+          {/* ── Finca con buscador ── */}
           <label className="field">
             <span>Finca</span>
-            <select value={state.fincaId} onChange={setField('fincaId')}>
-              <option value="">— Sin finca asignada —</option>
-              {fincas.map((f) => (
-                <option key={f._id ?? f.id} value={f._id ?? f.id}>
-                  {f.codigo ? `${f.codigo} – ` : ''}
-                  {f.nombre}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={state.fincaId}
+              onChange={(val) =>
+                dispatch({ type: 'SET_FIELD', field: 'fincaId', value: val })
+              }
+              placeholder="— Sin finca asignada —"
+              options={fincas.map((f) => ({
+                value: f._id ?? f.id,
+                label: f.nombre,
+              }))}
+            />
           </label>
 
+          {/* ── Proceso con buscador ── */}
           <label className="field">
             <span>Proceso</span>
-            <select value={state.procesoId} onChange={setField('procesoId')}>
-              <option value="">— Sin proceso asignado —</option>
-              {procesos.map((p) => (
-                <option key={p._id ?? p.id} value={p._id ?? p.id}>
-                  {p.codigo ? `${p.codigo} – ` : ''}
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={state.procesoId}
+              onChange={(val) =>
+                dispatch({ type: 'SET_FIELD', field: 'procesoId', value: val })
+              }
+              placeholder="— Sin proceso asignado —"
+              options={procesos.map((p) => ({
+                value: p._id ?? p.id,
+                label: p.nombre,
+              }))}
+            />
           </label>
 
+          {/* ── Supervisor con buscador ── */}
           <label className="field">
             <span>Supervisor</span>
-            <select value={state.supervisorId} onChange={setField('supervisorId')}>
-              <option value="">— Sin supervisor —</option>
-              {supervisores.map((s) => (
-                <option key={s._id ?? s.id} value={s._id ?? s.id}>
-                  {s.nombres} {s.apellidos}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={state.supervisorId}
+              onChange={(val) =>
+                dispatch({ type: 'SET_FIELD', field: 'supervisorId', value: val })
+              }
+              placeholder="— Sin supervisor —"
+              options={supervisores.map((s) => ({
+                value: s._id ?? s.id,
+                label: `${s.nombres} ${s.apellidos}`,
+              }))}
+            />
           </label>
 
           {state.error && <div className="form-error">{state.error}</div>}
