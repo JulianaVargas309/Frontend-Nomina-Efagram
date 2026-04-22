@@ -33,7 +33,7 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
                 </button>
             </div>
 
-            <div style={{ overflowX: 'auto', background: '#fff', borderRadius: 18, border: '1px solid #e5e7eb' }}>
+            <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '600px', background: '#fff', borderRadius: 18, border: '1px solid #e5e7eb' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>
