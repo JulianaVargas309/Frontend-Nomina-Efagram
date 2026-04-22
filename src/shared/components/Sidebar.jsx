@@ -297,20 +297,6 @@ export default function Sidebar() {
                         </div>
 
                         <div
-                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-actividades")}`}
-                            onClick={() => navigatePreservingSidebar("/configuracion/catalogo-actividades")}
-                        >
-                            <CheckSquare size={16} />Catálogo Actividades
-                        </div>
-
-                        <div
-                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-intervenciones")}`}
-                            onClick={() => navigatePreservingSidebar("/configuracion/catalogo-intervenciones")}
-                        >
-                            <Wrench size={16} />Catálogo Intervenciones
-                        </div>
-
-                        <div
                             className={`submenu-item ${isActiveSub("/configuracion/catalogo-procesos")}`}
                             onClick={() => navigatePreservingSidebar("/configuracion/catalogo-procesos")}
                         >
@@ -322,6 +308,20 @@ export default function Sidebar() {
                             onClick={() => navigatePreservingSidebar("/configuracion/catalogo-cargos")}
                         >
                             <Briefcase size={16} />Catálogo Cargos
+                        </div>
+
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-intervenciones")}`}
+                            onClick={() => navigatePreservingSidebar("/configuracion/catalogo-intervenciones")}
+                        >
+                            <Wrench size={16} />Catálogo Intervenciones
+                        </div>
+
+                        <div
+                            className={`submenu-item ${isActiveSub("/configuracion/catalogo-actividades")}`}
+                            onClick={() => navigatePreservingSidebar("/configuracion/catalogo-actividades")}
+                        >
+                            <CheckSquare size={16} />Catálogo Actividades
                         </div>
 
                         <div
