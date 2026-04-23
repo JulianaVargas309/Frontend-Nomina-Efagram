@@ -20,7 +20,6 @@ const FORM_INICIAL = {
   nombre: "",
   intervencion: "",
   activa: "true",
-  precio_base: "",
   descripcion: "",
 };
 
@@ -149,8 +148,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
         nombre: actividadEditar.nombre ?? "",
         intervencion: actividadEditar.intervencion?._id ?? actividadEditar.intervencion ?? "",
         activa: String(actividadEditar.activa ?? true),
-        precio_base:
-          actividadEditar.precio_base != null ? String(actividadEditar.precio_base) : "",
         descripcion: actividadEditar.descripcion ?? "",
       });
     } else {
@@ -159,7 +156,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
         nombre: "",
         intervencion: "",
         activa: "true",
-        precio_base: "",
         descripcion: "",
       });
     }
@@ -183,10 +179,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
     if (!form.nombre.trim()) errs.nombre = "El nombre es obligatorio";
     if (!form.intervencion) errs.intervencion = "Debes seleccionar una intervención";
 
-    if (form.precio_base !== "" && Number(form.precio_base) < 0) {
-      errs.precio_base = "El precio base no puede ser negativo";
-    }
-
     return errs;
   };
 
@@ -205,7 +197,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
         intervencion: form.intervencion,
         activa: form.activa === "true",
         descripcion: form.descripcion.trim(),
-        precio_base: form.precio_base !== "" ? Number(form.precio_base) : 0,
       };
 
       if (isEdit) {
