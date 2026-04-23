@@ -5,7 +5,6 @@ import {
   Type,
   GitBranch,
   ToggleLeft,
-  DollarSign,
   FileText
 } from "lucide-react";
 import {
@@ -495,41 +494,6 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
                 <option value="false">Inactiva</option>
               </select>
             </div>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "rgba(34, 197, 94, 0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <DollarSign size={16} color="#22c55e" strokeWidth={1} />
-              </div>
-              Precio Base ($)
-            </label>
-
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              name="precio_base"
-              value={form.precio_base}
-              onChange={handleChange}
-              placeholder="Ej: 850000"
-              style={inputStyle(!!errors.precio_base)}
-            />
-            {errors.precio_base && (
-              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc2626" }}>
-                {errors.precio_base}
-              </p>
-            )}
           </div>
 
           <div>
