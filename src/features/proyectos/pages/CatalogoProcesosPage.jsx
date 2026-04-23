@@ -56,7 +56,7 @@ export default function CatalogoProcesosPage() {
   const filteredProcesos = useMemo(() => {
     const q = search.trim().toLowerCase();
     let result = procesos;
-    
+
     if (q) {
       result = procesos.filter((p) => {
         const codigo = String(p?.codigo ?? '').toLowerCase();
@@ -64,7 +64,7 @@ export default function CatalogoProcesosPage() {
         return codigo.includes(q) || nombre.includes(q);
       });
     }
-    
+
     // Ordenar por fecha de creación (más antiguo primero)
     return result.sort((a, b) => {
       const dateA = new Date(a?.createdAt || a?.fechaCreacion || 0);
