@@ -61,6 +61,27 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
 
     const getId = (n) => n?._id ?? n?.id;
 
+    // Ordena por orden de creación: usa el timestamp embebido en _id de MongoDB,
+    // si no existe _id o es un id sin timestamp, mantiene el orden original del array.
+    const nucleosOrdenados = [...nucleos].sort((a, b) => {
+        const aId = a?._id ?? a?.id ?? '';
+        const bId = b?._id ?? b?.id ?? '';
+        // _id de MongoDB: primeros 8 hex chars = timestamp en segundos
+        const aIsMongoId = typeof aId === 'string' && /^[a-f0-9]{24}$/i.test(aId);
+        const bIsMongoId = typeof bId === 'string' && /^[a-f0-9]{24}$/i.test(bId);
+        if (aIsMongoId && bIsMongoId) {
+            const aTs = parseInt(aId.substring(0, 8), 16);
+            const bTs = parseInt(bId.substring(0, 8), 16);
+            return aTs - bTs;
+        }
+        // Si hay createdAt explícito
+        if (a?.createdAt && b?.createdAt) {
+            return new Date(a.createdAt) - new Date(b.createdAt);
+        }
+        // Fallback: mantiene orden original
+        return 0;
+    });
+
     const handleDelete = async (id) => {
         const ok = window.confirm('¿Eliminar este núcleo?');
         if (!ok) return;
@@ -106,10 +127,10 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
                         </tr>
                     </thead>
                     <tbody>
-                        {nucleos.length === 0 ? (
+                        {nucleosOrdenados.length === 0 ? (
                             <tr><td colSpan={5} className="zonas-empty">No hay núcleos para mostrar</td></tr>
                         ) : (
-                            nucleos.map((n) => {
+                            nucleosOrdenados.map((n) => {
                                 const id = getId(n);
                                 let isActive = false;
                                 const raw = n?.activo ?? n?.activa ?? n?.estado;

@@ -92,10 +92,6 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
     return f.nucleo;
   };
 
-  const fincasFiltradas = nucleoFiltro
-    ? fincas.filter((f) => resolveNucleoId(f) === nucleoFiltro)
-    : fincas;
-
   const getArea = (f) => f?.area_total ?? f?.area ?? f?.areaTotal ?? f?.hectareas;
 
   const resolveEstado = (f) => {
@@ -108,6 +104,27 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
     if (typeof raw === 'number') return raw === 1;
     return false;
   };
+
+  // Ordena por orden de creación antes de filtrar
+  const fincasOrdenadas = [...fincas].sort((a, b) => {
+    const aId = a?._id ?? a?.id ?? '';
+    const bId = b?._id ?? b?.id ?? '';
+    const aIsMongoId = typeof aId === 'string' && /^[a-f0-9]{24}$/i.test(aId);
+    const bIsMongoId = typeof bId === 'string' && /^[a-f0-9]{24}$/i.test(bId);
+    if (aIsMongoId && bIsMongoId) {
+      const aTs = parseInt(aId.substring(0, 8), 16);
+      const bTs = parseInt(bId.substring(0, 8), 16);
+      return aTs - bTs;
+    }
+    if (a?.createdAt && b?.createdAt) {
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    }
+    return 0;
+  });
+
+  const fincasFiltradas = nucleoFiltro
+    ? fincasOrdenadas.filter((f) => resolveNucleoId(f) === nucleoFiltro)
+    : fincasOrdenadas;
 
   return (
     <div className="zonas-card">

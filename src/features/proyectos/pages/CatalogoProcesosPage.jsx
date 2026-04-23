@@ -55,11 +55,21 @@ export default function CatalogoProcesosPage() {
 
   const filteredProcesos = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return procesos;
-    return procesos.filter((p) => {
-      const codigo = String(p?.codigo ?? '').toLowerCase();
-      const nombre = String(p?.nombre ?? '').toLowerCase();
-      return codigo.includes(q) || nombre.includes(q);
+    let result = procesos;
+    
+    if (q) {
+      result = procesos.filter((p) => {
+        const codigo = String(p?.codigo ?? '').toLowerCase();
+        const nombre = String(p?.nombre ?? '').toLowerCase();
+        return codigo.includes(q) || nombre.includes(q);
+      });
+    }
+    
+    // Ordenar por fecha de creación (más antiguo primero)
+    return result.sort((a, b) => {
+      const dateA = new Date(a?.createdAt || a?.fechaCreacion || 0);
+      const dateB = new Date(b?.createdAt || b?.fechaCreacion || 0);
+      return dateA - dateB;
     });
   }, [procesos, search]);
 

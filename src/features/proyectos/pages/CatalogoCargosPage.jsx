@@ -17,17 +17,29 @@ export default function CatalogoCargosPage() {
   const [error,   setError]   = useState(null);
 
   const normalizeList = (res) => {
-    if (Array.isArray(res))            return res;
-    if (Array.isArray(res?.data))      return res.data;
-    if (Array.isArray(res?.data?.data))return res.data.data;
+    if (Array.isArray(res))             return res;
+    if (Array.isArray(res?.data))       return res.data;
+    if (Array.isArray(res?.data?.data)) return res.data.data;
     return [];
+  };
+
+  const sortByCreation = (lista) => {
+    return [...lista].sort((a, b) => {
+      const tsA = a.createdAt
+        ? new Date(a.createdAt)
+        : new Date(parseInt(String(a._id ?? a.id).slice(0, 8), 16) * 1000);
+      const tsB = b.createdAt
+        ? new Date(b.createdAt)
+        : new Date(parseInt(String(b._id ?? b.id).slice(0, 8), 16) * 1000);
+      return tsA - tsB;
+    });
   };
 
   const fetchCargos = async () => {
     try {
       setLoading(true);
       const res = await getCargos();
-      setCargos(normalizeList(res));
+      setCargos(sortByCreation(normalizeList(res)));
       setError(null);
     } catch (e) {
       console.error(e);
@@ -58,7 +70,7 @@ export default function CatalogoCargosPage() {
     const created = await createCargo(payload);
     const obj = created?.data?.data ?? created?.data ?? created;
     if (obj && (obj._id || obj.id)) {
-      setCargos((prev) => [obj, ...prev]);
+      setCargos((prev) => sortByCreation([obj, ...prev]));
     } else {
       await fetchCargos();
     }
