@@ -1,7 +1,9 @@
 import httpEfaStack from "../../../core/api/httpEfastack";
 
-export const getPersonas = () =>
-  httpEfaStack.get('/personas');
+export const getPersonas = async () => {
+  const response = await httpEfaStack.get('/personas');
+  return response.data;
+};
 
 // alias para compatibilidad con otros componentes
 export const getPersonal = () =>

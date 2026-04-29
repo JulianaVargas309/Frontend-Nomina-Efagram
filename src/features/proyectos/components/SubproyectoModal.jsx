@@ -221,7 +221,8 @@ const SubproyectoModal = ({
           getActividadesDisponibles(proyecto._id),
         ]);
 
-        setPersonas(pRes?.data?.data ?? []);
+        const pd = pRes?.data ?? pRes ?? [];
+        setPersonas(Array.isArray(pd) ? pd : []);
         setActDisponibles(aRes?.data?.data ?? []);
 
         const zonaId = proyecto.zona?._id ?? proyecto.zona ?? null;
@@ -698,7 +699,8 @@ const SubproyectoModal = ({
                   <option value="">— Seleccione supervisor (opcional) —</option>
                   {personas.map((p) => (
                     <option key={p._id} value={p._id}>
-                      {`${p.nombres ?? ''} ${p.apellidos ?? ''}`.trim() || p.nombre || 'Persona'}
+                      {p.name || `${p.nombres ?? ''} ${p.apellidos ?? ''}`.trim() || 'Persona'}
+                      {p.cc ? ` — ${p.cc}` : ''}
                     </option>
                   ))}
                 </select>
