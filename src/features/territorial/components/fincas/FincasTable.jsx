@@ -1,18 +1,12 @@
 import { useState } from 'react';
-import { Eye, Pencil, Trash2, Plus, Search, Trees, X, ChevronDown } from 'lucide-react';
-import NuevaFincaModal from './NuevaFincaModal';
+import { Eye, Search, Trees, X, ChevronDown } from 'lucide-react';
+
 
 // ── Modal de detalle ───────────────────────────────────────────────────────
 function FincaDetalleModal({ isOpen, finca, onClose }) {
   if (!isOpen || !finca) return null;
 
-  let isActive = false;
-  const raw = finca?.activa ?? finca?.estado;
-  if (typeof raw === 'boolean') isActive = raw;
-  else if (typeof raw === 'string') {
-    const v = raw.toLowerCase().trim();
-    isActive = v === 'activa' || v === 'activo' || v === 'active' || v === 'true' || v === '1';
-  } else if (typeof raw === 'number') isActive = raw === 1;
+
 
   const area = finca?.area_total ?? finca?.area ?? finca?.areaTotal ?? finca?.hectareas;
 
@@ -53,38 +47,19 @@ function FincaDetalleModal({ isOpen, finca, onClose }) {
           </div>
         )}
 
-        <div className="zdm-estado-box">
-          <span className="zdm-estado-label">Estado</span>
-          <span className={isActive ? 'zdm-badge active' : 'zdm-badge inactive'}>
-            {isActive ? '⊙ Activa' : '⊗ Inactiva'}
-          </span>
-        </div>
       </div>
     </>
   );
 }
 
 // ── Tabla principal ────────────────────────────────────────────────────────
-export default function FincasTable({ fincas = [], nucleos = [], search = '', setSearch, onAdd, onUpdate, onDelete }) {
-  const [openCreate, setOpenCreate] = useState(false);
-  const [editFinca, setEditFinca] = useState(null);
+export default function FincasTable({ fincas = [], nucleos = [], search = '', setSearch }) {
   const [detalleFinca, setDetalleFinca] = useState(null);
   const [nucleoFiltro, setNucleoFiltro] = useState('');
 
   const getId = (f) => f?._id ?? f?.id;
 
-  const handleDelete = async (id) => {
-    const ok = window.confirm('¿Eliminar esta finca?');
-    if (!ok) return;
-    await onDelete?.(id);
-  };
 
-  const resolveNucleoNombre = (f) => {
-    if (!f?.nucleo) return '-';
-    if (typeof f.nucleo === 'object') return f.nucleo?.nombre ?? '-';
-    const found = nucleos.find((n) => (n?._id ?? n?.id) === f.nucleo);
-    return found?.nombre ?? f.nucleo;
-  };
 
   const resolveNucleoId = (f) => {
     if (!f?.nucleo) return '';
@@ -94,16 +69,6 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
 
   const getArea = (f) => f?.area_total ?? f?.area ?? f?.areaTotal ?? f?.hectareas;
 
-  const resolveEstado = (f) => {
-    const raw = f?.activa ?? f?.estado;
-    if (typeof raw === 'boolean') return raw;
-    if (typeof raw === 'string') {
-      const v = raw.toLowerCase().trim();
-      return v === 'activa' || v === 'activo' || v === 'active' || v === 'true' || v === '1';
-    }
-    if (typeof raw === 'number') return raw === 1;
-    return false;
-  };
 
   // Ordena por orden de creación antes de filtrar
   const fincasOrdenadas = [...fincas].sort((a, b) => {
@@ -132,10 +97,6 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
       {/* HEADER */}
       <div className="zonas-card-header">
         <h2 className="zonas-card-title">Gestión de Fincas</h2>
-        <button className="btn-primary" onClick={() => setOpenCreate(true)}>
-          <Plus size={16} />
-          Nueva Finca
-        </button>
       </div>
 
       {/* BARRA DE BÚSQUEDA + FILTRO */}
@@ -173,7 +134,6 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
               <th style={{ width: '180px' }}>Nombre</th>
               <th style={{ width: '160px' }}>Nucleo</th>
               <th style={{ width: '110px' }}>Area Total</th>
-              <th style={{ width: '130px' }}>Estado</th>
               <th style={{ width: '140px', textAlign: 'center' }}>Acciones</th>
             </tr>
           </thead>
@@ -183,7 +143,6 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
             ) : (
               fincasFiltradas.map((f) => {
                 const id = getId(f);
-                const isActive = resolveEstado(f);
                 const area = getArea(f);
 
                 return (
@@ -198,26 +157,18 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
                       </div>
                     </td>
                     <td style={{ fontSize: 13, color: '#374151' }}>
-                      {(f).codeNucleo ?? '-'}
+                      {typeof f?.codeNucleo === 'object'
+                        ? f.codeNucleo?.nombreNucleo || '-'
+                        : f?.codeNucleo || '-'}
                     </td>
                     <td style={{ fontSize: 13, color: '#374151' }}>
                       {area !== undefined && area !== null ? `${area} ha` : '-'}
                     </td>
-                    <td>
-                      <span className={isActive ? 'finca-badge-activa' : 'finca-badge-inactiva'}>
-                        {isActive ? '⊙ Activa' : '⊗ Inactiva'}
-                      </span>
-                    </td>
+                   
                     <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0 16px' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <button className="icon-btn" type="button" title="Ver detalle" onClick={() => setDetalleFinca(f)}>
                           <Eye size={16} />
-                        </button>
-                        <button className="icon-btn" type="button" title="Editar" onClick={() => setEditFinca(f)}>
-                          <Pencil size={16} />
-                        </button>
-                        <button className="icon-btn danger" type="button" title="Eliminar" onClick={() => handleDelete(id)}>
-                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -231,33 +182,8 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
 
       <FincaDetalleModal isOpen={!!detalleFinca} finca={detalleFinca} onClose={() => setDetalleFinca(null)} />
 
-      <NuevaFincaModal
-        key={openCreate ? 'create' : 'create-closed'}
-        isOpen={openCreate}
-        title="Nueva Finca"
-        initialValues={{ codigo: '', nombre: '', nucleo: '', area: '', estado: true }}
-        nucleos={nucleos}
-        onClose={() => setOpenCreate(false)}
-        onSubmit={async (values) => { await onAdd?.(values); setOpenCreate(false); }}
-      />
 
-      <NuevaFincaModal
-        key={editFinca ? (editFinca._id ?? editFinca.id ?? 'edit') : 'edit-closed'}
-        isOpen={!!editFinca}
-        title="Editar Finca"
-        initialValues={{
-          codigo: editFinca?.codigo ?? '',
-          nombre: editFinca?.nombre ?? '',
-          nucleo: typeof editFinca?.nucleo === 'object'
-            ? (editFinca?.nucleo?._id ?? editFinca?.nucleo?.id ?? '')
-            : (editFinca?.nucleo ?? ''),
-          area: getArea(editFinca) ?? '',
-          activa: typeof editFinca?.activa === 'boolean' ? editFinca.activa : true,
-        }}
-        nucleos={nucleos}
-        onClose={() => setEditFinca(null)}
-        onSubmit={async (values) => { const id = getId(editFinca); await onUpdate?.(id, values); setEditFinca(null); }}
-      />
+
     </div>
   );
 }

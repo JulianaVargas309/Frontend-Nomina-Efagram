@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Eye, Pencil, Trash2, Plus, Search, Layers, X } from 'lucide-react';
-import NuevoNucleoModal from './NuevoNucleoModal';
+import { Eye, Plus, Search, Layers, X } from 'lucide-react';
+
 
 function NucleoDetalleModal({ isOpen, nucleo, onClose }) {
     if (!isOpen || !nucleo) return null;
@@ -43,12 +43,6 @@ function NucleoDetalleModal({ isOpen, nucleo, onClose }) {
                     </div>
                 )}
 
-                <div className="zdm-estado-box">
-                    <span className="zdm-estado-label">Estado</span>
-                    <span className={isActive ? 'zdm-badge active' : 'zdm-badge inactive'}>
-                        {isActive ? '⊙ Activo' : '⊗ Inactivo'}
-                    </span>
-                </div>
             </div>
         </>
     );
@@ -56,9 +50,7 @@ function NucleoDetalleModal({ isOpen, nucleo, onClose }) {
 
 export default function NucleosTable({ nucleos = [], zonas = [], search = '', setSearch, onAdd, onUpdate, onDelete }) {
     const [openCreate, setOpenCreate] = useState(false);
-    const [editNucleo, setEditNucleo] = useState(null);
     const [detalleNucleo, setDetalleNucleo] = useState(null);
-
     const getId = (n) => n?._id ?? n?.id;
 
     // Ordena por orden de creación: usa el timestamp embebido en _id de MongoDB,
@@ -122,7 +114,6 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
                             <th className="th-code">Código</th>
                             <th className="th-name">Nombre</th>
                             <th>Zona</th>
-                            <th className="th-status">Estado</th>
                             <th className="th-actions">Acciones</th>
                         </tr>
                     </thead>
@@ -150,16 +141,10 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
                                             </div>
                                         </td>
                                         <td style={{ fontSize: 13, color: '#374151' }}>{(n).codeZona}</td>
-                                        <td>
-                                            <span className={isActive ? 'badge-active' : 'badge-inactive'}>
-                                                {isActive ? '⊙ Activo' : '⊗ Inactivo'}
-                                            </span>
-                                        </td>
+                                        
                                         <td className="td-actions">
                                             <div className="td-actions-inner">
                                                 <button className="icon-btn" type="button" title="Ver detalle" onClick={() => setDetalleNucleo(n)}><Eye size={16} /></button>
-                                                <button className="icon-btn" type="button" title="Editar" onClick={() => setEditNucleo(n)}><Pencil size={16} /></button>
-                                                <button className="icon-btn danger" type="button" title="Eliminar" onClick={() => handleDelete(id)}><Trash2 size={16} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -172,32 +157,6 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
 
             <NucleoDetalleModal isOpen={!!detalleNucleo} nucleo={detalleNucleo} onClose={() => setDetalleNucleo(null)} />
 
-            <NuevoNucleoModal
-                isOpen={openCreate}
-                title="Nuevo Núcleo"
-                initialValues={{ codigo: '', nombre: '', zona: '', estado: true }}
-                zonas={zonas}
-                onClose={() => setOpenCreate(false)}
-                onSubmit={async (values) => { await onAdd?.(values); setOpenCreate(false); }}
-            />
-
-            <NuevoNucleoModal
-                isOpen={!!editNucleo}
-                title="Editar Núcleo"
-                initialValues={{
-                    codigo: editNucleo?.codigo ?? '',
-                    nombre: editNucleo?.nombre ?? '',
-                    zona: typeof editNucleo?.zona === 'object'
-                        ? (editNucleo?.zona?._id ?? editNucleo?.zona?.id ?? '')
-                        : (editNucleo?.zona ?? ''),
-                    activo: typeof editNucleo?.activo === 'boolean'
-                        ? editNucleo.activo
-                        : (typeof editNucleo?.activa === 'boolean' ? editNucleo.activa : true),
-                }}
-                zonas={zonas}
-                onClose={() => setEditNucleo(null)}
-                onSubmit={async (values) => { const id = getId(editNucleo); await onUpdate?.(id, values); setEditNucleo(null); }}
-            />
         </div>
     );
 }

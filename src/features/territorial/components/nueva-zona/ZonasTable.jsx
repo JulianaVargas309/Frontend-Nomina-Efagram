@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Eye, Pencil, Plus, Search, MapPin, X } from 'lucide-react';
-import NuevaZonaModal from './NuevaZonaModal';
+import { Eye, Plus, Search, MapPin, X } from 'lucide-react';
+
 
 function ZonaDetalleModal({ isOpen, zona, onClose }) {
   if (!isOpen || !zona) return null;
@@ -62,10 +62,6 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
               placeholder="Buscar zona..."
             />
           </div>
-          <button className="btn-primary" onClick={() => setOpenCreate(true)}>
-            <Plus size={16} />
-            Nueva Zona
-          </button>
         </div>
       </div>
 
@@ -76,7 +72,6 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
             <tr>
               <th style={{ width: '120px' }}>Codigo</th>
               <th style={{ width: '200px' }}>Nombre</th>
-              <th style={{ width: '160px' }}>Estado</th>
               <th style={{ width: '140px', textAlign: 'center' }}>Acciones</th>
             </tr>
           </thead>
@@ -102,18 +97,11 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
                         {z?.nombreZona ?? '-'}
                       </div>
                     </td>
-                    <td>
-                      <span className={isActive ? 'badge-active' : 'badge-inactive'}>
-                        {isActive ? '⊙ Activa' : '⊗ Inactiva'}
-                      </span>
-                    </td>
+                    
                     <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0 16px' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <button className="icon-btn" type="button" title="Ver detalle" onClick={() => setDetalleZona(z)}>
                           <Eye size={16} />
-                        </button>
-                        <button className="icon-btn" type="button" title="Editar" onClick={() => setEditZona(z)}>
-                          <Pencil size={16} />
                         </button>
                       </div>
                     </td>
@@ -127,25 +115,9 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
 
       <ZonaDetalleModal isOpen={!!detalleZona} zona={detalleZona} onClose={() => setDetalleZona(null)} />
 
-      <NuevaZonaModal
-        isOpen={openCreate}
-        title="Nueva zona"
-        initialValues={{ codigo: '', nombre: '', estado: true }}
-        onClose={() => setOpenCreate(false)}
-        onSubmit={async (values) => { await onAdd?.(values); setOpenCreate(false); }}
-      />
+   
 
-      <NuevaZonaModal
-        isOpen={!!editZona}
-        title="Editar zona"
-        initialValues={{
-          codigo: editZona?.codeZona ?? '',
-          nombre: editZona?.nombreZona ?? '',
-          activa: typeof editZona?.activa === 'boolean' ? editZona.activa : true,
-        }}
-        onClose={() => setEditZona(null)}
-        onSubmit={async (values) => { const id = getId(editZona); await onUpdate?.(id, values); setEditZona(null); }}
-      />
+      
     </div>
   );
 }
