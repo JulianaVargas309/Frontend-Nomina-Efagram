@@ -142,14 +142,14 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
 
                                 return (
                                     <tr key={id}>
-                                        <td>{n?.codigo ?? '-'}</td>
+                                        <td>{n?.codeNucleo ?? '-'}</td>
                                         <td>
                                             <div className="zona-name-cell">
                                                 <span className="zona-pin-icon"><Layers size={13} /></span>
-                                                {n?.nombre ?? '-'}
+                                                {n?.nombreNucleo ?? '-'}
                                             </div>
                                         </td>
-                                        <td style={{ fontSize: 13, color: '#374151' }}>{resolveZonaNombre(n)}</td>
+                                        <td style={{ fontSize: 13, color: '#374151' }}>{(n).codeZona}</td>
                                         <td>
                                             <span className={isActive ? 'badge-active' : 'badge-inactive'}>
                                                 {isActive ? '⊙ Activo' : '⊗ Inactivo'}

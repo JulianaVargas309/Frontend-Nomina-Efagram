@@ -1,12 +1,12 @@
-import httpClient from '../../../core/api/httpClient';
+import httpEfaStack from "../../../core/api/httpEfastack";
 
 export const getFincas = async () => {
-  const response = await httpClient.get('/fincas');
+  const response = await httpEfaStack.get('/fincas');
   return response.data;
 };
 
 export const getNextFincaCode = async (nucleoId) => {
-  const response = await httpClient.get('/fincas/next-code', {
+  const response = await httpEfaStack.get('/fincas/next-code', {
     params: { nucleo: nucleoId }
   });
   return response.data;

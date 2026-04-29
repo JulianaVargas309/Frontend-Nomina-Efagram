@@ -66,8 +66,8 @@ function FincaDetalleModal({ isOpen, finca, onClose }) {
 
 // ── Tabla principal ────────────────────────────────────────────────────────
 export default function FincasTable({ fincas = [], nucleos = [], search = '', setSearch, onAdd, onUpdate, onDelete }) {
-  const [openCreate, setOpenCreate]     = useState(false);
-  const [editFinca, setEditFinca]       = useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [editFinca, setEditFinca] = useState(null);
   const [detalleFinca, setDetalleFinca] = useState(null);
   const [nucleoFiltro, setNucleoFiltro] = useState('');
 
@@ -189,16 +189,16 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
                 return (
                   <tr key={id}>
                     <td>
-                      <span className="finca-codigo-badge">{f?.codigo ?? '-'}</span>
+                      <span className="finca-codigo-badge">{f?.codeFinca ?? '-'}</span>
                     </td>
                     <td>
                       <div className="zona-name-cell">
                         <span className="finca-tree-icon"><Trees size={14} /></span>
-                        {f?.nombre ?? '-'}
+                        {f?.nombreFinca ?? '-'}
                       </div>
                     </td>
                     <td style={{ fontSize: 13, color: '#374151' }}>
-                      {resolveNucleoNombre(f)}
+                      {(f).codeNucleo ?? '-'}
                     </td>
                     <td style={{ fontSize: 13, color: '#374151' }}>
                       {area !== undefined && area !== null ? `${area} ha` : '-'}

@@ -3,10 +3,15 @@ import { MapPin, CheckCircle, XCircle } from 'lucide-react';
 export default function TerritorialStats({ zonas = [] }) {
   const totalZonas = zonas.length;
 
-  const isActive = (z) =>
-    typeof z?.estado === 'boolean' ? z.estado : z?.activa;
+  const isActive = (z) => {
+    const raw = z?.activa ?? z?.estado;
+    if (raw === undefined || raw === null) return true; // fallback
+    if (typeof raw === 'boolean') return raw;
+    if (typeof raw === 'string') return raw === 'activa' || raw === 'true' || raw === '1';
+    return false;
+  };
 
-  const activas   = zonas.filter((z) => isActive(z) === true).length;
+  const activas = zonas.filter((z) => isActive(z) === true).length;
   const inactivas = zonas.filter((z) => isActive(z) === false).length;
 
   return (

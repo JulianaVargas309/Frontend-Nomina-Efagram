@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, Pencil, Plus, Search, MapPin, X } from 'lucide-react';
-import NuevaZonaModal from './nueva-zona/NuevaZonaModal';
+import NuevaZonaModal from './NuevaZonaModal';
 
 function ZonaDetalleModal({ isOpen, zona, onClose }) {
   if (!isOpen || !zona) return null;
@@ -25,8 +25,8 @@ function ZonaDetalleModal({ isOpen, zona, onClose }) {
         <div className="zdm-name-card">
           <div className="zdm-pin-wrap"><MapPin size={20} /></div>
           <div className="zdm-name-info">
-            <span className="zdm-name">{zona?.nombre ?? '-'}</span>
-            <span className="zdm-code">{zona?.codigo ?? '-'}</span>
+            <span className="zdm-name">{zona?.nombreZona ?? '-'}</span>
+            <span className="zdm-code">{zona?.codeZona ?? '-'}</span>
           </div>
         </div>
         <div className="zdm-estado-box">
@@ -41,8 +41,8 @@ function ZonaDetalleModal({ isOpen, zona, onClose }) {
 }
 
 export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, onUpdate }) {
-  const [openCreate, setOpenCreate]   = useState(false);
-  const [editZona, setEditZona]       = useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [editZona, setEditZona] = useState(null);
   const [detalleZona, setDetalleZona] = useState(null);
 
   const getId = (z) => z?._id ?? z?.id;
@@ -89,28 +89,17 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
               zonas.map((z) => {
                 const id = getId(z);
 
-                let isActive = false;
-                if (z?.activa !== undefined && z?.activa !== null) {
-                  if (typeof z.activa === 'boolean') isActive = z.activa;
-                  else if (typeof z.activa === 'string') {
-                    const act = z.activa.toLowerCase().trim();
-                    isActive = act === 'activa' || act === 'active' || act === 'true' || act === '1';
-                  } else if (typeof z.activa === 'number') isActive = z.activa === 1;
-                } else if (z?.estado !== undefined && z?.estado !== null) {
-                  if (typeof z.estado === 'boolean') isActive = z.estado;
-                  else if (typeof z.estado === 'string') {
-                    const est = z.estado.toLowerCase().trim();
-                    isActive = est === 'activa' || est === 'active' || est === 'true' || est === '1';
-                  } else if (typeof z.estado === 'number') isActive = z.estado === 1;
-                }
-
+                // ✅ POR ESTO (una sola línea)
+                const raw = z?.activa ?? z?.estado;
+                const isActive = (raw === undefined || raw === null) ? true : Boolean(raw);
+                
                 return (
                   <tr key={id}>
-                    <td>{z?.codigo ?? '-'}</td>
+                    <td>{z?.codeZona ?? '-'}</td>
                     <td>
                       <div className="zona-name-cell">
                         <span className="zona-pin-icon"><MapPin size={13} /></span>
-                        {z?.nombre ?? '-'}
+                        {z?.nombreZona ?? '-'}
                       </div>
                     </td>
                     <td>
@@ -150,8 +139,8 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
         isOpen={!!editZona}
         title="Editar zona"
         initialValues={{
-          codigo: editZona?.codigo ?? '',
-          nombre: editZona?.nombre ?? '',
+          codigo: editZona?.codeZona ?? '',
+          nombre: editZona?.nombreZona ?? '',
           activa: typeof editZona?.activa === 'boolean' ? editZona.activa : true,
         }}
         onClose={() => setEditZona(null)}
@@ -160,3 +149,6 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
     </div>
   );
 }
+
+
+

@@ -4,7 +4,7 @@ import {
     LayoutDashboard, BarChart3, Play, Folder,
     Users, CheckSquare, ChevronDown, Layers, Building,
     AlertTriangle, Calendar, Clock,
-    Settings, MapPin, Wrench, GitBranch, FileText, Activity, Briefcase, Upload, LogOut
+    Settings, MapPin, Wrench, GitBranch, FileText, Activity, Briefcase, LogOut
 } from "lucide-react";
 import { useAuth } from "../../app/providers/useAuth";
 import "./sidebar.css";
@@ -260,12 +260,6 @@ export default function Sidebar() {
                         >
                             <Users size={16} />Catálogo personal
                         </div>
-                        <div
-                            className={`submenu-item ${isActiveSub("/personal/carga-masiva")}`}
-                            onClick={() => navigatePreservingSidebar("/personal/carga-masiva")}
-                        >
-                            <Upload size={16} />Carga masiva
-                        </div>
                     </div>
                 )}
 
@@ -352,12 +346,6 @@ export default function Sidebar() {
                                     onClick={() => navigatePreservingSidebar("/configuracion/ubicacion/fincas")}
                                 >
                                     <Building size={14} />Fincas
-                                </div>
-                                <div
-                                    className={`submenu-item ${isActiveSub("/configuracion/ubicacion/fincas-masivas")}`}
-                                    onClick={() => navigatePreservingSidebar("/configuracion/ubicacion/fincas-masivas")}
-                                >
-                                    <Building size={14} />Carga masiva fincas
                                 </div>
                             </div>
                         )}

@@ -1,26 +1,26 @@
-import httpClient from '../../../core/api/httpClient';
+import httpEfaStack from '../../../core/api/httpEfastack';
 
 export const getZonas = async () => {
-  const response = await httpClient.get('/zonas');
+  const response = await httpEfaStack.get('/zonas');
   return response.data;
 };
 
 export const getNextZonaCode = async () => {
-  const response = await httpClient.get('/zonas/next-code');
+  const response = await httpEfaStack.get('/zonas/next-code');
   return response.data;
 };
 
 export const createZona = async (data) => {
-  const response = await httpClient.post('/zonas', data);
+  const response = await httpEfaStack.post('/zonas', data);
   return response.data;
 };
 
 export const updateZona = async (id, data) => {
-  const response = await httpClient.put(`/zonas/${id}`, data);
+  const response = await httpEfaStack.put(`/zonas/${id}`, data);
   return response.data;
 };
 
 export const deleteZona = async (id) => {
-  const response = await httpClient.delete(`/zonas/${id}`);
+  const response = await httpEfaStack.delete(`/zonas/${id}`);
   return response.data;
 };

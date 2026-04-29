@@ -48,10 +48,10 @@ export default function NuevaZonaModal({
         dispatch({
           type: 'RESET',
           values: {
-            codigo: initialValues?.codigo !== undefined && initialValues?.codigo !== null
-              ? String(initialValues.codigo).padStart(2, '0')
+            codigo: initialValues?.codeZona !== undefined && initialValues?.codeZona !== null
+              ? String(initialValues.codeZona).padStart(2, '0')
               : '',
-            nombre: initialValues?.nombre ?? '',
+            nombre: initialValues?.nombreZona ?? '',
             estado: typeof estadoValue === 'boolean' ? estadoValue : true,
             saving: false,
             error: null,

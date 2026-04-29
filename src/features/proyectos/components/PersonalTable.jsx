@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Eye, Pencil, Trash2, Plus, Search, User, X } from 'lucide-react';
-import NuevoPersonalModal from './NuevoPersonalModal';
+import { Eye, Search, User, X } from 'lucide-react';
+
+
 
 function PersonalDetalleModal({ isOpen, persona, onClose }) {
   if (!isOpen || !persona) return null;
@@ -92,18 +93,14 @@ export default function PersonalTable({
   personal = [],
   search = '',
   setSearch,
-  onAdd,
-  onUpdate,
-  onDelete,
 }) {
-  const [openCreate,     setOpenCreate]     = useState(false);
-  const [editPersona,    setEditPersona]    = useState(null);
+ 
   const [detallePersona, setDetallePersona] = useState(null);
 
   const getId = (p) => p?._id ?? p?.id;
 
   const supervisorLabel = (p) => {
-    const sup = p?.supervisor;
+    const sup = p?.supervisorId?.name;
     if (!sup) return 'N/A';
     if (typeof sup === 'string') return 'N/A';
     return `${sup.nombres ?? ''} ${sup.apellidos ?? ''}`.trim() || 'N/A';
@@ -126,10 +123,7 @@ export default function PersonalTable({
             placeholder="Buscar por cédula, nombre o cargo..."
           />
         </div>
-        <button className="btn-primary" onClick={() => setOpenCreate(true)}>
-          <Plus size={16} />
-          Nuevo Personal
-        </button>
+        
       </div>
 
       {/* TABLA */}
@@ -156,38 +150,37 @@ export default function PersonalTable({
               </tr>
             ) : (
               personal.map((p) => {
-                const id       = getId(p);
-                const isActive = p?.estado === 'ACTIVO';
-                const nombre   = `${p?.nombres ?? ''} ${p?.apellidos ?? ''}`.trim();
+                const id = getId(p);
+                const isActive = p?.estado === 'Activo';
 
                 return (
                   <tr key={id}>
                     <td style={{ fontSize: '13px', color: '#374151' }}>
-                      {p?.num_doc ?? '-'}
+                      {p?.cc ?? '-'}
                     </td>
                     <td>
                       <div className="zona-name-cell">
                         <span className="zona-pin-icon">
                           <User size={13} />
                         </span>
-                        {nombre || '-'}
+                        {p?.name || '-'}
                       </div>
                     </td>
                     <td style={{ fontSize: '13px', color: '#374151' }}>
                       {p?.cargo ?? '-'}
                     </td>
                     <td style={{ fontSize: '13px', color: '#6b7280' }}>
-                      {p?.finca?.nombre ?? '-'}
+                      {p?.codeFinca?.nombreFinca ?? '-'}
                     </td>
                     <td style={{ fontSize: '13px', color: '#6b7280' }}>
-                      {p?.proceso?.nombre ?? '-'}
+                      {p?.proceso?.proceso ?? '-'}
                     </td>
                     <td style={{ fontSize: '13px', color: '#6b7280' }}>
-                      {supervisorLabel(p)}
+                      {p.supervisorId?.name ?? '-'}
                     </td>
                     <td>
                       <span className={isActive ? 'badge-active' : 'badge-inactive'}>
-                        {isActive ? '⊙ Activo' : '⊗ Inactivo'}
+                        {p.estado === 'Activo' ? '⊙ Activo' : '⊗ Inactivo'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0 16px' }}>
@@ -199,23 +192,6 @@ export default function PersonalTable({
                           onClick={() => setDetallePersona(p)}
                         >
                           <Eye size={16} />
-                        </button>
-                        <button
-                          className="icon-btn"
-                          type="button"
-                          title="Editar"
-                          onClick={() => setEditPersona(p)}
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          className="icon-btn"
-                          type="button"
-                          title="Retirar"
-                          style={{ color: '#ef4444' }}
-                          onClick={() => onDelete?.(id)}
-                        >
-                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -234,27 +210,6 @@ export default function PersonalTable({
         onClose={() => setDetallePersona(null)}
       />
 
-      <NuevoPersonalModal
-        isOpen={openCreate}
-        title="Nuevo Personal"
-        initialValues={{}}
-        onClose={() => setOpenCreate(false)}
-        onSubmit={async (values) => {
-          await onAdd?.(values);
-          setOpenCreate(false);
-        }}
-      />
-
-      <NuevoPersonalModal
-        isOpen={!!editPersona}
-        title="Editar Personal"
-        initialValues={editPersona}
-        onClose={() => setEditPersona(null)}
-        onSubmit={async (values) => {
-          await onUpdate?.(getId(editPersona), values);
-          setEditPersona(null);
-        }}
-      />
     </div>
   );
 }
