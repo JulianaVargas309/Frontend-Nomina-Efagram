@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, AlertCircle, MapPin, Layers, Wrench, Calendar, Hash, DollarSign, CalendarDays, ClipboardList } from 'lucide-react';
+import SearchableSelect from "../../proyectos/components/SearchableSelect";
 
 const getMensajeError = (err) => {
   if (!err) return 'Error desconocido';
@@ -219,21 +220,48 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                 ⚠️ No hay contratos en estado ACTIVO.
               </div>
             ) : (
-              <select
-                style={inputSt}
+              <SearchableSelect
+                options={contratos}
                 value={contratoSeleccionado}
-                onChange={e => handleContratoChange(e.target.value)}
+                onChange={(id) => handleContratoChange(id)}
+                placeholder="— Selecciona un contrato —"
+                searchPlaceholder="Buscar por código, finca o subproyecto…"
                 disabled={guardando}
-              >
-                <option value="">— Selecciona un contrato —</option>
-                {contratos.map(c => (
-                  <option key={c._id} value={c._id}>
-                    {c.codigo} · {c.finca?.nombre || 'Sin finca'}
-                    {c.subproyecto?.nombre ? ` · ${c.subproyecto.nombre}` : ''}
-                    {c.cuadrillas?.length > 0 ? ` · ${c.cuadrillas[0]?.nombre || ''}` : ''}
-                  </option>
-                ))}
-              </select>
+                filterFn={(c, q) => {
+                  const term = q.toLowerCase();
+                  return (
+                    (c.codigo ?? '').toLowerCase().includes(term) ||
+                    (c.finca?.nombre ?? '').toLowerCase().includes(term) ||
+                    (c.subproyecto?.nombre ?? '').toLowerCase().includes(term) ||
+                    (c.cuadrillas?.[0]?.nombre ?? '').toLowerCase().includes(term)
+                  );
+                }}
+                renderOption={(c) => (
+                  <>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: 8,
+                      background: 'rgba(22,163,74,0.1)', color: '#16a34a',
+                      fontSize: 10, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {(c.codigo ?? '').slice(-3)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, fontSize: 13, color: '#0f172a' }}>
+                        {c.codigo} · {c.finca?.nombre || 'Sin finca'}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                        {c.subproyecto?.nombre ?? ''}
+                        {c.cuadrillas?.length > 0 ? ` · ${c.cuadrillas[0]?.nombre || ''}` : ''}
+                      </div>
+                    </div>
+                  </>
+                )}
+                renderSelected={(c) =>
+                  `${c.codigo} · ${c.finca?.nombre || 'Sin finca'}${c.subproyecto?.nombre ? ` · ${c.subproyecto.nombre}` : ''}`
+                }
+              />
             )}
           </div>
 
