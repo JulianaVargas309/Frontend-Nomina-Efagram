@@ -107,6 +107,7 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
             value={search}
             onChange={(e) => setSearch?.(e.target.value)}
             placeholder="Buscar por codigo o nombre..."
+            
           />
         </div>
         <div className="fincas-select-wrap">
@@ -117,8 +118,8 @@ export default function FincasTable({ fincas = [], nucleos = [], search = '', se
           >
             <option value="">Todos los nucleos</option>
             {nucleos.map((n) => {
-              const id = n?._id ?? n?.id;
-              return <option key={id} value={id}>{n?.nombre ?? id}</option>;
+              const id = n?.name ?? n?.name ;
+              return <option key={id} value={id}>{n?.name ?? id}</option>;
             })}
           </select>
           <ChevronDown size={14} className="fincas-select-arrow" />

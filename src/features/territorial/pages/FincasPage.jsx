@@ -46,8 +46,8 @@ export default function FincasPage() {
     const q = search.trim().toLowerCase();
     if (!q) return fincas;
     return fincas.filter((f) => {
-      const codigo = String(f?.codigo ?? '').toLowerCase();
-      const nombre = String(f?.nombre ?? '').toLowerCase();
+      const codigo = String(f?.codeFinca ?? f?.codigo ?? '').toLowerCase();
+      const nombre = String(f?.nombreFinca ?? f?.nombre ?? '').toLowerCase();
       return codigo.includes(q) || nombre.includes(q);
     });
   }, [fincas, search]);

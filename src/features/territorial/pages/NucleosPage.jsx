@@ -46,8 +46,8 @@ export default function NucleosPage() {
     const q = search.trim().toLowerCase();
     if (!q) return nucleos;
     return nucleos.filter((n) => {
-      const codigo = String(n?.codigo ?? '').toLowerCase();
-      const nombre = String(n?.nombre ?? '').toLowerCase();
+      const codigo = String(n?.codeNucleo ?? n?.codigo ?? '').toLowerCase();
+      const nombre = String(n?.nombreNucleo ?? n?.nombre ?? '').toLowerCase();
       return codigo.includes(q) || nombre.includes(q);
     });
   }, [nucleos, search]);

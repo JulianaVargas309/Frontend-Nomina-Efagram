@@ -54,8 +54,8 @@ export default function CatalogoPersonalPage() {
     if (!q) return personal;
 
     return personal.filter((p) => {
-      const doc = String(p?.num_doc ?? '').toLowerCase();
-      const nombre = `${p?.nombres ?? ''} ${p?.apellidos ?? ''}`.toLowerCase();
+      const doc = String(p?.cc ?? p?.num_doc ?? '').toLowerCase();
+      const nombre = (p?.name ?? `${p?.nombres ?? ''} ${p?.apellidos ?? ''}`).toLowerCase();
       const cargo = String(p?.cargo ?? '').toLowerCase();
       return doc.includes(q) || nombre.includes(q) || cargo.includes(q);
     });
