@@ -12,6 +12,7 @@ import {
   createContrato,
   updateContrato,
 } from '../services/contratosService';
+import SearchableSelect from "../../proyectos/components/SearchableSelect";
 import { getPersonal } from '../../proyectos/services/personalService';
 import httpClient from '../../../core/api/httpClient';
 
@@ -541,7 +542,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
               codigo: `CUA-${Date.now()}-${idx}`,
               nombre: c.nombre.trim(),
               supervisor: { cc: c.supervisor.cc, name: c.supervisor.name, cargo: c.supervisor.cargo },
-              miembros: c.miembros.map(m => {m._id, m.name, m.cc, m.cargo})
+              miembros: c.miembros.map(m => { m._id, m.name, m.cc, m.cargo })
             })
           )
         );
@@ -737,14 +738,44 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
           {tab === 'datos' && (
             <>
               <div className="form-section">
-                <p className="form-section-title" style={{ display: 'flex', alignItems: 'center', gap: 7 }}><FolderOpen size={14} color="#6366f1" /> Subproyecto *</p>
+                <p className="form-section-title" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <FolderOpen size={14} color="#6366f1" /> Subproyecto *
+                </p>
                 <div className="form-field">
-                  <select value={form.subproyecto} onChange={e => handleSubproyectoChange(e.target.value)}>
-                    <option value="">— Selecciona un subproyecto —</option>
-                    {subproyectos.map(s => (
-                      <option key={s._id ?? s.id} value={s._id ?? s.id}>{s.codigo} · {s.nombre}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={subproyectos}
+                    value={form.subproyecto}
+                    onChange={(id) => handleSubproyectoChange(id)}
+                    placeholder="— Selecciona un subproyecto —"
+                    searchPlaceholder="Buscar por código o nombre…"
+                    filterFn={(s, q) => {
+                      const term = q.toLowerCase();
+                      return (
+                        (s.codigo ?? '').toLowerCase().includes(term) ||
+                        (s.nombre ?? '').toLowerCase().includes(term)
+                      );
+                    }}
+                    renderOption={(s) => (
+                      <>
+                        <div style={{
+                          width: 30, height: 30, borderRadius: 8,
+                          background: 'rgba(99,102,241,0.1)', color: '#6366f1',
+                          fontSize: 11, fontWeight: 700,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          {(s.codigo ?? '').slice(-3)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, fontSize: 13 }}>
+                            {s.nombre}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>{s.codigo}</div>
+                        </div>
+                      </>
+                    )}
+                    renderSelected={(s) => `${s.codigo} · ${s.nombre}`}
+                  />
                 </div>
               </div>
 
@@ -791,14 +822,44 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                 <p className="form-section-title" style={{ display: 'flex', alignItems: 'center', gap: 7 }}><MapPin size={14} color="#e67e22" /> Ubicación</p>
                 <div className="form-field">
                   <label>Finca *</label>
-                  <select value={form.finca} onChange={e => setForm(p => ({ ...p, finca: e.target.value }))}>
-                    <option value="">— Selecciona una finca —</option>
-                    {fincas.map(f => (
-                      <option key={f._id} value={f._id}>
-                        {f.nombreFinca ?? f.nombre ?? 'Finca'} {f.codeFinca ? `(${f.codeFinca})` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={fincas}
+                    value={form.finca}
+                    onChange={(id) => setForm(p => ({ ...p, finca: id }))}
+                    placeholder="— Selecciona una finca —"
+                    searchPlaceholder="Buscar por nombre o código…"
+                    filterFn={(f, q) => {
+                      const term = q.toLowerCase();
+                      return (
+                        (f.nombreFinca ?? f.nombre ?? '').toLowerCase().includes(term) ||
+                        (f.codeFinca ?? '').toLowerCase().includes(term)
+                      );
+                    }}
+                    renderOption={(f) => (
+                      <>
+                        <div style={{
+                          width: 30, height: 30, borderRadius: 8,
+                          background: 'rgba(230,126,34,0.1)', color: '#e67e22',
+                          fontSize: 11, fontWeight: 700,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          🌿
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, fontSize: 13 }}>
+                            {f.nombreFinca ?? f.nombre ?? 'Finca'}
+                          </div>
+                          {f.codeFinca && (
+                            <div style={{ fontSize: 11, color: '#94a3b8' }}>{f.codeFinca}</div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    renderSelected={(f) =>
+                      `${f.nombreFinca ?? f.nombre ?? 'Finca'}${f.codeFinca ? ` (${f.codeFinca})` : ''}`
+                    }
+                  />
                 </div>
 
                 {/* ✅ NUEVO: Sección de lotes embebidos */}

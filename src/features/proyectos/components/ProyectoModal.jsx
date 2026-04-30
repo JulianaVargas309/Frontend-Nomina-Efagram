@@ -4,6 +4,7 @@ import { getPersonal } from "../services/personalService";
 import { getZonas } from "../../territorial/services/zonas.service";
 import ActividadesIntervencion from "./ActividadesIntervencion";
 import "../../../assets/styles/proyectos.css";
+import SearchableSelect from "./SearchableSelect";
 import {
   Folder,
   Calendar,
@@ -18,6 +19,7 @@ import {
   AlertCircle,
   Lock,
 } from "lucide-react";
+
 
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : "");
 
@@ -352,7 +354,7 @@ const ProyectoModal = ({
             getZonas(),
           ]);
 
-         
+
 
           setPersonas(extractArray(pRes.status === "fulfilled" ? pRes.value : []));
           setZonas(extractArray(zRes.status === "fulfilled" ? zRes.value : []));
@@ -1285,50 +1287,60 @@ const ProyectoModal = ({
 
             <div className="form-group">
               <label>Responsable del proyecto</label>
-              <select
-                name="responsable"
+              <SearchableSelect
+                options={personas}
                 value={form.responsable}
-                onChange={handleChange}
+                onChange={(id) => { setFormErrors([]); setForm((p) => ({ ...p, responsable: id })); }}
+                placeholder="Seleccione responsable (opcional)"
+                searchPlaceholder="Buscar por nombre o documento…"
                 disabled={loadingData}
-              >
-                <option value="">
-                  {loadingData ? "Cargando..." : "Seleccione responsable (opcional)"}
-                </option>
-                {personas.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.name || `${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || "Persona"}
-                    {p.cc ? ` — ${p.cc}` : p.num_doc ? ` — ${p.num_doc}` : ""}
-                  </option>
-                ))}
-              </select>
+                filterFn={(p, q) => {
+                  const s = q.toLowerCase();
+                  const nombre = `${p.nombres ?? ""} ${p.apellidos ?? ""} ${p.name ?? ""}`.toLowerCase();
+                  const doc = String(p.cc ?? p.num_doc ?? "");
+                  return nombre.includes(s) || doc.includes(s);
+                }}
+                renderOption={(p) => (
+                  <>
+                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#e8f5ee", color: "#1f8f57", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {(`${p.nombres ?? p.name ?? "?"}`.charAt(0) + `${p.apellidos ?? ""}`.charAt(0)).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div>{`${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.name}</div>
+                      {(p.cc || p.num_doc) && <div style={{ fontSize: 11, color: "#94a3b8" }}>CC {p.cc ?? p.num_doc}</div>}
+                    </div>
+                  </>
+                )}
+                renderSelected={(p) => `${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.name}
+              />
             </div>
 
             <div className="form-group">
               <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <MapPin size={13} /> Zona *
               </label>
-              <select
-                name="zona"
+              <SearchableSelect
+                options={zonas}
                 value={form.zona}
-                onChange={handleChange}
+                onChange={(id) => { setFormErrors([]); setForm((p) => ({ ...p, zona: id })); }}
+                placeholder="— Seleccione una zona —"
+                searchPlaceholder="Buscar por nombre o código…"
                 disabled={loadingData}
-              >
-                <option value="">
-                  {loadingData ? "Cargando..." : "— Seleccione una zona —"}
-                </option>
-                {zonas.map((z) => (
-                  <option key={z._id} value={z._id}>
-                    {z.nombreZona} ({z.codeZona})
-                  </option>
-                ))}
-              </select>
-              <p
-                style={{
-                  margin: "4px 0 0",
-                  fontSize: 12,
-                  color: "#64748b",
+                filterFn={(z, q) => {
+                  const s = q.toLowerCase();
+                  return z.nombreZona?.toLowerCase().includes(s) || z.codeZona?.toLowerCase().includes(s);
                 }}
-              >
+                renderOption={(z) => (
+                  <>
+                    <div style={{ padding: "2px 7px", borderRadius: 6, background: "#eff6ff", color: "#3b82f6", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                      {z.codeZona}
+                    </div>
+                    <span style={{ flex: 1 }}>{z.nombreZona}</span>
+                  </>
+                )}
+                renderSelected={(z) => `${z.nombreZona} (${z.codeZona})`}
+              />
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>
                 La zona determina los núcleos disponibles para los subproyectos.
               </p>
             </div>
