@@ -54,12 +54,10 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
     const [detalleNucleo, setDetalleNucleo] = useState(null);
     const getId = (n) => n?._id ?? n?.id;
 
-    // Ordena por orden de creación: usa el timestamp embebido en _id de MongoDB,
-    // si no existe _id o es un id sin timestamp, mantiene el orden original del array.
+    // Ordena por orden de creación
     const nucleosOrdenados = [...nucleos].sort((a, b) => {
         const aId = a?._id ?? a?.id ?? '';
         const bId = b?._id ?? b?.id ?? '';
-        // _id de MongoDB: primeros 8 hex chars = timestamp en segundos
         const aIsMongoId = typeof aId === 'string' && /^[a-f0-9]{24}$/i.test(aId);
         const bIsMongoId = typeof bId === 'string' && /^[a-f0-9]{24}$/i.test(bId);
         if (aIsMongoId && bIsMongoId) {
@@ -67,11 +65,9 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
             const bTs = parseInt(bId.substring(0, 8), 16);
             return aTs - bTs;
         }
-        // Si hay createdAt explícito
         if (a?.createdAt && b?.createdAt) {
             return new Date(a.createdAt) - new Date(b.createdAt);
         }
-        // Fallback: mantiene orden original
         return 0;
     });
 
@@ -86,6 +82,16 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
         if (typeof n.zona === 'object') return n.zona?.nombre ?? '-';
         const found = zonas.find((z) => (z?._id ?? z?.id) === n.zona);
         return found?.nombre ?? n.zona;
+    };
+
+    // Función para truncar IDs largos
+    const truncateZona = (zona) => {
+        if (!zona || zona === '-') return '-';
+        // Si es un string muy largo (probablemente un ID), trunca
+        if (typeof zona === 'string' && zona.length > 20) {
+            return zona.substring(0, 8) + '...' + zona.substring(zona.length - 4);
+        }
+        return zona;
     };
 
     return (
@@ -109,7 +115,13 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
             </div>
 
             <div className="zonas-table-scroll">
-                <table className="zonas-table-grid">
+                <table className="zonas-table-grid" style={{ tableLayout: 'fixed', width: '100%' }}>
+                    <colgroup>
+                        <col style={{ width: '100px' }} />
+                        <col style={{ width: 'auto' }} />
+                        <col style={{ width: '180px' }} />
+                        <col style={{ width: '100px' }} />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th className="th-code">Código</th>
@@ -120,7 +132,7 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
                     </thead>
                     <tbody>
                         {nucleosOrdenados.length === 0 ? (
-                            <tr><td colSpan={5} className="zonas-empty">No hay núcleos para mostrar</td></tr>
+                            <tr><td colSpan={4} className="zonas-empty">No hay núcleos para mostrar</td></tr>
                         ) : (
                             nucleosOrdenados.map((n) => {
                                 const id = getId(n);
@@ -132,16 +144,26 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
                                     isActive = v === 'activo' || v === 'activa' || v === 'active' || v === 'true' || v === '1';
                                 } else if (typeof raw === 'number') isActive = raw === 1;
 
+                                const zonaValue = n?.codeZona ?? '-';
+
                                 return (
                                     <tr key={id}>
-                                        <td>{n?.codeNucleo ?? '-'}</td>
+                                        <td style={{ fontSize: 13 }}>{n?.codeNucleo ?? '-'}</td>
                                         <td>
                                             <div className="zona-name-cell">
                                                 <span className="zona-pin-icon"><Layers size={13} /></span>
                                                 {n?.nombreNucleo ?? '-'}
                                             </div>
                                         </td>
-                                        <td style={{ fontSize: 13, color: '#374151' }}>{(n).codeZona}</td>
+                                        <td style={{ 
+                                            fontSize: 13, 
+                                            color: '#374151',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }} title={zonaValue}>
+                                            {truncateZona(zonaValue)}
+                                        </td>
                                         
                                         <td className="td-actions">
                                             <div className="td-actions-inner">
