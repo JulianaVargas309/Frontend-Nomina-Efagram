@@ -26,7 +26,7 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
 
                 <button
                     onClick={() => setOpenCreate(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderRadius: 14, border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderRadius: 14, border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer' }}
                 >
                     <Plus size={16} />
                     Nuevo usuario
@@ -59,7 +59,7 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
                                     <tr key={id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                         <td style={{ padding: '14px 18px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <div style={{ width: 36, height: 36, borderRadius: 12, background: '#eef2ff', display: 'grid', placeItems: 'center', fontWeight: 700, color: '#4338ca' }}>
+                                                <div style={{ width: 36, height: 36, borderRadius: 12, background: '#dcfce7', display: 'grid', placeItems: 'center', fontWeight: 700, color: '#16a34a' }}>
                                                     <Users size={16} />
                                                 </div>
                                                 <div style={{ minWidth: 0 }}>
@@ -73,7 +73,10 @@ export default function UsuariosTable({ usuarios = [], search = '', setSearch, o
                                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                                 {Array.isArray(usuario.roles) && usuario.roles.length > 0 ? (
                                                     usuario.roles.map((rol) => (
-                                                        <span key={rol} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 500, background: rol === 'ADMIN_SISTEMA' ? 'rgba(220,38,38,0.12)' : 'rgba(37,99,235,0.12)', color: rol === 'ADMIN_SISTEMA' ? '#991b1b' : '#1e40af' }}>
+                                                        <span key={rol} style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 500, background: rol === 'ADMIN_SISTEMA' ? 'rgba(220,38,38,0.12)' : 'rgba(22,163,74,0.12)',
+                                                            color: rol === 'ADMIN_SISTEMA' ? '#991b1b' : '#15803d'
+                                                        }}>
                                                             {rol === 'ADMIN_SISTEMA' ? '👑 Admin' : rol === 'SUPERVISOR' ? '📋 Supervisor' : rol}
                                                         </span>
                                                     ))

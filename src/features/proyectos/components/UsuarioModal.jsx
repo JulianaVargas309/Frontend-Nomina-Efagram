@@ -3,7 +3,7 @@ import { X, AlertCircle } from 'lucide-react';
 
 const ROLES_DISPONIBLES = [
     { id: 'ADMIN_SISTEMA', nombre: 'Administrador del Sistema', color: '#DC2626' },
-    { id: 'SUPERVISOR', nombre: 'Supervisor', color: '#2563EB' },
+    { id: 'SUPERVISOR', nombre: 'Supervisor', color: '#16a34a' },
 ];
 
 export default function UsuarioModal({
@@ -105,7 +105,7 @@ export default function UsuarioModal({
                             onChange={(e) => { setNombre(e.target.value); setErrors([]); }}
                             placeholder="Ej: Juan Pérez"
                             autoFocus
-                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14 }}
+                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14, background: '#fff', color: '#0f172a' }}
                         />
                     </label>
 
@@ -116,7 +116,7 @@ export default function UsuarioModal({
                             value={email}
                             onChange={(e) => { setEmail(e.target.value); setErrors([]); }}
                             placeholder="usuario@empresa.com"
-                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14 }}
+                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14, background: '#fff', color: '#0f172a' }}
                         />
                     </label>
 
@@ -128,7 +128,7 @@ export default function UsuarioModal({
                                 setRol(e.target.value);
                                 setErrors([]);
                             }}
-                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14, background: '#fff', cursor: 'pointer', color: '#334155', fontWeight: 500 }}
+                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14, background: '#fff', cursor: 'pointer', color: '#0f172a', fontWeight: 500 }}
                         >
                             {ROLES_DISPONIBLES.map(role => (
                                 <option key={role.id} value={role.id}>
@@ -137,9 +137,9 @@ export default function UsuarioModal({
                             ))}
                         </select>
                         {selectedRoleData && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '10px 12px', background: '#f0f9ff', borderRadius: 10, border: `1px solid ${selectedRoleData.color}33` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '10px 12px', background: '#f0fdf4', borderRadius: 10, border: `1px solid ${selectedRoleData.color}33` }}>
                                 <div style={{ width: 12, height: 12, borderRadius: '50%', background: selectedRoleData.color }} />
-                                <span style={{ fontSize: 13, color: '#1e40af' }}>
+                                <span style={{ fontSize: 13, color: '#15803d' }}>
                                     {selectedRoleData.nombre}
                                 </span>
                             </div>
@@ -153,7 +153,7 @@ export default function UsuarioModal({
                             value={password}
                             onChange={(e) => { setPassword(e.target.value); setErrors([]); }}
                             placeholder={isEdit ? "Nueva contraseña opcional" : "Ingresa la contraseña"}
-                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14 }}
+                            style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14, background: '#fff', color: '#0f172a' }}
                         />
                     </label>
 
@@ -189,7 +189,7 @@ export default function UsuarioModal({
                     <button
                         type="submit"
                         disabled={saving || (!isAdmin && rol === 'ADMIN_SISTEMA' && !isEdit)}
-                        style={{ minWidth: 110, padding: '10px 16px', borderRadius: 10, border: 'none', background: (!isAdmin && rol === 'ADMIN_SISTEMA' && !isEdit) ? '#cbd5e1' : '#2563eb', color: '#fff', cursor: (!isAdmin && rol === 'ADMIN_SISTEMA' && !isEdit) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 14 }}
+                        style={{ minWidth: 110, padding: '10px 16px', borderRadius: 10, border: 'none', background: (!isAdmin && rol === 'ADMIN_SISTEMA' && !isEdit) ? '#cbd5e1' : '#16a34a', color: '#fff', cursor: (!isAdmin && rol === 'ADMIN_SISTEMA' && !isEdit) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 14 }}
                     >
                         {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear usuario'}
                     </button>

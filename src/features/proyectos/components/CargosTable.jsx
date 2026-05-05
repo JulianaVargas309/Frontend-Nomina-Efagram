@@ -108,8 +108,8 @@ export default function CargosTable({
           <thead>
             <tr>
               <th style={{ width: '120px' }}>Código</th>
-              <th>Nombre</th>
-              <th style={{ width: '120px' }}>Estado</th>
+              <th style={{ width: '40%', textAlign: 'left' }}>Nombre</th>
+              <th style={{ width: '20%', textAlign: 'left' }}>Estado</th>
               <th style={{ width: '140px', textAlign: 'center' }}>Acciones</th>
             </tr>
           </thead>

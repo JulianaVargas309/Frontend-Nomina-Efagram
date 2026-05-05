@@ -16,7 +16,7 @@ const normalizeList = (res) => {
 const fmtFecha = (iso) =>
   iso ? new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-const ESTADO_LABEL = { PENDIENTE: 'Pendiente', RECHAZADA: 'Rechazada', ACTIVA: 'Activa' };
+const ESTADO_LABEL = { PENDIENTE: 'Pendiente', RECHAZADO: 'Rechazado', ACTIVO: 'Activo', CANCELADO: 'Cancelado', CERRADO: 'Cerrado' };
 
 // ── Genera el siguiente código basado en los contratos existentes ─
 const generarNextCode = (contratos) => {
@@ -63,24 +63,13 @@ export default function ContratosPage() {
   const abrirEditar = (c) => setModal({ open: true, modo: 'editar', contrato: c });
   const cerrarModal = () => setModal(prev => ({ ...prev, open: false }));
 
-  const cargar = async (newContratoId = null) => {
+  const cargar = async () => {
     try {
       setLoading(true);
       setError(null);
-      if (newContratoId) {
-        setUltimoCreado(newContratoId);
-      }
       const res = await getContratos();
-      let lista = normalizeList(res);
-      // Forzar PENDIENTE en contratos recién creados
-      if (newContratoId) {
-        lista = lista.map(c => {
-          if ((c._id ?? c.id) === newContratoId) {
-            return { ...c, estado: 'PENDIENTE' };
-          }
-          return c;
-        });
-      }
+      const lista = normalizeList(res);
+      console.log('ESTADOS:', lista.map(c => c.estado));
       setContratos(lista);
     } catch (e) {
       console.error(e);
@@ -117,8 +106,9 @@ export default function ContratosPage() {
   }, [contratos, busqueda]);
 
   const pendientes = contratos.filter(c => c.estado === 'PENDIENTE').length;
-  const activas = contratos.filter(c => c.estado === 'ACTIVA').length;
-  const rechazadas = contratos.filter(c => c.estado === 'RECHAZADA').length;
+  const activas = contratos.filter(c => c.estado === 'ACTIVO').length;
+  const cancelados = contratos.filter(c => c.estado === 'CANCELADO').length;
+  const cerrados = contratos.filter(c => c.estado === 'CERRADO').length;
 
   const Chips = ({ items, getLabel }) => {
     const MAX = 2;
@@ -154,7 +144,7 @@ export default function ContratosPage() {
           <StatCard icon={FileText} label="Total" value={contratos.length} color="#3b82f6" bg="rgba(59,130,246,0.1)" />
           <StatCard icon={Clock} label="Pendientes" value={pendientes} color="#ca8a04" bg="rgba(234,179,8,0.1)" />
           <StatCard icon={CheckCircle} label="Activas" value={activas} color="#1f8f57" bg="rgba(31,143,87,0.1)" />
-          <StatCard icon={XCircle} label="Rechazadas" value={rechazadas} color="#dc2626" bg="rgba(220,38,38,0.1)" />
+          <StatCard icon={XCircle} label="Cancelados" value={cancelados} color="#dc2626" bg="rgba(220,38,38,0.1)" />
         </div>
 
         <div className="contratos-toolbar">

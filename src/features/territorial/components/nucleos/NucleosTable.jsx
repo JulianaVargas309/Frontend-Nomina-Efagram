@@ -43,6 +43,7 @@ function NucleoDetalleModal({ isOpen, nucleo, onClose }) {
                     </div>
                 )}
 
+
             </div>
         </>
     );
