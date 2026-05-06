@@ -89,7 +89,7 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
         if (!zona || zona === '-') return '-';
         // Si es un string muy largo (probablemente un ID), trunca
         if (typeof zona === 'string' && zona.length > 20) {
-            return zona.substring(0, 8) + '...' + zona.substring(zona.length - 4);
+            return zona.substring(0, 8)  + zona.substring(zona.length - 4);
         }
         return zona;
     };
