@@ -235,6 +235,34 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
     );
   };
 
+  const handleCambiarTiempoDetenido = (index, valor) => {
+    const tiempo = parseFloat(valor) || 0;
+
+    setDias(prev =>
+      prev.map((d, i) =>
+        i === index
+          ? {
+            ...d,
+            tiempo_detenido: tiempo,
+          }
+          : d
+      )
+    );
+  };
+
+  const handleCambiarObservaciones = (index, valor) => {
+    setDias(prev =>
+      prev.map((d, i) =>
+        i === index
+          ? {
+            ...d,
+            observaciones: valor,
+          }
+          : d
+      )
+    );
+  };
+
   const renderDiaCard = (dia, index) => {
     const est = dia.estado || 'PENDIENTE';
     const estInfo = ESTADO_COLOR[est] || ESTADO_COLOR.PENDIENTE;
@@ -394,7 +422,7 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
             type="number"
             min="0"
             step="0.01"
-            value={dia.cantidad_ejecutada || ''}
+            value={dia.cantidad_ejecutada ?? 0}
             onChange={(e) => handleCambiarCantidad(index, e.target.value)}
             disabled={guardando}
             placeholder="0"
@@ -488,7 +516,7 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
               min="0"
               max="24"
               step="0.5"
-              value={dia.tiempo_detenido || ''}
+              value={dia.tiempo_detenido ?? 0}
               onChange={(e) => handleCambiarTiempoDetenido(index, e.target.value)}
               disabled={guardando}
               placeholder="0"

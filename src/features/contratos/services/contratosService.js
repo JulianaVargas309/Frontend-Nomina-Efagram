@@ -1,4 +1,5 @@
 import httpClient from '../../../core/api/httpClient';
+import httpEfaStack from '../../../core/api/httpEfastack';
 
 // ── Contratos ────────────────────────────────────────────────────
 export const getContratos = async (params = {}) => {
@@ -31,8 +32,6 @@ export const cancelarContrato = async (id) => {
 };
 
 // ── Actividades disponibles de un subproyecto para un contrato ───
-// Devuelve: [{ asignacion_id, actividad, cantidad_asignada_subproyecto,
-//              cantidad_en_contratos, cantidad_disponible, precio_unitario_referencia, unidad }]
 export const getActividadesDisponiblesSubproyecto = async (subproyectoId, excludeContratoId = null) => {
   const params = excludeContratoId ? { excludeContratoId } : {};
   const response = await httpClient.get(
@@ -58,8 +57,10 @@ export const getTrabajadoresDisponibles = async (contratoId, q = '') => {
 };
 
 // ── Catálogos necesarios para el formulario ──────────────────────
+
+// Fincas vienen de EfaStack (API externa)
 export const getFincas = async () => {
-  const response = await httpClient.get('/fincas');
+  const response = await httpEfaStack.get('/fincas');
   return response.data;
 };
 

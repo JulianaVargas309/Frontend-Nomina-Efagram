@@ -12,15 +12,21 @@ import {
   createContrato,
   updateContrato,
 } from '../services/contratosService';
+import { getPersonal } from '../../proyectos/services/personalService';
 import httpClient from '../../../core/api/httpClient';
 
 // ── helpers ───────────────────────────────────────────────────────
 const normalizeList = (res) => {
   if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.fincas)) return res.fincas;   // ← agregar
+  if (Array.isArray(res?.zonas)) return res.zonas;    // ← agregar
+  if (Array.isArray(res?.nucleos)) return res.nucleos;  // ← agregar
   if (Array.isArray(res?.data)) return res.data;
   if (Array.isArray(res?.data?.data)) return res.data.data;
   return [];
 };
+
+
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : '');
 const formatIsoToDisplay = (iso) => {
   if (!iso) return '';
@@ -195,8 +201,9 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     if (todasPersonas.length > 0) return;
     try {
       setLoadingPersonas(true);
-      const res = await httpClient.get('/personas', { params: { estado: 'ACTIVO' } });
-      setTodasPersonas(normalizeList(res?.data));
+      const res = await getPersonal();                        // ✅ EfaStack /users
+      const lista = normalizeList(res);
+      setTodasPersonas(lista);
     } catch (e) { console.error(e); }
     finally { setLoadingPersonas(false); }
   }, [todasPersonas.length]);
@@ -492,8 +499,8 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       const pid = p._id ?? p.id;
       if (todosOcupados.has(pid)) return false;
       if (!busqueda) return true;
-      const nombre = `${p.nombres ?? ''} ${p.apellidos ?? ''}`.toLowerCase();
-      const doc = (p.num_doc ?? '').toLowerCase();
+      const nombre = `${p.name ?? ''}`.toLowerCase();
+      const doc = (p.cc ?? '').toLowerCase();
       return nombre.includes(busqueda) || doc.includes(busqueda);
     });
   };
@@ -533,8 +540,8 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             httpClient.post('/cuadrillas', {
               codigo: `CUA-${Date.now()}-${idx}`,
               nombre: c.nombre.trim(),
-              supervisor: c.supervisor._id ?? c.supervisor.id,
-              miembros: c.miembros.map(m => m._id ?? m.id),
+              supervisor: { cc: c.supervisor.cc, name: c.supervisor.name, cargo: c.supervisor.cargo },
+              miembros: c.miembros.map(m => {m._id, m.name, m.cc, m.cargo})
             })
           )
         );
@@ -786,7 +793,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                   <label>Finca *</label>
                   <select value={form.finca} onChange={e => setForm(p => ({ ...p, finca: e.target.value }))}>
                     <option value="">— Selecciona una finca —</option>
-                    {fincas.map(f => <option key={f._id ?? f.id} value={f._id ?? f.id}>{f.nombre} ({f.codigo})</option>)}
+                    {fincas.map(f => (
+                      <option key={f._id} value={f._id}>
+                        {f.nombreFinca ?? f.nombre ?? 'Finca'} {f.codeFinca ? `(${f.codeFinca})` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1120,7 +1131,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
                             <div>
                               <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
-                                Agregar personas
+
                               </p>
                               <div style={{ position: 'relative', marginBottom: 10 }}>
                                 <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
@@ -1144,8 +1155,8 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                     return (
                                       <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 12px' }}>
                                         <div>
-                                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres} {p.apellidos}</p>
-                                          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.num_doc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
+                                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres} {p.name}</p>
+                                          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.cc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
                                         </div>
                                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                                           <button onClick={() => seleccionarSupervisor(cuaIdx, p)}

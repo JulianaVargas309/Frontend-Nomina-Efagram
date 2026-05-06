@@ -18,7 +18,6 @@ import CatalogoPersonalPage from '../../features/proyectos/pages/CatalogoPersona
 import ZonasPage from '../../features/territorial/pages/ZonasPage';
 import NucleosPage from '../../features/territorial/pages/NucleosPage';
 import FincasPage from '../../features/territorial/pages/FincasPage';
-import FincasMasivasPage from '../../features/territorial/pages/FincasMasivasPage';
 
 import CatalogoIntervencionesPage from '../../features/proyectos/pages/CatalogoIntervencionesPage';
 import CatalogoProcesosPage from '../../features/proyectos/pages/CatalogoProcesosPage';
@@ -36,9 +35,6 @@ import ReportesPage from '../../features/reportes/pages/ReportesPage';
 
 // Cargos
 import CatalogoCargosPage from '../../features/proyectos/pages/CatalogoCargosPage';
-
-// Personal
-import CargaMasivaPersonalPage from '../../features/personal/pages/CargaMasivaPersonalPage';
 
 export default function AppRouter() {
   return (
@@ -63,7 +59,6 @@ export default function AppRouter() {
 
       {/* ─── PERSONAL ─── */}
       <Route path="/personal/catalogo" element={<PrivateRoute><CatalogoPersonalPage /></PrivateRoute>} />
-      <Route path="/personal/carga-masiva" element={<PrivateRoute><CargaMasivaPersonalPage /></PrivateRoute>} />
 
       {/* ─── CONFIGURACIÓN ─── */}
       <Route path="/configuracion/catalogo-clientes" element={<PrivateRoute><ClientesPage /></PrivateRoute>} />
@@ -75,7 +70,6 @@ export default function AppRouter() {
       <Route path="/configuracion/ubicacion/zonas" element={<PrivateRoute><ZonasPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/nucleos" element={<PrivateRoute><NucleosPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/fincas" element={<PrivateRoute><FincasPage /></PrivateRoute>} />
-      <Route path="/configuracion/ubicacion/fincas-masivas" element={<PrivateRoute><FincasMasivasPage /></PrivateRoute>} />
 
       {/* ─── REDIRECCIONES PARA COMPATIBILIDAD ─── */}
       <Route path="/clientes" element={<Navigate to="/configuracion/catalogo-clientes" replace />} />

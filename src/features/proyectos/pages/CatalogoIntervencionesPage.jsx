@@ -31,7 +31,15 @@ export default function CatalogoIntervencionesPage() {
       console.log('RES RAW:', res);
       const list = normalizeList(res);
       console.log('LIST normalizada:', list);
-      setIntervenciones(list);
+      
+      // Ordenar por fecha de creación (más recientes primero)
+      const sorted = list.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.created_at || 0);
+        const dateB = new Date(b.createdAt || b.created_at || 0);
+        return dateB - dateA; // Descendente: más reciente primero
+      });
+      
+      setIntervenciones(sorted);
       setError(null);
     } catch (e) {
       console.error(e);

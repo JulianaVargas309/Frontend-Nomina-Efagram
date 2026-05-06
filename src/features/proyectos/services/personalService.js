@@ -1,11 +1,13 @@
-import httpClient from '../../../core/api/httpClient';
+import httpEfaStack from "../../../core/api/httpEfastack";
 
-export const getPersonas = () =>
-  httpClient.get('/personas');
+export const getPersonas = async () => {
+  const response = await httpEfaStack.get('/personas');
+  return response.data;
+};
 
 // alias para compatibilidad con otros componentes
 export const getPersonal = () =>
-  httpClient.get('/personas');
+  httpEfaStack.get('/users');
 
 export const createPersona = (data) =>
   httpClient.post('/personas', data);

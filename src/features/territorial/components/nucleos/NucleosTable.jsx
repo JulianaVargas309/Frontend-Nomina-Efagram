@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Eye, Pencil, Trash2, Plus, Search, Layers, X } from 'lucide-react';
-import NuevoNucleoModal from './NuevoNucleoModal';
+import { Eye, Plus, Search, Layers, X } from 'lucide-react';
+
 
 function NucleoDetalleModal({ isOpen, nucleo, onClose }) {
     if (!isOpen || !nucleo) return null;
@@ -43,12 +43,6 @@ function NucleoDetalleModal({ isOpen, nucleo, onClose }) {
                     </div>
                 )}
 
-                <div className="zdm-estado-box">
-                    <span className="zdm-estado-label">Estado</span>
-                    <span className={isActive ? 'zdm-badge active' : 'zdm-badge inactive'}>
-                        {isActive ? '⊙ Activo' : '⊗ Inactivo'}
-                    </span>
-                </div>
             </div>
         </>
     );
@@ -56,10 +50,29 @@ function NucleoDetalleModal({ isOpen, nucleo, onClose }) {
 
 export default function NucleosTable({ nucleos = [], zonas = [], search = '', setSearch, onAdd, onUpdate, onDelete }) {
     const [openCreate, setOpenCreate] = useState(false);
-    const [editNucleo, setEditNucleo] = useState(null);
     const [detalleNucleo, setDetalleNucleo] = useState(null);
-
     const getId = (n) => n?._id ?? n?.id;
+
+    // Ordena por orden de creación: usa el timestamp embebido en _id de MongoDB,
+    // si no existe _id o es un id sin timestamp, mantiene el orden original del array.
+    const nucleosOrdenados = [...nucleos].sort((a, b) => {
+        const aId = a?._id ?? a?.id ?? '';
+        const bId = b?._id ?? b?.id ?? '';
+        // _id de MongoDB: primeros 8 hex chars = timestamp en segundos
+        const aIsMongoId = typeof aId === 'string' && /^[a-f0-9]{24}$/i.test(aId);
+        const bIsMongoId = typeof bId === 'string' && /^[a-f0-9]{24}$/i.test(bId);
+        if (aIsMongoId && bIsMongoId) {
+            const aTs = parseInt(aId.substring(0, 8), 16);
+            const bTs = parseInt(bId.substring(0, 8), 16);
+            return aTs - bTs;
+        }
+        // Si hay createdAt explícito
+        if (a?.createdAt && b?.createdAt) {
+            return new Date(a.createdAt) - new Date(b.createdAt);
+        }
+        // Fallback: mantiene orden original
+        return 0;
+    });
 
     const handleDelete = async (id) => {
         const ok = window.confirm('¿Eliminar este núcleo?');
@@ -101,15 +114,14 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
                             <th className="th-code">Código</th>
                             <th className="th-name">Nombre</th>
                             <th>Zona</th>
-                            <th className="th-status">Estado</th>
                             <th className="th-actions">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {nucleos.length === 0 ? (
+                        {nucleosOrdenados.length === 0 ? (
                             <tr><td colSpan={5} className="zonas-empty">No hay núcleos para mostrar</td></tr>
                         ) : (
-                            nucleos.map((n) => {
+                            nucleosOrdenados.map((n) => {
                                 const id = getId(n);
                                 let isActive = false;
                                 const raw = n?.activo ?? n?.activa ?? n?.estado;
@@ -121,24 +133,18 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
 
                                 return (
                                     <tr key={id}>
-                                        <td>{n?.codigo ?? '-'}</td>
+                                        <td>{n?.codeNucleo ?? '-'}</td>
                                         <td>
                                             <div className="zona-name-cell">
                                                 <span className="zona-pin-icon"><Layers size={13} /></span>
-                                                {n?.nombre ?? '-'}
+                                                {n?.nombreNucleo ?? '-'}
                                             </div>
                                         </td>
-                                        <td style={{ fontSize: 13, color: '#374151' }}>{resolveZonaNombre(n)}</td>
-                                        <td>
-                                            <span className={isActive ? 'badge-active' : 'badge-inactive'}>
-                                                {isActive ? '⊙ Activo' : '⊗ Inactivo'}
-                                            </span>
-                                        </td>
+                                        <td style={{ fontSize: 13, color: '#374151' }}>{(n).codeZona}</td>
+                                        
                                         <td className="td-actions">
                                             <div className="td-actions-inner">
                                                 <button className="icon-btn" type="button" title="Ver detalle" onClick={() => setDetalleNucleo(n)}><Eye size={16} /></button>
-                                                <button className="icon-btn" type="button" title="Editar" onClick={() => setEditNucleo(n)}><Pencil size={16} /></button>
-                                                <button className="icon-btn danger" type="button" title="Eliminar" onClick={() => handleDelete(id)}><Trash2 size={16} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -151,32 +157,6 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
 
             <NucleoDetalleModal isOpen={!!detalleNucleo} nucleo={detalleNucleo} onClose={() => setDetalleNucleo(null)} />
 
-            <NuevoNucleoModal
-                isOpen={openCreate}
-                title="Nuevo Núcleo"
-                initialValues={{ codigo: '', nombre: '', zona: '', estado: true }}
-                zonas={zonas}
-                onClose={() => setOpenCreate(false)}
-                onSubmit={async (values) => { await onAdd?.(values); setOpenCreate(false); }}
-            />
-
-            <NuevoNucleoModal
-                isOpen={!!editNucleo}
-                title="Editar Núcleo"
-                initialValues={{
-                    codigo: editNucleo?.codigo ?? '',
-                    nombre: editNucleo?.nombre ?? '',
-                    zona: typeof editNucleo?.zona === 'object'
-                        ? (editNucleo?.zona?._id ?? editNucleo?.zona?.id ?? '')
-                        : (editNucleo?.zona ?? ''),
-                    activo: typeof editNucleo?.activo === 'boolean'
-                        ? editNucleo.activo
-                        : (typeof editNucleo?.activa === 'boolean' ? editNucleo.activa : true),
-                }}
-                zonas={zonas}
-                onClose={() => setEditNucleo(null)}
-                onSubmit={async (values) => { const id = getId(editNucleo); await onUpdate?.(id, values); setEditNucleo(null); }}
-            />
         </div>
     );
 }

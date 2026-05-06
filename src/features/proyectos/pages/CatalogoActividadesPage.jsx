@@ -31,7 +31,16 @@ const CatalogoActividadesPage = () => {
       if (filtroEstado === "inactivas") params.activa = false;
 
       const res = await getActividades(params);
-      setActividades(res?.data?.data || []);
+      const data = res?.data?.data || [];
+      
+      // Ordenar por fecha de creación (más recientes primero)
+      const sorted = data.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.created_at || 0);
+        const dateB = new Date(b.createdAt || b.created_at || 0);
+        return dateB - dateA;
+      });
+      
+      setActividades(sorted);
     } catch (error) {
       console.error("Error cargando actividades", error);
     } finally {

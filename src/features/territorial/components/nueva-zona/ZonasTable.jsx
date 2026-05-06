@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Eye, Pencil, Plus, Search, MapPin, X } from 'lucide-react';
-import NuevaZonaModal from './nueva-zona/NuevaZonaModal';
+import { Eye, Plus, Search, MapPin, X } from 'lucide-react';
+
 
 function ZonaDetalleModal({ isOpen, zona, onClose }) {
   if (!isOpen || !zona) return null;
@@ -25,8 +25,8 @@ function ZonaDetalleModal({ isOpen, zona, onClose }) {
         <div className="zdm-name-card">
           <div className="zdm-pin-wrap"><MapPin size={20} /></div>
           <div className="zdm-name-info">
-            <span className="zdm-name">{zona?.nombre ?? '-'}</span>
-            <span className="zdm-code">{zona?.codigo ?? '-'}</span>
+            <span className="zdm-name">{zona?.nombreZona ?? '-'}</span>
+            <span className="zdm-code">{zona?.codeZona ?? '-'}</span>
           </div>
         </div>
         <div className="zdm-estado-box">
@@ -41,8 +41,8 @@ function ZonaDetalleModal({ isOpen, zona, onClose }) {
 }
 
 export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, onUpdate }) {
-  const [openCreate, setOpenCreate]   = useState(false);
-  const [editZona, setEditZona]       = useState(null);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [editZona, setEditZona] = useState(null);
   const [detalleZona, setDetalleZona] = useState(null);
 
   const getId = (z) => z?._id ?? z?.id;
@@ -62,10 +62,6 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
               placeholder="Buscar zona..."
             />
           </div>
-          <button className="btn-primary" onClick={() => setOpenCreate(true)}>
-            <Plus size={16} />
-            Nueva Zona
-          </button>
         </div>
       </div>
 
@@ -76,7 +72,6 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
             <tr>
               <th style={{ width: '120px' }}>Codigo</th>
               <th style={{ width: '200px' }}>Nombre</th>
-              <th style={{ width: '160px' }}>Estado</th>
               <th style={{ width: '140px', textAlign: 'center' }}>Acciones</th>
             </tr>
           </thead>
@@ -89,42 +84,24 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
               zonas.map((z) => {
                 const id = getId(z);
 
-                let isActive = false;
-                if (z?.activa !== undefined && z?.activa !== null) {
-                  if (typeof z.activa === 'boolean') isActive = z.activa;
-                  else if (typeof z.activa === 'string') {
-                    const act = z.activa.toLowerCase().trim();
-                    isActive = act === 'activa' || act === 'active' || act === 'true' || act === '1';
-                  } else if (typeof z.activa === 'number') isActive = z.activa === 1;
-                } else if (z?.estado !== undefined && z?.estado !== null) {
-                  if (typeof z.estado === 'boolean') isActive = z.estado;
-                  else if (typeof z.estado === 'string') {
-                    const est = z.estado.toLowerCase().trim();
-                    isActive = est === 'activa' || est === 'active' || est === 'true' || est === '1';
-                  } else if (typeof z.estado === 'number') isActive = z.estado === 1;
-                }
-
+                // ✅ POR ESTO (una sola línea)
+                const raw = z?.activa ?? z?.estado;
+                const isActive = (raw === undefined || raw === null) ? true : Boolean(raw);
+                
                 return (
                   <tr key={id}>
-                    <td>{z?.codigo ?? '-'}</td>
+                    <td>{z?.codeZona ?? '-'}</td>
                     <td>
                       <div className="zona-name-cell">
                         <span className="zona-pin-icon"><MapPin size={13} /></span>
-                        {z?.nombre ?? '-'}
+                        {z?.nombreZona ?? '-'}
                       </div>
                     </td>
-                    <td>
-                      <span className={isActive ? 'badge-active' : 'badge-inactive'}>
-                        {isActive ? '⊙ Activa' : '⊗ Inactiva'}
-                      </span>
-                    </td>
+                    
                     <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0 16px' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <button className="icon-btn" type="button" title="Ver detalle" onClick={() => setDetalleZona(z)}>
                           <Eye size={16} />
-                        </button>
-                        <button className="icon-btn" type="button" title="Editar" onClick={() => setEditZona(z)}>
-                          <Pencil size={16} />
                         </button>
                       </div>
                     </td>
@@ -138,25 +115,12 @@ export default function ZonasTable({ zonas = [], search = '', setSearch, onAdd, 
 
       <ZonaDetalleModal isOpen={!!detalleZona} zona={detalleZona} onClose={() => setDetalleZona(null)} />
 
-      <NuevaZonaModal
-        isOpen={openCreate}
-        title="Nueva zona"
-        initialValues={{ codigo: '', nombre: '', estado: true }}
-        onClose={() => setOpenCreate(false)}
-        onSubmit={async (values) => { await onAdd?.(values); setOpenCreate(false); }}
-      />
+   
 
-      <NuevaZonaModal
-        isOpen={!!editZona}
-        title="Editar zona"
-        initialValues={{
-          codigo: editZona?.codigo ?? '',
-          nombre: editZona?.nombre ?? '',
-          activa: typeof editZona?.activa === 'boolean' ? editZona.activa : true,
-        }}
-        onClose={() => setEditZona(null)}
-        onSubmit={async (values) => { const id = getId(editZona); await onUpdate?.(id, values); setEditZona(null); }}
-      />
+      
     </div>
   );
 }
+
+
+

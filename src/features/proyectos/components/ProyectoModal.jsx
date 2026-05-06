@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createProyecto, updateProyecto } from "../services/proyectosService";
-import { getPersonas } from "../services/personalService";
+import { getPersonal } from "../services/personalService";
 import { getZonas } from "../../territorial/services/zonas.service";
 import ActividadesIntervencion from "./ActividadesIntervencion";
 import "../../../assets/styles/proyectos.css";
@@ -24,10 +24,10 @@ const toDateInput = (iso) => (iso ? iso.slice(0, 10) : "");
 const fmtFecha = (iso) =>
   iso
     ? new Date(iso).toLocaleDateString("es-CO", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "—";
 
 const fmtMonto = (n) =>
@@ -265,6 +265,16 @@ const ProyectoModal = ({
 
   const [personas, setPersonas] = useState([]);
   const [zonas, setZonas] = useState([]);
+
+  // Normaliza respuesta de httpEfaStack: acepta array directo,
+  // { data: [] } o { data: { data: [] } }
+  const extractArray = (res) => {
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.zonas)) return res.zonas;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.data?.data)) return res.data.data;
+    return [];
+  };
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [intervenciones, setIntervenciones] = useState([]);
@@ -317,48 +327,18 @@ const ProyectoModal = ({
         fecha_fin_estimada: formatIsoToDisplay(proyecto.fecha_fin_estimada),
       });
 
-      const bloquesMigrados = [];
-      const api = proyecto.actividades_por_intervencion ?? {};
-
-      Object.entries(api).forEach(([intervencionKey, acts], index) => {
-        if (!Array.isArray(acts) || acts.length === 0) return;
-
-        const bloque = {
-          _uid: `migrado-${intervencionKey}-${index}`,
-          intervencion_id: intervencionKey,
-          intervencion_nombre:
-            acts?.[0]?.intervencion_nombre ||
-            acts?.[0]?.intervencion?.nombre ||
-            intervencionKey,
-          cliente_id: proyecto.cliente?._id ?? proyecto.cliente ?? "",
-          supervisor_id: "",
-          actividades: acts.map((act) => ({
-            catalogo_id:
-              act.actividad?._id ??
-              act.actividad_id ??
-              act.catalogo_id ??
-              act._id ??
-              "",
-            nombre: act.nombre ?? "",
-            unidad: act.unidad ?? "",
-            precio_unitario: act.precio_unitario ?? "",
-            cantidad: act.cantidad ?? act.cantidad_total ?? "",
-          })),
-        };
-
-        bloquesMigrados.push(bloque);
-      });
-
-      setIntervenciones(bloquesMigrados);
+      setIntervenciones([]);
     } else {
       setForm({
         ...initialForm,
         codigo: getNextProyectoCode(proyectosActuales, "PRY"),
       });
+
       setDisplayFechas({
         fecha_inicio: "",
         fecha_fin_estimada: "",
       });
+
       setIntervenciones([]);
     }
 
@@ -367,14 +347,17 @@ const ProyectoModal = ({
         try {
           setLoadingData(true);
 
-          const [pRes, zRes] = await Promise.all([getPersonas(), getZonas()]);
+          const [pRes, zRes] = await Promise.allSettled([
+            getPersonal(),
+            getZonas(),
+          ]);
 
-          const pd = pRes?.data?.data ?? pRes?.data ?? [];
-          setPersonas(Array.isArray(pd) ? pd : []);
+         
 
-          const zd = zRes?.data ?? zRes ?? [];
-          setZonas(Array.isArray(zd) ? zd : []);
-        } catch {
+          setPersonas(extractArray(pRes.status === "fulfilled" ? pRes.value : []));
+          setZonas(extractArray(zRes.status === "fulfilled" ? zRes.value : []));
+        } catch (err) {
+          console.error("Error cargando datos del proyecto:", err);
           setPersonas([]);
           setZonas([]);
         } finally {
@@ -861,8 +844,8 @@ const ProyectoModal = ({
                       avance >= 80
                         ? "linear-gradient(90deg,#1f8f57,#2bb673)"
                         : avance >= 40
-                        ? "linear-gradient(90deg,#e67e22,#f39c12)"
-                        : "linear-gradient(90deg,#3b82f6,#60a5fa)",
+                          ? "linear-gradient(90deg,#e67e22,#f39c12)"
+                          : "linear-gradient(90deg,#3b82f6,#60a5fa)",
                     borderRadius: 999,
                     minWidth: 4,
                   }}
@@ -1313,9 +1296,8 @@ const ProyectoModal = ({
                 </option>
                 {personas.map((p) => (
                   <option key={p._id} value={p._id}>
-                    {`${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() ||
-                      p.nombre ||
-                      "Persona"}
+                    {p.name || `${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || "Persona"}
+                    {p.cc ? ` — ${p.cc}` : p.num_doc ? ` — ${p.num_doc}` : ""}
                   </option>
                 ))}
               </select>
@@ -1336,7 +1318,7 @@ const ProyectoModal = ({
                 </option>
                 {zonas.map((z) => (
                   <option key={z._id} value={z._id}>
-                    {z.nombre} {z.codigo ? `(${z.codigo})` : ""}
+                    {z.nombreZona} ({z.codeZona})
                   </option>
                 ))}
               </select>

@@ -260,7 +260,17 @@ const ClientesPage = () => {
       setLoading(true);
       setError(null);
       const res = await getClientes();
-      setClientes(res?.data?.data ?? res?.data ?? []);
+      const lista = res?.data?.data ?? res?.data ?? [];
+      lista.sort((a, b) => {
+        const tsA = a.createdAt
+          ? new Date(a.createdAt)
+          : new Date(parseInt(a._id.slice(0, 8), 16) * 1000);
+        const tsB = b.createdAt
+          ? new Date(b.createdAt)
+          : new Date(parseInt(b._id.slice(0, 8), 16) * 1000);
+        return tsA - tsB;
+      });
+      setClientes(lista);
     } catch (err) {
       console.error("Error cargando clientes:", err);
       setError("No se pudieron cargar los clientes.");

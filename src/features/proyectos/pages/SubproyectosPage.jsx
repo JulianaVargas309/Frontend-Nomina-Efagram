@@ -16,6 +16,37 @@ const ESTADO_COLOR = {
   CANCELADO: { bg: '#fee2e2', color: '#dc2626', border: '#dc2626' },
 };
 
+// Ordena por orden de creación usando el timestamp del _id de MongoDB,
+// con fallback a createdAt y luego al orden original del array.
+const ordenarPorCreacion = (arr) =>
+  [...arr].sort((a, b) => {
+    const aId = a?._id ?? '';
+    const bId = b?._id ?? '';
+    const isMongo = (id) => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id);
+    if (isMongo(aId) && isMongo(bId)) {
+      return parseInt(aId.substring(0, 8), 16) - parseInt(bId.substring(0, 8), 16);
+    }
+    if (a?.createdAt && b?.createdAt) {
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    }
+    return 0;
+  });
+
+// Función helper para calcular totales de horas por subproyecto
+const calcularTotalesHoras = (resumen) => {
+  if (!Array.isArray(resumen) || resumen.length === 0) {
+    return { horasTrabajadas: 0, horasNoTrabajadas: 0 };
+  }
+
+  return resumen.reduce(
+    (acc, item) => ({
+      horasTrabajadas: (acc.horasTrabajadas || 0) + (item.horas_trabajadas || 0),
+      horasNoTrabajadas: (acc.horasNoTrabajadas || 0) + (item.horas_no_trabajadas || 0),
+    }),
+    { horasTrabajadas: 0, horasNoTrabajadas: 0 }
+  );
+};
+
 const SubproyectosPage = () => {
   const [searchParams] = useSearchParams();
   const proyectoIdParam = searchParams.get('proyecto');
@@ -55,7 +86,7 @@ const SubproyectosPage = () => {
 
       try {
         const res = await getSubproyectos({ proyecto: proyectoSel });
-        const subs = res?.data?.data ?? [];
+        const subs = ordenarPorCreacion(res?.data?.data ?? []);
 
         setSubproyectos(subs);
 
@@ -99,7 +130,7 @@ const SubproyectosPage = () => {
 
     try {
       const res = await getSubproyectos({ proyecto: proyectoSel });
-      const subs = res?.data?.data ?? [];
+      const subs = ordenarPorCreacion(res?.data?.data ?? []);
       setSubproyectos(subs);
 
       const resumenTemp = {};
@@ -414,6 +445,7 @@ const SubproyectosPage = () => {
               <tbody>
                 {subproyectos.map((s, i) => {
                   const est = ESTADO_COLOR[s.estado] ?? {};
+                  const totalesHoras = calcularTotalesHoras(resumenHoras[s._id]);
 
                   return (
                     <tr
@@ -468,7 +500,7 @@ const SubproyectosPage = () => {
                           color: '#1f8f57',
                         }}
                       >
-                        {s.horasTrabajadas ?? 0}
+                        {totalesHoras.horasTrabajadas}h
                       </td>
 
                       <td
@@ -479,7 +511,7 @@ const SubproyectosPage = () => {
                           color: '#dc2626',
                         }}
                       >
-                        {s.horasNoTrabajadas ?? 0}
+                        {totalesHoras.horasNoTrabajadas}h
                       </td>
 
                       <td style={{ padding: '13px 16px' }}>
@@ -645,4 +677,4 @@ const SubproyectosPage = () => {
   );
 };
 
-export default SubproyectosPage;                                                                                        
+export default SubproyectosPage;

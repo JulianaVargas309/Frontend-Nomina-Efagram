@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../../app/layouts/DashboardLayout';
-import TerritorialStats from '../components/TerritorialStats';
-import ZonasTable from '../components/ZonasTable';
+import TerritorialStats from '../components/nueva-zona/TerritorialStats';
+import ZonasTable from '../components/nueva-zona/ZonasTable';
 import {
   getZonas,
   createZona,
@@ -17,10 +17,7 @@ export default function ZonasPage() {
   const [error, setError] = useState(null);
 
   const normalizeList = (res) => {
-    // service retorna response.data; pero si el backend responde { data: [] }, lo soportamos igual
-    if (Array.isArray(res)) return res;
-    if (Array.isArray(res?.data)) return res.data;
-    if (Array.isArray(res?.data?.data)) return res.data.data;
+    if (Array.isArray(res?.zonas)) return res.zonas;
     return [];
   };
 
@@ -47,8 +44,8 @@ export default function ZonasPage() {
     const q = search.trim().toLowerCase();
     if (!q) return zonas;
     return zonas.filter((z) => {
-      const codigo = String(z?.codigo ?? '').toLowerCase();
-      const nombre = String(z?.nombre ?? '').toLowerCase();
+      const codigo = String(z?.codeZona ?? '').toLowerCase();
+      const nombre = String(z?.nombreZona ?? '').toLowerCase();
       return codigo.includes(q) || nombre.includes(q);
     });
   }, [zonas, search]);
@@ -56,25 +53,31 @@ export default function ZonasPage() {
   const getId = (z) => z?._id ?? z?.id;
 
   const handleAdd = async (payload) => {
-    const created = await createZona(payload);
-    // si backend devuelve el objeto, lo insertamos; si no, recargamos
-    const obj = created?.data ?? created;
-    if (obj && (obj._id || obj.id)) {
-      setZonas((prev) => [obj, ...prev]);
-    } else {
-      await fetchZonas();
-    }
-  };
+  try {
+    const response = await createZona(payload);
+    const newZona = response?.data ?? response;
+    await fetchZonas(); 
+    console.log('Zona creada exitosamente:', newZona);
+    
+    return newZona;
+  } catch (error) {
+    console.error('Error al crear zona:', error);
+    throw error;
+  }
+};
 
-  const handleUpdate = async (id, payload) => {
-    const updated = await updateZona(id, payload);
-    const obj = updated?.data ?? updated;
-    if (obj && (obj._id || obj.id)) {
-      setZonas((prev) => prev.map((z) => (getId(z) === id ? obj : z)));
-    } else {
-      await fetchZonas();
-    }
-  };
+  
+
+const handleUpdate = async (id, payload) => {
+  const updated = await updateZona(id, payload);
+  const obj = updated?.data ?? updated?.zonas ?? updated;
+  if (obj && (obj._id || obj.id)) {
+    setZonas((prev) => prev.map((z) => (getId(z) === id ? obj : z)));
+  } else {
+    await fetchZonas();
+  }
+};
+
 
   const handleDelete = async (id) => {
     await deleteZona(id);
@@ -84,7 +87,7 @@ export default function ZonasPage() {
   return (
     <DashboardLayout>
       <div className="territorial-wrapper">
-        
+
 
         <TerritorialStats zonas={zonas} />
 
