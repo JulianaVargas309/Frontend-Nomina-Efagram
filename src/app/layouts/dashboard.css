@@ -1,3 +1,4 @@
+/* ─── LAYOUT PRINCIPAL ─── */
 .dashboard-layout {
   display: flex;
   height: 100vh;
@@ -40,4 +41,36 @@
   flex: 1;
   overflow: hidden;
   min-height: 0;
+}
+
+/* ─── OVERLAY MÓVIL ─── */
+.sidebar-overlay {
+  display: none;
+}
+
+/* ─── RESPONSIVE SIDEBAR ─── */
+@media (max-width: 768px) {
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 99;
+  }
+
+  .sidebar {
+    transform: translateX(-260px);
+    transition: transform 0.3s ease;
+    z-index: 200;
+  }
+
+  .sidebar-wrapper--open .sidebar {
+    transform: translateX(0);
+  }
+
+  .dashboard-main {
+    margin-left: 0;
+    width: 100%;
+  }
 }
