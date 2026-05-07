@@ -1045,18 +1045,34 @@
 
   .proyectos-container,
   .proyecto-container,
+  .proyecto-page,
   .content,
   .page-content {
-    width: 100%;
-    padding: 10px;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px !important;
     overflow-x: hidden;
+  }
+
+  .cards-container,
+  .grid-container,
+  .proyectos-grid,
+  .form-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .card,
+  .proyecto-card {
+    width: 100% !important;
   }
 
   .filters,
   .toolbar,
   .actions {
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 10px;
     width: 100%;
   }
@@ -1064,14 +1080,28 @@
   .filters input,
   .filters select,
   .toolbar input,
-  .toolbar select {
+  .toolbar select,
+  .actions button {
+    width: 100% !important;
+  }
+
+  .table-container,
+  .table-responsive {
     width: 100%;
+    overflow-x: auto;
   }
 
   table {
     display: block;
+    width: 100%;
     overflow-x: auto;
     white-space: nowrap;
+  }
+
+  .modal,
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
   }
 
 }
