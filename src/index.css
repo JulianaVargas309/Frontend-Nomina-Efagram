@@ -98,3 +98,14 @@ button svg {
   color: currentColor;
   fill: none;
 }
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  overflow-x: hidden;
+}
