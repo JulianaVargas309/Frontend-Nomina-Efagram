@@ -275,3 +275,51 @@
   color: #dc2626;
   border: 1.5px solid #fecaca;
 }
+
+@media (max-width: 768px) {
+
+  .programacion-container,
+  .programacion-page,
+  .content,
+  .page-content {
+    width: 100%;
+    padding: 10px;
+    overflow-x: hidden;
+  }
+
+  .filters,
+  .toolbar,
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .filters input,
+  .filters select,
+  .toolbar input,
+  .toolbar select {
+    width: 100%;
+  }
+
+  .calendar-container,
+  .calendar,
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .cards-container,
+  .grid-container {
+    display: grid;
+    grid-template-columns: 1fr !important;
+  }
+
+}

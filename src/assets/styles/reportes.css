@@ -417,3 +417,61 @@
 .pct-high   { color: #166534; font-weight: 700; }
 .pct-mid    { color: #92400e; font-weight: 700; }
 .pct-low    { color: #991b1b; font-weight: 700; }
+
+@media (max-width: 768px) {
+
+  .reportes-container,
+  .reportes-page,
+  .content,
+  .page-content {
+    width: 100%;
+    padding: 10px;
+    overflow-x: hidden;
+  }
+
+  .filters,
+  .toolbar,
+  .actions,
+  .buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .filters input,
+  .filters select,
+  .toolbar input,
+  .toolbar select,
+  .actions button {
+    width: 100%;
+  }
+
+  .chart-container,
+  .charts-container,
+  .table-container,
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .cards-container,
+  .grid-container,
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+  }
+
+  canvas,
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+}

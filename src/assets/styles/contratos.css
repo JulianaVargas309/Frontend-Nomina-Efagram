@@ -703,3 +703,61 @@
   font-weight: 500;
   margin: 0;
 }
+
+@media (max-width: 768px) {
+
+  .contratos-container,
+  .contrato-container,
+  .content,
+  .page-content {
+    width: 100%;
+    padding: 10px;
+    overflow-x: hidden;
+  }
+
+  .filters,
+  .toolbar,
+  .actions,
+  .buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .filters input,
+  .filters select,
+  .toolbar input,
+  .toolbar select,
+  .actions button {
+    width: 100%;
+  }
+
+  .table-container,
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .cards-container,
+  .grid-container,
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+  }
+
+  .modal,
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+}
