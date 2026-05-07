@@ -9,6 +9,7 @@
 
 .sidebar {
   width: 260px;
+   flex-shrink: 0;
   position: fixed;
   height: 100vh;
   left: 0;
@@ -25,6 +26,7 @@
   overflow-x: hidden;
   background: #f4f6f9;
   width: calc(100% - 260px);
+  transition: all 0.3s ease;
 }
 
 .dashboard-header {
@@ -53,7 +55,7 @@
 }
 
 /* ─── RESPONSIVE SIDEBAR ─── */
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
 
   .sidebar-overlay {
     display: block;
@@ -78,16 +80,27 @@
     transform: translateX(0);
   }
 
+  /* 🔥 ESTA ES LA PARTE IMPORTANTE */
   .dashboard-main {
-    margin-left: 0;
-    width: 100%;
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
   }
 
-  .dashboard-header {
-    padding: 0 14px;
+  .dashboard-layout {
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .dashboard-content {
+    width: 100%;
     padding: 12px;
+    overflow-x: hidden;
   }
+
+  .dashboard-header {
+    width: 100%;
+    padding: 0 14px;
+  }
+
 }
