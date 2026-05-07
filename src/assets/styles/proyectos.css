@@ -1042,21 +1042,36 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .proy-stats-row {
-    flex-direction: column;
-  }
 
-  .proy-cards-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .proy-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-crear {
+  .proyectos-container,
+  .proyecto-container,
+  .content,
+  .page-content {
     width: 100%;
-    text-align: center;
+    padding: 10px;
+    overflow-x: hidden;
   }
+
+  .filters,
+  .toolbar,
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .filters input,
+  .filters select,
+  .toolbar input,
+  .toolbar select {
+    width: 100%;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
 }
