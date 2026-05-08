@@ -761,3 +761,25 @@
   }
 
 }
+
+@media (max-width: 768px) {
+
+  .contrato-grid,
+  .contrato-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contrato-modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 16px !important;
+  }
+
+  .contrato-actions {
+    flex-direction: column;
+  }
+
+  .contrato-actions button {
+    width: 100%;
+  }
+}
