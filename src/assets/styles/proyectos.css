@@ -1093,3 +1093,209 @@
     padding: 12px !important;
   }
 }
+
+/* ================================================================
+   FIX RESPONSIVE PROYECTOS - MOBILE
+   Evita cortes horizontales y mejora visual en celular
+================================================================ */
+
+.proyectos-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.proy-cards-grid {
+  width: 100%;
+  max-width: 100%;
+}
+
+.proy-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.proy-card-header,
+.proy-card-footer,
+.proy-toolbar,
+.proy-stats-row,
+.proy-intervenciones,
+.proy-meta-row,
+.proy-acciones {
+  min-width: 0;
+}
+
+.proy-card-title-block {
+  min-width: 0;
+}
+
+.proy-interv-chip,
+.proy-fechas,
+.proy-card-cliente {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .proyectos-container {
+    padding: 0 12px 24px !important;
+    overflow-x: hidden;
+  }
+
+  .proy-stats-row {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .proy-stat-card {
+    min-width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+
+  .proy-stat-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .proy-stat-value {
+    font-size: 24px;
+  }
+
+  .proy-toolbar {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .proy-search-wrapper {
+    min-width: 0;
+  }
+
+  .proy-search-input {
+    min-height: 48px;
+    font-size: 0;
+    color: transparent;
+    padding-left: 42px;
+  }
+
+  .proy-search-input::placeholder {
+    color: transparent;
+  }
+
+  .btn-crear {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    padding: 12px 14px;
+    font-size: 15px;
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+
+  .proy-cards-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .proy-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 18px 16px;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .proy-card-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .proy-card-icon-wrap {
+    width: 38px;
+    height: 38px;
+  }
+
+  .proy-card-nombre {
+    font-size: 16px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+    line-height: 1.25;
+  }
+
+  .proy-card-cliente {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .proy-estado-chip {
+    max-width: 110px;
+    padding: 4px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .proy-intervenciones {
+    gap: 8px;
+  }
+
+  .proy-interv-chip {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.25;
+    padding: 7px 11px;
+  }
+
+  .proy-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .proy-fechas {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .proy-acciones {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .proy-btn-accion {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .proyectos-container {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .proy-toolbar {
+    grid-template-columns: 56px 1fr;
+    gap: 10px;
+  }
+
+  .btn-crear {
+    font-size: 14px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .proy-card {
+    padding: 16px 14px;
+  }
+
+  .proy-estado-chip {
+    max-width: 96px;
+    font-size: 11px;
+  }
+}
