@@ -444,12 +444,29 @@ const SubproyectoModal = ({
     try {
       setLoading(true);
 
+      // 🔹 TRANSFORMAR NUCLEOS A OBJETOS EMBEBIDOS
+      const nucleosTransformados = nucleosSel.map(id => {
+        const nucleo = nucleos.find(n => n._id === id);
+        return {
+          nombre: nucleo?.nombre ?? nucleo?.nombreNucleo ?? id,
+        };
+      });
+
+      // 🔹 TRANSFORMAR SUPERVISOR A OBJETO EMBEBIDO
+      const supervisorTransformado = form.supervisor
+        ? (() => {
+          const sup = personas.find(p => p._id === form.supervisor);
+          return { nombre: sup?.name || sup?.nombres || sup?.nombre || form.supervisor };
+        })()
+        : undefined;
+
       const payload = {
         ...form,
         codigo: form.codigo.trim().toUpperCase(),
         nombre: form.nombre.trim(),
         proyecto: proyecto._id,
-        nucleos: nucleosSel,
+        nucleos: nucleosTransformados,
+        supervisor: supervisorTransformado,
       };
 
       let subId;

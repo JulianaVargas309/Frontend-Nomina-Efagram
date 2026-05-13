@@ -153,7 +153,37 @@ const GestionarSubproyectoModal = ({ isOpen, onClose, onSuccess, subproyecto }) 
             )}
 
             <button onClick={async ()=>{
-              await updateSubproyecto(subproyecto._id,{ cuadrillas: cuadrillasSel });
+              // 🔹 TRANSFORMAR CUADRILLAS A OBJETOS EMBEBIDOS
+              const cuadrillasTransformadas = cuadrillasSel.map(id => {
+                const cuadrilla = todasCuadrillas.find(c => c._id === id);
+                return {
+                  nombre: cuadrilla?.nombre ?? id,
+                };
+              });
+
+              // 🔹 TRANSFORMAR SUPERVISOR A OBJETO EMBEBIDO
+              const supervisorTransformado = personalSel
+                ? (() => {
+                  const supervisor = personal.find(p => p._id === personalSel);
+                  return {
+                    nombre: supervisor?.name || supervisor?.nombres || supervisor?.nombre || personalSel,
+                  };
+                })()
+                : undefined;
+
+              // 🔹 TRANSFORMAR PERSONAL A OBJETOS EMBEBIDOS
+              const personalTransformado = personal.map(p => ({
+                nombre: p?.name || p?.nombres || p?.nombre || '',
+                documento: p?.cc || p?.documento || '',
+              }));
+
+              const payload = {
+                cuadrillas: cuadrillasTransformadas,
+                supervisor: supervisorTransformado,
+                personal: personalTransformado,
+              };
+
+              await updateSubproyecto(subproyecto._id, payload);
               onSuccess?.();
             }}>
               Guardar

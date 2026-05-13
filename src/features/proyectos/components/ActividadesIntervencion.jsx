@@ -96,6 +96,7 @@ const IntervencionBloque = ({
     const yaExiste = bloque.actividades.some((a) => a.catalogo_id === actCatalogo._id);
     if (yaExiste) return;
 
+    // 🔹 TRANSFORMAR A OBJETO EMBEBIDO CORRECTO
     const nueva = {
       catalogo_id: actCatalogo._id,
       nombre: actCatalogo.nombre,
@@ -105,6 +106,13 @@ const IntervencionBloque = ({
           ? String(actCatalogo.precio_base)
           : "",
       cantidad: "",
+      // 🔹 DATOS EMBEBIDOS PARA TRANSFORMACIÓN
+      actividad: {
+        nombre: actCatalogo.nombre,
+      },
+      asignacion_subproyecto: {
+        nombre: bloque.intervencion_nombre || "Actividad",
+      },
     };
 
     onUpdate(index, {

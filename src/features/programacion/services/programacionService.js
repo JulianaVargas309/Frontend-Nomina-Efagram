@@ -1,17 +1,69 @@
 // ==========================================
 // SERVICIO: PROGRAMACIÓN
 // ==========================================
-// Descripción: Llamadas a API para programaciones
-// Ubicación: src/features/programacion/services/programacionService.js
 
 import httpClient from '../../../core/api/httpClient';
+
+// ================= TRANSFORMADOR =================
+// El modal envía { contrato: { codigo, nombre }, fecha_inicial, ... }
+// Esta función asegura que el payload siempre llegue en formato embebido.
+
+const buildProgramacionPayload = (data = {}) => {
+  const payload = { ...data };
+
+  // contrato: si viene como objeto { codigo, nombre } lo respeta;
+  // si viene como contrato_id (string) lo convierte a objeto mínimo.
+  if (data.contrato && typeof data.contrato === 'object') {
+    payload.contrato = {
+      codigo: data.contrato.codigo ?? "",
+      nombre: data.contrato.nombre ?? "",
+    };
+  } else if (data.contrato_id) {
+    payload.contrato = {
+      codigo: data._contratoObj?.codigo ?? "",
+      nombre: data._contratoObj?.nombre ?? data.contrato_id,
+    };
+    delete payload.contrato_id;
+    delete payload._contratoObj;
+  }
+
+  payload.fincas = (data.fincas || []).map(f => ({
+    nombre: f?.nombre ?? f,
+    codigo: f?.codigo ?? "",
+  }));
+
+  payload.personal = (data.personal || []).map(p => ({
+    nombre: p?.nombre ?? p,
+    documento: p?.documento ?? "",
+  }));
+
+  payload.zonas = (data.zonas || []).map(z => ({
+    nombre: z?.nombre ?? z,
+  }));
+
+  payload.nucleos = (data.nucleos || []).map(n => ({
+    nombre: n?.nombre ?? n,
+  }));
+
+  payload.actividades = (data.actividades || []).map(a => ({
+    actividad: {
+      nombre: a?.actividad?.nombre ?? a?.actividad ?? "",
+    },
+    asignacion_subproyecto: {
+      nombre: a?.asignacion_subproyecto?.nombre ?? a?.asignacion_subproyecto ?? "",
+    },
+    cantidad: Number(a?.cantidad || 0),
+    precio_unitario: Number(a?.precio_unitario || 0),
+  }));
+
+  return payload;
+};
 
 export const programacionService = {
   // ────────────────────────────────────────────────────────────────
   // PROGRAMACIONES
   // ────────────────────────────────────────────────────────────────
 
-  // Obtener todas las programaciones
   getAll: async (params = {}) => {
     try {
       const response = await httpClient.get('/programaciones', { params });
@@ -21,7 +73,6 @@ export const programacionService = {
     }
   },
 
-  // Obtener programaciones activas
   getActivas: async () => {
     try {
       const response = await httpClient.get('/programaciones/activas');
@@ -31,7 +82,6 @@ export const programacionService = {
     }
   },
 
-  // Obtener programación por ID
   getById: async (id) => {
     try {
       const response = await httpClient.get(`/programaciones/${id}`);
@@ -41,7 +91,6 @@ export const programacionService = {
     }
   },
 
-  // Obtener resumen de programación (con registros diarios)
   getResumen: async (id) => {
     try {
       const response = await httpClient.get(`/programaciones/${id}/resumen`);
@@ -51,7 +100,6 @@ export const programacionService = {
     }
   },
 
-  // Obtener programaciones por contrato
   getPorContrato: async (contratoId) => {
     try {
       const response = await httpClient.get(`/programaciones/contrato/${contratoId}`);
@@ -61,27 +109,28 @@ export const programacionService = {
     }
   },
 
-  // Crear nueva programación
+  // ⭐ CAMBIADO: transforma el payload antes de enviarlo
   create: async (data) => {
     try {
-      const response = await httpClient.post('/programaciones', data);
+      const payload = buildProgramacionPayload(data);
+      const response = await httpClient.post('/programaciones', payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
   },
 
-  // Actualizar programación
+  // ⭐ CAMBIADO: transforma el payload antes de enviarlo
   update: async (id, data) => {
     try {
-      const response = await httpClient.put(`/programaciones/${id}`, data);
+      const payload = buildProgramacionPayload(data);
+      const response = await httpClient.put(`/programaciones/${id}`, payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
   },
 
-  // Eliminar programación
   delete: async (id) => {
     try {
       const response = await httpClient.delete(`/programaciones/${id}`);
@@ -95,7 +144,6 @@ export const programacionService = {
   // REGISTROS DIARIOS
   // ────────────────────────────────────────────────────────────────
 
-  // Obtener registros diarios de una programación
   getRegistrosDiarios: async (programacionId) => {
     try {
       const response = await httpClient.get(
@@ -107,7 +155,6 @@ export const programacionService = {
     }
   },
 
-  // Obtener un registro diario específico
   getRegistroDiarioById: async (id) => {
     try {
       const response = await httpClient.get(`/registros-diarios-programacion/${id}`);
@@ -117,20 +164,15 @@ export const programacionService = {
     }
   },
 
-  // Crear registro diario
   createRegistroDiario: async (data) => {
     try {
-      const response = await httpClient.post(
-        '/registros-diarios-programacion',
-        data
-      );
+      const response = await httpClient.post('/registros-diarios-programacion', data);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
   },
 
-  // Actualizar un registro diario
   updateRegistroDiario: async (id, data) => {
     try {
       const response = await httpClient.put(
@@ -143,7 +185,6 @@ export const programacionService = {
     }
   },
 
-  // ⭐ IMPORTANTE: Actualizar múltiples registros (para el modal)
   updateMultiplesRegistros: async (registros) => {
     try {
       const response = await httpClient.post(
@@ -156,7 +197,6 @@ export const programacionService = {
     }
   },
 
-  // Obtener estadísticas de una programación
   getEstadisticas: async (programacionId) => {
     try {
       const response = await httpClient.get(
@@ -168,7 +208,6 @@ export const programacionService = {
     }
   },
 
-  // Validar un registro diario
   validarRegistro: async (id) => {
     try {
       const response = await httpClient.put(
@@ -180,7 +219,6 @@ export const programacionService = {
     }
   },
 
-  // Eliminar registro diario
   deleteRegistroDiario: async (id) => {
     try {
       const response = await httpClient.delete(
@@ -193,4 +231,4 @@ export const programacionService = {
   },
 };
 
-export default programacionService;  
+export default programacionService;

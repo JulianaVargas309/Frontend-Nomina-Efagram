@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createProyecto, updateProyecto } from "../services/proyectosService";
 import { getPersonal } from "../services/personalService";
 import { getZonas } from "../../territorial/services/zonas.service";
+import { getClientes } from "../services/Clientesservice";
 import ActividadesIntervencion from "./ActividadesIntervencion";
 import "../../../assets/styles/proyectos.css";
 import {
@@ -265,6 +266,7 @@ const ProyectoModal = ({
 
   const [personas, setPersonas] = useState([]);
   const [zonas, setZonas] = useState([]);
+  const [clientes, setClientes] = useState([]);
 
   // Normaliza respuesta de httpEfaStack: acepta array directo,
   // { data: [] } o { data: { data: [] } }
@@ -347,19 +349,20 @@ const ProyectoModal = ({
         try {
           setLoadingData(true);
 
-          const [pRes, zRes] = await Promise.allSettled([
+          const [pRes, zRes, cRes] = await Promise.allSettled([
             getPersonal(),
             getZonas(),
+            getClientes(),
           ]);
-
-         
 
           setPersonas(extractArray(pRes.status === "fulfilled" ? pRes.value : []));
           setZonas(extractArray(zRes.status === "fulfilled" ? zRes.value : []));
+          setClientes(extractArray(cRes.status === "fulfilled" ? cRes.value : []));
         } catch (err) {
           console.error("Error cargando datos del proyecto:", err);
           setPersonas([]);
           setZonas([]);
+          setClientes([]);
         } finally {
           setLoadingData(false);
         }
@@ -484,10 +487,35 @@ const ProyectoModal = ({
   const buildPayload = () => {
     const actividadesPorIntervencion = {};
     let clienteId = "";
+    let clienteObj = null;
+    let responsableObj = null;
+
+    // 🔹 TRANSFORMAR RESPONSABLE A OBJETO EMBEBIDO
+    if (form.responsable) {
+      const resp = personas.find(p => p._id === form.responsable);
+      if (resp) {
+        responsableObj = {
+          nombre: resp.name || resp.nombres || resp.nombre || resp._id,
+        };
+      }
+    }
+
+    // 🔹 TRANSFORMAR ZONA A OBJETO EMBEBIDO
+    const zonaObj = form.zona
+      ? (() => {
+        const z = zonas.find(zn => zn._id === form.zona);
+        return { nombre: z?.nombre ?? z?.nombreZona ?? form.zona };
+      })()
+      : undefined;
 
     intervenciones.forEach((bloque) => {
       if (!clienteId && bloque.cliente_id) {
         clienteId = bloque.cliente_id;
+        // 🔹 BUSCAR EL CLIENTE EN LA LISTA PARA OBTENER EL NOMBRE
+        const clienteData = clientes.find(c => c._id === bloque.cliente_id);
+        clienteObj = { 
+          nombre: clienteData?.nombre || clienteData?.razon_social || clienteData?.razonSocial || bloque.cliente_id 
+        };
       }
 
       const key = bloque.intervencion_id ?? "sin_intervencion";
@@ -497,16 +525,17 @@ const ProyectoModal = ({
       }
 
       bloque.actividades.forEach((act) => {
+        // 🔹 TRANSFORMACIÓN A OBJETOS EMBEBIDOS - Sin IDs
         actividadesPorIntervencion[key].push({
-          actividad_id: act.catalogo_id || undefined,
-          nombre: act.nombre,
+          actividad: {
+            nombre: act.nombre || ""
+          },
+          asignacion_subproyecto: {
+            nombre: bloque.intervencion_nombre || "Actividad"
+          },
           precio_unitario: Number(act.precio_unitario) || 0,
           cantidad: Number(act.cantidad) || 0,
-          unidad: act.unidad || "UNIDAD",
-          estado: "Pendiente",
-          supervisor_id: bloque.supervisor_id || undefined,
-          cliente_id_bloque: bloque.cliente_id || undefined,
-          intervencion_nombre: bloque.intervencion_nombre || undefined,
+          unidad: act.unidad || "UNIDAD"
         });
       });
     });
@@ -515,8 +544,9 @@ const ProyectoModal = ({
       ...form,
       codigo: form.codigo.trim().toUpperCase(),
       nombre: form.nombre.trim(),
-      zona: form.zona || undefined,
-      cliente: clienteId || undefined,
+      zona: zonaObj,
+      responsable: responsableObj,
+      cliente: clienteObj,
       actividades_por_intervencion: actividadesPorIntervencion,
     };
   };
@@ -536,6 +566,10 @@ const ProyectoModal = ({
 
     if (!form.zona) {
       errores.push("Debes seleccionar una zona.");
+    }
+
+    if (!form.responsable) {
+      errores.push("Debes seleccionar un responsable.");
     }
 
     if (intervenciones.length === 0) {

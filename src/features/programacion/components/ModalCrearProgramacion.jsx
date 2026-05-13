@@ -82,12 +82,32 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
     try {
       setGuardando(true);
       const fechaISO = new Date(fechaInicial + 'T12:00:00.000Z').toISOString();
+
+      // ✅ FIX: Enviar objeto embebido sin IDs - MONGODB EMBEBIDO
+      const contratoObj = contratos.find(x => x._id === contratoSeleccionado);
       const datos = {
-        contrato_id: contratoSeleccionado,
+        contrato: {
+          codigo: contratoObj?.codigo ?? "",
+          nombre: contratoObj?.nombre ?? contratoObj?.finca?.nombre ?? contratoSeleccionado,
+        },
         fecha_inicial: fechaISO,
         cantidad_proyectada: cantNum,
         valor_proyectado: Number(valorProyectado) || 0,
         observaciones: observaciones.trim(),
+        fincas: (contratoObj?.fincas || []).map(f => ({
+          nombre: f?.nombre ?? f,
+          codigo: f?.codigo ?? ""
+        })),
+        lotes: (contratoObj?.lotes || []).map(l => ({
+          nombre: l?.nombre ?? l
+        })),
+        actividades: (contratoObj?.actividades || []).map(a => ({
+          actividad: {
+            nombre: a?.actividad?.nombre ?? a?.actividad ?? ""
+          },
+          cantidad: Number(a?.cantidad || 0),
+          precio_unitario: Number(a?.precio_unitario || 0)
+        }))
       };
       await onSave(datos);
     } catch (err) {
@@ -175,28 +195,20 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
           <button
             onClick={onClose}
             style={{
-              background: '#e5e7eb',
-              border: '1.5px solid #d1d5db',
-              borderRadius: 8,
-              width: 34, height: 34,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', flexShrink: 0, marginLeft: 12,
-              fontSize: 18, fontWeight: 700, color: '#374151',
-              lineHeight: 1,
+              background: '#e5e7eb', border: '1.5px solid #d1d5db', borderRadius: 8,
+              width: 34, height: 34, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginLeft: 12,
+              fontSize: 18, fontWeight: 700, color: '#374151', lineHeight: 1,
             }}
-          >
-            ✕
-          </button>
+          >✕</button>
         </div>
 
         {/* BODY */}
         <div style={{ padding: '20px 24px' }}>
-
           {error && (
             <div style={{
-              background: '#fef2f2', border: '1px solid #fecaca',
-              borderRadius: 8, padding: '10px 14px',
-              fontSize: 13, color: '#dc2626', marginBottom: 14,
+              background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8,
+              padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 14,
               display: 'flex', alignItems: 'flex-start', gap: 8,
             }}>
               <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -211,20 +223,13 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
               <span style={{ color: '#94a3b8', fontWeight: 400 }}>(contratos activos)</span>
             </label>
             {loading ? (
-              <div style={{ padding: 10, color: '#64748b', fontSize: 13 }}>
-                ⏳ Cargando contratos...
-              </div>
+              <div style={{ padding: 10, color: '#64748b', fontSize: 13 }}>⏳ Cargando contratos...</div>
             ) : contratos.length === 0 ? (
               <div style={{ padding: 10, color: '#dc2626', fontSize: 13, background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca' }}>
                 ⚠️ No hay contratos en estado ACTIVO.
               </div>
             ) : (
-              <select
-                style={inputSt}
-                value={contratoSeleccionado}
-                onChange={e => handleContratoChange(e.target.value)}
-                disabled={guardando}
-              >
+              <select style={inputSt} value={contratoSeleccionado} onChange={e => handleContratoChange(e.target.value)} disabled={guardando}>
                 <option value="">— Selecciona un contrato —</option>
                 {contratos.map(c => (
                   <option key={c._id} value={c._id}>
@@ -244,9 +249,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                 <div style={{ width: 28, height: 28, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <ClipboardList size={15} color="#2563eb" strokeWidth={2} />
                 </div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#374151' }}>
-                  Información del Contrato
-                </p>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#374151' }}>Información del Contrato</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
                 <MapPin size={14} color="#64748b" style={{ marginTop: 1, flexShrink: 0 }} />
@@ -289,125 +292,48 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                 <Calendar size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                 Fecha Inicial *
               </label>
-
-              <div
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
-                  type="text"
-                  placeholder="DD/MM/AAAA"
-                  maxLength={10}
+                  type="text" placeholder="DD/MM/AAAA" maxLength={10}
                   style={{ ...inputSt, letterSpacing: 1, paddingRight: 46 }}
-                  value={displayFechaInicial}
-                  disabled={guardando}
+                  value={displayFechaInicial} disabled={guardando}
                   onChange={e => {
                     const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
                     let display = raw;
-
                     if (raw.length > 4) display = raw.slice(0, 2) + '/' + raw.slice(2, 4) + '/' + raw.slice(4);
                     else if (raw.length > 2) display = raw.slice(0, 2) + '/' + raw.slice(2);
-
                     setDisplayFechaInicial(display);
-
                     if (raw.length === 8) {
                       const d = parseInt(raw.slice(0, 2), 10);
                       const m = parseInt(raw.slice(2, 4), 10);
                       const y = parseInt(raw.slice(4, 8), 10);
-
                       const fecha = new Date(y, m - 1, d);
-                      const valida =
-                        fecha.getFullYear() === y &&
-                        fecha.getMonth() === m - 1 &&
-                        fecha.getDate() === d &&
-                        m >= 1 &&
-                        m <= 12 &&
-                        d >= 1 &&
-                        d <= 31;
-
+                      const valida = fecha.getFullYear() === y && fecha.getMonth() === m - 1 && fecha.getDate() === d && m >= 1 && m <= 12 && d >= 1 && d <= 31;
                       if (valida) {
-                        const dd = String(d).padStart(2, '0');
-                        const mm = String(m).padStart(2, '0');
-                        const yy = String(y);
-                        setFechaInicial(`${yy}-${mm}-${dd}`);
-                      } else {
-                        setFechaInicial('');
-                      }
-                    } else {
-                      setFechaInicial('');
-                    }
+                        setFechaInicial(`${String(y)}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+                      } else { setFechaInicial(''); }
+                    } else { setFechaInicial(''); }
                   }}
                 />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (fechaInicialPickerRef.current?.showPicker) {
-                      fechaInicialPickerRef.current.showPicker();
-                    } else {
-                      fechaInicialPickerRef.current?.focus();
-                    }
-                  }}
+                <button type="button" onClick={() => { if (fechaInicialPickerRef.current?.showPicker) { fechaInicialPickerRef.current.showPicker(); } else { fechaInicialPickerRef.current?.focus(); } }}
                   disabled={guardando}
-                  style={{
-                    position: 'absolute',
-                    right: 8,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    border: '1px solid #e2e8f0',
-                    background: '#f8fafc',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: guardando ? 'not-allowed' : 'pointer',
-                    color: '#16a34a',
-                    transition: 'all .2s ease',
-                    opacity: guardando ? 0.7 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!guardando) e.currentTarget.style.background = '#ecfdf5';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#f8fafc';
-                  }}
+                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 34, height: 34, borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: guardando ? 'not-allowed' : 'pointer', color: '#16a34a', transition: 'all .2s ease', opacity: guardando ? 0.7 : 1 }}
+                  onMouseEnter={(e) => { if (!guardando) e.currentTarget.style.background = '#ecfdf5'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
                   title="Seleccionar fecha inicial"
-                >
-                  <CalendarDays size={16} />
-                </button>
-
-                <input
-                  ref={fechaInicialPickerRef}
-                  type="date"
-                  value={fechaInicial || ''}
+                ><CalendarDays size={16} /></button>
+                <input ref={fechaInicialPickerRef} type="date" value={fechaInicial || ''}
                   onChange={(e) => {
                     const iso = e.target.value;
                     setFechaInicial(iso);
-
-                    if (!iso) {
-                      setDisplayFechaInicial('');
-                      return;
-                    }
-
+                    if (!iso) { setDisplayFechaInicial(''); return; }
                     const [yy, mm, dd] = iso.split('-');
                     setDisplayFechaInicial(`${dd}/${mm}/${yy}`);
                   }}
-                  style={{
-                    position: 'absolute',
-                    opacity: 0,
-                    pointerEvents: 'none',
-                    width: 0,
-                    height: 0,
-                  }}
+                  style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }}
                   tabIndex={-1}
                 />
               </div>
-
               {displayFechaInicial.length === 10 && !fechaInicial && (
                 <small style={{ color: '#dc2626', fontSize: 11, marginTop: 2, display: 'block' }}>
                   Fecha inválida — verifica día, mes y año
