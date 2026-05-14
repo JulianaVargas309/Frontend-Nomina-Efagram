@@ -16,17 +16,108 @@ import SearchableSelect from "../../proyectos/components/SearchableSelect";
 import { getPersonal } from '../../proyectos/services/personalService';
 import httpClient from '../../../core/api/httpClient';
 
-// ── helpers ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// ✅ HELPERS DE NORMALIZACIÓN (AGREGADOS)
+// ══════════════════════════════════════════════════════════════════
+
+const getPersonaId = (persona) =>
+  persona?._id ??
+  persona?.id ??
+  persona?.value ??
+  persona?.cc ??
+  persona?.documento ??
+  persona?.num_doc ??
+  persona?.cedula ??
+  '';
+
+const normalizarPersonaParaCuadrilla = (persona) => {
+  if (!persona || typeof persona !== 'object') return null;
+
+  const cc = String(
+    persona.cc ??
+    persona.documento ??
+    persona.num_doc ??
+    persona.cedula ??
+    persona.identificacion ??
+    ''
+  ).trim();
+
+  const name = String(
+    persona.name ??
+    persona.nombre ??
+    persona.nombres ??
+    persona.nombre_completo ??
+    [persona.primer_nombre, persona.primer_apellido].filter(Boolean).join(' ') ??
+    ''
+  ).trim();
+
+  if (!cc || !name) return null;
+
+  return {
+    cc,
+    name,
+    cargo: persona.cargo ? String(persona.cargo).trim() : null,
+    nombrefinca: persona.nombrefinca
+      ? String(persona.nombrefinca).trim()
+      : persona.nombreFinca
+        ? String(persona.nombreFinca).trim()
+        : null,
+    proceso: persona.proceso ? String(persona.proceso).trim() : null,
+  };
+};
+
+const getFincaId = (finca) =>
+  finca?._id ??
+  finca?.id ??
+  finca?.value ??
+  finca?.codigo ??
+  finca?.code ??
+  '';
+
+const normalizarFincaParaContrato = (finca) => {
+  if (!finca || typeof finca !== 'object') return null;
+
+  const nombre = String(
+    finca.nombre ??
+    finca.name ??
+    finca.nombreFinca ??
+    finca.nombre_finca ??
+    finca.descripcion ??
+    ''
+  ).trim();
+
+  if (!nombre) return null;
+
+  return {
+    id: String(
+      finca._id ??
+      finca.id ??
+      finca.value ??
+      finca.codigo ??
+      finca.code ??
+      ''
+    ).trim(),
+    codigo: String(
+      finca.codigo ??
+      finca.code ??
+      finca.codeFinca ??
+      finca.cod_finca ??
+      ''
+    ).trim(),
+    nombre,
+  };
+};
+
+// ── helpers originales ────────────────────────────────────────────
 const normalizeList = (res) => {
   if (Array.isArray(res)) return res;
-  if (Array.isArray(res?.fincas)) return res.fincas;   // ← agregar
-  if (Array.isArray(res?.zonas)) return res.zonas;    // ← agregar
-  if (Array.isArray(res?.nucleos)) return res.nucleos;  // ← agregar
+  if (Array.isArray(res?.fincas)) return res.fincas;
+  if (Array.isArray(res?.zonas)) return res.zonas;
+  if (Array.isArray(res?.nucleos)) return res.nucleos;
   if (Array.isArray(res?.data)) return res.data;
   if (Array.isArray(res?.data?.data)) return res.data.data;
   return [];
 };
-
 
 const toDateInput = (iso) => (iso ? iso.slice(0, 10) : '');
 const formatIsoToDisplay = (iso) => {
@@ -42,36 +133,26 @@ const parseDisplayToIso = (value) => {
   return `${yyyy.padStart(4, '0')}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
 };
 const fmt = (n) => Number(n).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-// ── Generador automático basado en contratos existentes ──
-const generarCodigoContrato = (contratos = []) => {
 
+const generarCodigoContrato = (contratos = []) => {
   if (!Array.isArray(contratos) || contratos.length === 0) {
     return "CON-001";
   }
 
   let max = 0;
-
   contratos.forEach((c) => {
-
     const codigo = String(c.codigo || "").trim();
-
     if (!codigo.startsWith("CON-")) return;
-
     const numero = parseInt(codigo.replace("CON-", ""), 10);
-
     if (!isNaN(numero) && numero > max) {
       max = numero;
     }
-
   });
 
   const siguiente = max + 1;
-
   return `CON-${String(siguiente).padStart(3, "0")}`;
-
 };
 
-// ── Cuadrilla vacía base ──────────────────────────────────────────
 const nuevaCuadrillaVacia = (idx) => ({
   _key: Date.now() + idx,
   nombre: '',
@@ -81,7 +162,6 @@ const nuevaCuadrillaVacia = (idx) => ({
   expandida: true,
 });
 
-// ── Barra progreso ────────────────────────────────────────────────
 const BarraCantidad = ({ disponible, total }) => {
   const totalNum = Number(total) || 0;
   const dispNum = Number(disponible) || 0;
@@ -137,17 +217,12 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   const [loadingActividades, setLoadingActividades] = useState(false);
   const [actividadesSel, setActividadesSel] = useState([]);
 
-  // ✅ NUEVO: lotes embebidos del contrato
   const [lotes, setLotes] = useState([]);
   const [nuevoLote, setNuevoLote] = useState('');
 
-  // ── Lista de cuadrillas a crear ──
   const [cuadrillas, setCuadrillas] = useState([nuevaCuadrillaVacia(0)]);
-
-  // ── Cuadrillas existentes (modo editar) ──
   const [cuadrillasExistentes, setCuadrillasExistentes] = useState([]);
 
-  // ── Personas ──
   const [todasPersonas, setTodasPersonas] = useState([]);
   const [loadingPersonas, setLoadingPersonas] = useState(false);
 
@@ -157,7 +232,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('datos');
 
-  // ── Cargar catálogos ──────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
@@ -174,35 +248,24 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
     const cargarContratos = async () => {
       try {
-
         const res = await httpClient.get("/contratos");
-
         const lista = normalizeList(res?.data);
-
         setContratosExistentes(lista);
-
         const codigoGenerado = generarCodigoContrato(lista);
-
-        setForm((prev) => ({
-          ...prev,
-          codigo: codigoGenerado
-        }));
-
+        setForm((prev) => ({ ...prev, codigo: codigoGenerado }));
       } catch (error) {
         console.error("Error cargando contratos:", error);
       }
     };
 
     cargarContratos();
-
   }, [isOpen, modo]);
 
-  // ── Cargar personas al abrir tab cuadrilla ────────────────────
   const cargarPersonas = useCallback(async () => {
     if (todasPersonas.length > 0) return;
     try {
       setLoadingPersonas(true);
-      const res = await getPersonal();                        // ✅ EfaStack /users
+      const res = await getPersonal();
       const lista = normalizeList(res);
       setTodasPersonas(lista);
     } catch (e) { console.error(e); }
@@ -297,12 +360,15 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     </div>
   );
 
-  // ── Pre-llenar en editar/ver ──────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
 
     if (contrato && (modo === 'editar' || modo === 'ver')) {
-      const fincaId = contrato.finca?._id ?? contrato.finca ?? '';
+      const fincaId =
+        contrato.finca?.id ??
+        contrato.finca?._id ??
+        contrato.finca ??
+        '';
       const subId = contrato.subproyecto?._id ?? contrato.subproyecto ?? '';
 
       setForm({
@@ -360,8 +426,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       setError(null);
       setTab('datos');
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, contrato, modo, contratosExistentes]);
 
   const resetForm = (codigoInicial = '') => {
@@ -402,7 +466,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     cargarActividadesDisponibles(subId, contrato?._id ?? contrato?.id ?? null);
   };
 
-  // ✅ NUEVO: agregar lote a la lista
   const handleAgregarLote = () => {
     const nombre = nuevoLote.trim();
     if (!nombre) return;
@@ -410,12 +473,10 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     setNuevoLote('');
   };
 
-  // ✅ NUEVO: eliminar lote por índice
   const handleEliminarLote = (idx) => {
     setLotes((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // ✅ NUEVO: agregar lote con Enter
   const handleLoteKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -423,7 +484,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     }
   };
 
-  // ── Actividades ───────────────────────────────────────────────
   const agregarActividad = (disp) => {
     if (!disp || typeof disp !== 'object') return;
     const actId = disp.actividad?._id ?? '';
@@ -449,7 +509,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     return null;
   };
 
-  // ── Helpers cuadrillas ────────────────────────────────────────
   const actualizarCuadrilla = (idx, campo, valor) =>
     setCuadrillas(prev => prev.map((c, i) => i === idx ? { ...c, [campo]: valor } : c));
 
@@ -464,56 +523,82 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   const toggleExpandida = (idx) =>
     actualizarCuadrilla(idx, 'expandida', !cuadrillas[idx].expandida);
 
+  // ✅ CORREGIDO: usar getPersonaId
   const seleccionarSupervisor = (cuadrillaIdx, persona) => {
-    const pid = persona._id ?? persona.id;
-    setCuadrillas(prev => prev.map((c, i) => {
-      if (i !== cuadrillaIdx) return c;
-      return { ...c, supervisor: persona, miembros: c.miembros.filter(m => (m._id ?? m.id) !== pid) };
-    }));
+    const pid = getPersonaId(persona);
+    setCuadrillas((prev) =>
+      prev.map((c, i) => {
+        if (i !== cuadrillaIdx) return c;
+        return {
+          ...c,
+          supervisor: persona,
+          miembros: c.miembros.filter((m) => String(getPersonaId(m)) !== String(pid)),
+        };
+      })
+    );
   };
 
   const quitarSupervisor = (cuadrillaIdx) =>
     actualizarCuadrilla(cuadrillaIdx, 'supervisor', null);
 
+  // ✅ CORREGIDO: usar getPersonaId
   const agregarMiembro = (cuadrillaIdx, persona) => {
-    setCuadrillas(prev => prev.map((c, i) => {
-      if (i !== cuadrillaIdx) return c;
-      const pid = persona._id ?? persona.id;
-      if (c.miembros.some(m => (m._id ?? m.id) === pid)) return c;
-      return { ...c, miembros: [...c.miembros, persona] };
-    }));
+    setCuadrillas((prev) =>
+      prev.map((c, i) => {
+        if (i !== cuadrillaIdx) return c;
+        const pid = getPersonaId(persona);
+        if (c.miembros.some((m) => String(getPersonaId(m)) === String(pid))) {
+          return c;
+        }
+        return {
+          ...c,
+          miembros: [...c.miembros, persona],
+        };
+      })
+    );
   };
 
+  // ✅ CORREGIDO: usar getPersonaId
   const quitarMiembro = (cuadrillaIdx, pid) =>
-    setCuadrillas(prev => prev.map((c, i) =>
-      i !== cuadrillaIdx ? c : { ...c, miembros: c.miembros.filter(m => (m._id ?? m.id) !== pid) }
-    ));
+    setCuadrillas((prev) =>
+      prev.map((c, i) =>
+        i !== cuadrillaIdx
+          ? c
+          : {
+              ...c,
+              miembros: c.miembros.filter((m) => String(getPersonaId(m)) !== String(pid)),
+            }
+      )
+    );
 
+  // ✅ CORREGIDO: usar getPersonaId
   const getPersonasDisponibles = (cuadrillaIdx) => {
     const busqueda = (busquedas[cuadrillaIdx] ?? '').trim().toLowerCase();
     const todosOcupados = new Set();
     cuadrillas.forEach(c => {
-      if (c.supervisor) todosOcupados.add(c.supervisor._id ?? c.supervisor.id);
-      c.miembros.forEach(m => todosOcupados.add(m._id ?? m.id));
+      if (c.supervisor) todosOcupados.add(String(getPersonaId(c.supervisor)));
+      c.miembros.forEach(m => todosOcupados.add(String(getPersonaId(m))));
     });
     return todasPersonas.filter(p => {
-      const pid = p._id ?? p.id;
+      const pid = String(getPersonaId(p));
       if (todosOcupados.has(pid)) return false;
       if (!busqueda) return true;
-      const nombre = `${p.name ?? ''}`.toLowerCase();
-      const doc = (p.cc ?? '').toLowerCase();
+      const nombre = `${p.name ?? p.nombre ?? p.nombres ?? ''}`.toLowerCase();
+      const doc = String(p.cc ?? p.num_doc ?? p.documento ?? '').toLowerCase();
       return nombre.includes(busqueda) || doc.includes(busqueda);
     });
   };
 
-  // ── Guardar ───────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════
+  // ✅ FUNCIÓN handleSave COMPLETAMENTE CORREGIDA
+  // ══════════════════════════════════════════════════════════════════
   const handleSave = async () => {
     setError(null);
 
     if (!form.codigo.trim()) return setError('El código del contrato es obligatorio');
     if (!form.subproyecto) return setError('Selecciona un subproyecto');
     if (!form.finca) return setError('Selecciona una finca');
-    if (lotes.length === 0) return setError('Agrega al menos un lote'); // ✅
+    if (lotes.length === 0) return setError('Agrega al menos un lote');
     if (actividadesSel.length === 0) return setError('Agrega al menos una actividad');
 
     for (const a of actividadesSel) {
@@ -525,27 +610,68 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
     let cuadrillaIds = (contrato?.cuadrillas ?? []).map(c => c._id ?? c);
 
+    // ✅ VALIDACIÓN Y CREACIÓN DE CUADRILLAS CORREGIDA
     if (modo === 'crear') {
+      // Validar cuadrillas antes de enviar
       for (let i = 0; i < cuadrillas.length; i++) {
         const c = cuadrillas[i];
-        if (!c.nombre.trim()) return setError(`Cuadrilla ${i + 1}: el nombre es obligatorio`);
-        if (!c.supervisor) return setError(`Cuadrilla ${i + 1}: debes seleccionar un supervisor`);
-        if (c.miembros.length === 0) return setError(`Cuadrilla ${i + 1}: agrega al menos un trabajador`);
+
+        if (!String(c.nombre ?? '').trim()) {
+          return setError(`Cuadrilla ${i + 1}: el nombre es obligatorio`);
+        }
+
+        const supervisorNormalizado = normalizarPersonaParaCuadrilla(c.supervisor);
+
+        if (!supervisorNormalizado) {
+          return setError(`Cuadrilla ${i + 1}: el supervisor debe tener cédula y nombre`);
+        }
+
+        if (!Array.isArray(c.miembros) || c.miembros.length === 0) {
+          return setError(`Cuadrilla ${i + 1}: agrega al menos un trabajador`);
+        }
+
+        const miembrosNormalizados = c.miembros
+          .map(normalizarPersonaParaCuadrilla)
+          .filter(Boolean);
+
+        if (miembrosNormalizados.length !== c.miembros.length) {
+          return setError(`Cuadrilla ${i + 1}: todos los miembros deben tener cédula y nombre`);
+        }
+
+        // Validar duplicados
+        const ccs = new Set();
+        for (const miembro of miembrosNormalizados) {
+          if (ccs.has(miembro.cc)) {
+            return setError(`Cuadrilla ${i + 1}: hay trabajadores duplicados`);
+          }
+          ccs.add(miembro.cc);
+
+          if (miembro.cc === supervisorNormalizado.cc) {
+            return setError(`Cuadrilla ${i + 1}: el supervisor no puede estar también como miembro`);
+          }
+        }
       }
 
       try {
         setSaving(true);
-        // ✅ CÓDIGO CORREGIDO (agrega codigo único)
+        
+        // ✅ CREACIÓN DE CUADRILLAS CORREGIDA
         const resultados = await Promise.all(
-          cuadrillas.map((c, idx) =>
-            httpClient.post('/cuadrillas', {
+          cuadrillas.map((c, idx) => {
+            const supervisorNormalizado = normalizarPersonaParaCuadrilla(c.supervisor);
+            const miembrosNormalizados = c.miembros
+              .map(normalizarPersonaParaCuadrilla)
+              .filter(Boolean);
+
+            return httpClient.post('/cuadrillas', {
               codigo: `CUA-${Date.now()}-${idx}`,
-              nombre: c.nombre.trim(),
-              supervisor: { cc: c.supervisor.cc, name: c.supervisor.name, cargo: c.supervisor.cargo },
-              miembros: c.miembros.map(m => { m._id, m.name, m.cc, m.cargo })
-            })
-          )
+              nombre: String(c.nombre ?? '').trim(),
+              supervisor: supervisorNormalizado,
+              miembros: miembrosNormalizados,
+            });
+          })
         );
+
         cuadrillaIds = resultados.map(r => r?.data?.data?._id ?? r?.data?._id);
         if (cuadrillaIds.some(id => !id)) throw new Error('No se pudo obtener el ID de una cuadrilla creada');
       } catch (e) {
@@ -555,30 +681,52 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       }
     }
 
+    // ✅ NORMALIZAR FINCA ANTES DE CREAR PAYLOAD
+    const fincaSeleccionada = fincas.find((f) => {
+      const id = getFincaId(f);
+      return String(id) === String(form.finca);
+    });
+
+    const fincaNormalizada = normalizarFincaParaContrato(fincaSeleccionada);
+
+    if (!fincaNormalizada) {
+      return setError('Selecciona una finca válida con nombre');
+    }
+
+    // ✅ NORMALIZAR LOTES
+    const lotesNormalizados = lotes
+      .map((l) => ({
+        nombre: String(l.nombre ?? '').trim(),
+      }))
+      .filter((l) => l.nombre);
+
     try {
+      // ✅ PAYLOAD FINAL CORREGIDO
       const payload = {
         codigo: form.codigo.trim().toUpperCase(),
         subproyecto: form.subproyecto,
-        finca: form.finca,
-        lotes: lotes.map((l) => ({ nombre: l.nombre })),
-        actividades: actividadesSel.map(a => ({
+        finca: fincaNormalizada,
+        lotes: lotesNormalizados,
+        actividades: actividadesSel.map((a) => ({
           actividad: a.actividad_id,
           cantidad: Number(a.cantidad),
           precio_unitario: Number(a.precio_unitario),
         })),
         cuadrillas: cuadrillaIds,
-        fecha_inicio: form.fecha_inicio,
+        fecha_inicio: form.fecha_inicio || null,
         fecha_fin: form.fecha_fin || null,
-        observaciones: form.observaciones.trim(),
-        estado: modo === 'crear' ? 'PENDIENTE' : form.estado,
+        observaciones: String(form.observaciones ?? '').trim(),
+        estado: modo === 'crear' ? 'ACTIVO' : form.estado,
       };
 
       if (modo === 'editar' && contrato) {
         await updateContrato(contrato._id ?? contrato.id, payload);
       } else {
+        // ✅ MANEJO DE RESPUESTA CORREGIDO
         const res = await createContrato(payload);
-        // Pasar el ID del contrato creado al callback
-        const newContratoId = res?._id ?? res?.id;
+        const contratoCreado = res?.data?.data ?? res?.data ?? res;
+        const newContratoId = contratoCreado?._id ?? contratoCreado?.id;
+
         onSuccess?.(newContratoId);
         onClose();
         return;
@@ -623,7 +771,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
               {c.finca?.nombre ?? '—'} <span style={{ color: '#94a3b8', fontSize: 12 }}>({c.finca?.codigo})</span>
             </InfoRow>
 
-            {/* ✅ NUEVO: Lotes embebidos en modo ver */}
             <InfoRow icon={Layers} label={`Lotes (${lotesContrato.length})`}>
               {lotesContrato.length === 0 ? (
                 <span style={{ color: '#94a3b8', fontSize: 13 }}>Sin lotes registrados</span>
@@ -713,7 +860,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid #e6e8ef', padding: '0 24px' }}>
           {TABS.map(t => {
             const TabIcon = t.icon;
@@ -734,7 +880,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
         <div className="modal-body">
 
-          {/* ══ TAB DATOS ══════════════════════════════════════════ */}
           {tab === 'datos' && (
             <>
               <div className="form-section">
@@ -809,14 +954,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                   </div>
                 </div>
 
-                {/* ✅ NUEVO: Fechas del contrato */}
                 <div className="form-row" style={{ marginTop: 12 }}>
                   {renderDatePickerField('Fecha de inicio *', 'fecha_inicio', fechaInicioPickerRef)}
                   {renderDatePickerField('Fecha de fin', 'fecha_fin', fechaFinPickerRef)}
                 </div>
               </div>
-
-
 
               <div className="form-section">
                 <p className="form-section-title" style={{ display: 'flex', alignItems: 'center', gap: 7 }}><MapPin size={14} color="#e67e22" /> Ubicación</p>
@@ -862,13 +1004,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                   />
                 </div>
 
-                {/* ✅ NUEVO: Sección de lotes embebidos */}
                 <div className="form-field" style={{ marginTop: 16 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Layers size={13} /> Lotes * — {lotes.length} definido(s)
                   </label>
 
-                  {/* Input + botón agregar */}
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       value={nuevoLote}
@@ -899,7 +1039,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                     Presiona Enter o el botón para agregar. El código se genera automáticamente.
                   </p>
 
-                  {/* Lista de lotes agregados */}
                   {lotes.length > 0 && (
                     <div
                       style={{
@@ -963,7 +1102,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             </>
           )}
 
-          {/* ══ TAB ACTIVIDADES ════════════════════════════════════ */}
           {tab === 'actividades' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {!form.subproyecto ? (
@@ -1088,7 +1226,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             </div>
           )}
 
-          {/* ══ TAB CUADRILLAS ═════════════════════════════════════ */}
           {tab === 'cuadrilla' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
@@ -1124,7 +1261,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                 {cua.nombre.trim() || `Cuadrilla ${cuaIdx + 1}`}
                               </p>
                               <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>
-                                {cua.supervisor ? `Supervisor: ${cua.supervisor.nombres} ${cua.supervisor.apellidos}` : 'Sin supervisor'} · {cua.miembros.length} miembro(s)
+                                {cua.supervisor ? `Supervisor: ${cua.supervisor.nombres ?? cua.supervisor.name} ${cua.supervisor.apellidos ?? ''}` : 'Sin supervisor'} · {cua.miembros.length} miembro(s)
                               </p>
                             </div>
                           </div>
@@ -1157,8 +1294,8 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                               <div style={{ background: '#eff6ff', border: '1.5px solid #3b82f6', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div>
                                   <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase' }}>⭐ Supervisor</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700 }}>{cua.supervisor.nombres} {cua.supervisor.apellidos}</p>
-                                  <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>{cua.supervisor.tipo_doc} {cua.supervisor.num_doc}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700 }}>{cua.supervisor.nombres ?? cua.supervisor.name} {cua.supervisor.apellidos ?? ''}</p>
+                                  <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>{cua.supervisor.tipo_doc} {cua.supervisor.num_doc ?? cua.supervisor.cc}</p>
                                 </div>
                                 <button onClick={() => quitarSupervisor(cuaIdx)} style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#dc2626', width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                   <X size={13} />
@@ -1173,12 +1310,12 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                 </p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                                   {cua.miembros.map(p => {
-                                    const pid = p._id ?? p.id;
+                                    const pid = getPersonaId(p);
                                     return (
                                       <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 12px' }}>
                                         <div>
-                                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres} {p.apellidos}</p>
-                                          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.num_doc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
+                                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres ?? p.name} {p.apellidos ?? ''}</p>
+                                          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.num_doc ?? p.cc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
                                         </div>
                                         <button onClick={() => quitarMiembro(cuaIdx, pid)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
                                           <UserX size={15} />
@@ -1192,7 +1329,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
                             <div>
                               <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
-
+                                
                               </p>
                               <div style={{ position: 'relative', marginBottom: 10 }}>
                                 <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
@@ -1212,12 +1349,12 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                               ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 240, overflowY: 'auto' }}>
                                   {personasDisp.map(p => {
-                                    const pid = p._id ?? p.id;
+                                    const pid = getPersonaId(p);
                                     return (
                                       <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 12px' }}>
                                         <div>
-                                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres} {p.name}</p>
-                                          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.cc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
+                                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres ?? p.name}</p>
+                                          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.num_doc ?? p.cc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
                                         </div>
                                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                                           <button onClick={() => seleccionarSupervisor(cuaIdx, p)}
