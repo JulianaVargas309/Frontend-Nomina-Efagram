@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, AlertCircle, MapPin, Layers, Wrench, Calendar, Hash, DollarSign, CalendarDays, ClipboardList } from 'lucide-react';
+import SearchableSelect from "../../proyectos/components/SearchableSelect";
 
 const getMensajeError = (err) => {
   if (!err) return 'Error desconocido';
@@ -82,32 +83,12 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
     try {
       setGuardando(true);
       const fechaISO = new Date(fechaInicial + 'T12:00:00.000Z').toISOString();
-
-      // ✅ FIX: Enviar objeto embebido sin IDs - MONGODB EMBEBIDO
-      const contratoObj = contratos.find(x => x._id === contratoSeleccionado);
       const datos = {
-        contrato: {
-          codigo: contratoObj?.codigo ?? "",
-          nombre: contratoObj?.nombre ?? contratoObj?.finca?.nombre ?? contratoSeleccionado,
-        },
+        contrato_id: contratoSeleccionado,
         fecha_inicial: fechaISO,
         cantidad_proyectada: cantNum,
         valor_proyectado: Number(valorProyectado) || 0,
         observaciones: observaciones.trim(),
-        fincas: (contratoObj?.fincas || []).map(f => ({
-          nombre: f?.nombre ?? f,
-          codigo: f?.codigo ?? ""
-        })),
-        lotes: (contratoObj?.lotes || []).map(l => ({
-          nombre: l?.nombre ?? l
-        })),
-        actividades: (contratoObj?.actividades || []).map(a => ({
-          actividad: {
-            nombre: a?.actividad?.nombre ?? a?.actividad ?? ""
-          },
-          cantidad: Number(a?.cantidad || 0),
-          precio_unitario: Number(a?.precio_unitario || 0)
-        }))
       };
       await onSave(datos);
     } catch (err) {
@@ -229,16 +210,48 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                 ⚠️ No hay contratos en estado ACTIVO.
               </div>
             ) : (
-              <select style={inputSt} value={contratoSeleccionado} onChange={e => handleContratoChange(e.target.value)} disabled={guardando}>
-                <option value="">— Selecciona un contrato —</option>
-                {contratos.map(c => (
-                  <option key={c._id} value={c._id}>
-                    {c.codigo} · {c.finca?.nombre || 'Sin finca'}
-                    {c.subproyecto?.nombre ? ` · ${c.subproyecto.nombre}` : ''}
-                    {c.cuadrillas?.length > 0 ? ` · ${c.cuadrillas[0]?.nombre || ''}` : ''}
-                  </option>
-                ))}
-              </select>
+              <SearchableSelect
+                options={contratos}
+                value={contratoSeleccionado}
+                onChange={(id) => handleContratoChange(id)}
+                placeholder="— Selecciona un contrato —"
+                searchPlaceholder="Buscar por código, finca o subproyecto…"
+                disabled={guardando}
+                filterFn={(c, q) => {
+                  const term = q.toLowerCase();
+                  return (
+                    (c.codigo ?? '').toLowerCase().includes(term) ||
+                    (c.finca?.nombre ?? '').toLowerCase().includes(term) ||
+                    (c.subproyecto?.nombre ?? '').toLowerCase().includes(term) ||
+                    (c.cuadrillas?.[0]?.nombre ?? '').toLowerCase().includes(term)
+                  );
+                }}
+                renderOption={(c) => (
+                  <>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: 8,
+                      background: 'rgba(22,163,74,0.1)', color: '#16a34a',
+                      fontSize: 10, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {(c.codigo ?? '').slice(-3)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, fontSize: 13, color: '#0f172a' }}>
+                        {c.codigo} · {c.finca?.nombre || 'Sin finca'}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                        {c.subproyecto?.nombre ?? ''}
+                        {c.cuadrillas?.length > 0 ? ` · ${c.cuadrillas[0]?.nombre || ''}` : ''}
+                      </div>
+                    </div>
+                  </>
+                )}
+                renderSelected={(c) =>
+                  `${c.codigo} · ${c.finca?.nombre || 'Sin finca'}${c.subproyecto?.nombre ? ` · ${c.subproyecto.nombre}` : ''}`
+                }
+              />
             )}
           </div>
 

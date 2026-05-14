@@ -541,15 +541,6 @@
   .zonas-card { max-height: calc(100vh - 260px); }
 }
 
-@media (max-width: 768px) {
-  .territorial-wrapper { padding: 16px; }
-  .territorial-stats { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .territorial-stat-text h3 { font-size: 20px; }
-  .zonas-card-header { flex-wrap: wrap; padding: 16px; }
-  .zonas-card-actions { width: 100%; }
-  .zonas-search { width: 100%; flex: 1; }
-  .zonas-card { max-height: calc(100vh - 280px); }
-}
 
 @media (max-width: 480px) {
   .territorial-stats { grid-template-columns: 1fr; }
@@ -817,3 +808,65 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+@media (max-width: 768px) {
+
+  .ubicacion-container,
+  .ubicaciones-container,
+  .territorial-container,
+  .content,
+  .page-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px;
+    overflow-x: hidden;
+  }
+
+  .map-container,
+  .map {
+    width: 100%;
+    height: 300px;
+  }
+
+  .cards-container,
+  .grid-container,
+  .ubicaciones-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .filters,
+  .toolbar,
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .filters input,
+  .filters select,
+  .toolbar input,
+  .toolbar select,
+  .actions button {
+    width: 100%;
+  }
+
+  .table-container,
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+}
+
+
+
+

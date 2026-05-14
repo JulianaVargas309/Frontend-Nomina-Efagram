@@ -1,13 +1,15 @@
-import httpEfaStack from "../../../core/api/httpEfastack";
+import httpEfaStack from '../../../core/api/httpEfastack';
+import httpClient from '../../../core/api/httpClient';
 
 export const getPersonas = async () => {
   const response = await httpEfaStack.get('/personas');
   return response.data;
 };
 
-// alias para compatibilidad con otros componentes
-export const getPersonal = () =>
-  httpEfaStack.get('/users');
+export const getPersonal = async () => {
+  const response = await httpEfaStack.get('/users');
+  return response.data;
+};
 
 export const createPersona = (data) =>
   httpClient.post('/personas', data);
@@ -16,7 +18,9 @@ export const updatePersona = (id, data) =>
   httpClient.put(`/personas/${id}`, data);
 
 export const deletePersona = (id) =>
-  httpClient.post(`/personas/${id}/retirar`, { motivo: 'Retiro desde catálogo' });
+  httpClient.post(`/personas/${id}/retirar`, {
+    motivo: 'Retiro desde catálogo'
+  });
 
 export const getPersonasBulkTemplateData = () =>
   httpClient.get('/personas/bulk/template-data');

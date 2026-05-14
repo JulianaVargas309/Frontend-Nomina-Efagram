@@ -1,5 +1,6 @@
 import './header.css';
 import { useAuth } from "../../app/providers/useAuth";
+import { Menu } from "lucide-react";
 
 function getDisplayName(user) {
   if (!user) return 'Usuario';
@@ -18,13 +19,23 @@ function getDisplayName(user) {
   );
 }
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
   const { user } = useAuth();
   const displayName = getDisplayName(user);
 
   return (
     <header className="dashboard-header">
-      <h2>Dashboard</h2>
+      <div className="header-left">
+        {/* Botón hamburguesa — solo visible en móvil vía CSS */}
+        <button
+          className="hamburger-btn"
+          onClick={onMenuClick}
+          aria-label="Abrir menú"
+        >
+          <Menu size={22} />
+        </button>
+        <h2>Dashboard</h2>
+      </div>
       <div>
         Bienvenido(a), <strong>{displayName}</strong>
       </div>

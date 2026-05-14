@@ -1,9 +1,9 @@
 import { Users, CheckCircle, XCircle } from 'lucide-react';
 
 export default function PersonalStats({ personal = [] }) {
-  const total     = personal.length;
-  const activos   = personal.filter((p) => p?.estado === 'ACTIVO').length;
-  const inactivos = total - activos;
+  const total = personal.length;
+  const activos = personal.filter((p) => String(p?.estado ?? '').toUpperCase() === 'ACTIVO').length;
+  const inactivos = personal.filter((p) => String(p?.estado ?? '').toUpperCase() === 'INACTIVO').length;
 
   return (
     <div className="territorial-stats">

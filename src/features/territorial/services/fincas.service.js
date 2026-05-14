@@ -13,26 +13,26 @@ export const getNextFincaCode = async (nucleoId) => {
 };
 
 export const createFinca = async (data) => {
-  const response = await httpClient.post('/fincas', data);
+  const response = await httpEfaStack.post('/fincas', data);
   return response.data;
 };
 
 export const updateFinca = async (id, data) => {
-  const response = await httpClient.put(`/fincas/${id}`, data);
+  const response = await httpEfaStack.put(`/fincas/${id}`, data);
   return response.data;
 };
 
 export const deleteFinca = async (id) => {
-  const response = await httpClient.delete(`/fincas/${id}`);
+  const response = await httpEfaStack.delete(`/fincas/${id}`);
   return response.data;
 };
 
 export const getFincasBulkTemplateData = async () => {
-  const response = await httpClient.get('/fincas/bulk/template-data');
+  const response = await httpEfaStack.get('/fincas/bulk/template-data');
   return response.data;
 };
 
 export const bulkUpsertFincas = async (rows) => {
-  const response = await httpClient.post('/fincas/bulk/upsert', { rows });
+  const response = await httpEfaStack.post('/fincas/bulk/upsert', { rows });
   return response.data;
 };

@@ -7,6 +7,7 @@ import {
   getAsignaciones,
   cancelarAsignacion,
 } from '../services/subproyectosService';
+import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
 import { CalendarDays } from "lucide-react";
@@ -708,21 +709,42 @@ const SubproyectoModal = ({
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <User size={13} /> Supervisor
                 </label>
-                <select
-                  name="supervisor"
+                <SearchableSelect
+                  options={personas}
                   value={form.supervisor}
-                  onChange={(e) => setForm((p) => ({ ...p, supervisor: e.target.value }))}
-                >
-                  <option value="">— Seleccione supervisor (opcional) —</option>
-                  {personas.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name || `${p.nombres ?? ''} ${p.apellidos ?? ''}`.trim() || 'Persona'}
-                      {p.cc ? ` — ${p.cc}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => setForm((p) => ({ ...p, supervisor: id }))}
+                  placeholder="— Seleccione supervisor (opcional) —"
+                  searchPlaceholder="Buscar por nombre o documento…"
+                  disabled={loadData}
+                  filterFn={(p, q) => {
+                    const s = q.toLowerCase();
+                    const nombre = `${p.nombres ?? ""} ${p.apellidos ?? ""} ${p.name ?? ""}`.toLowerCase();
+                    const doc = String(p.cc ?? p.num_doc ?? "");
+                    return nombre.includes(s) || doc.includes(s);
+                  }}
+                  renderOption={(p) => (
+                    <>
+                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#e8f5ee", color: "#1f8f57", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {(`${p.nombres ?? p.name ?? "?"}`.charAt(0) + `${p.apellidos ?? ""}`.charAt(0)).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {`${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.name}
+                        </div>
+                        {(p.cc || p.num_doc) && (
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                            CC {p.cc ?? p.num_doc}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  renderSelected={(p) =>
+                    `${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.name
+                  }
+                />
               </div>
-
+              
               <div className="modal-grid">
                 {renderDateField({
                   label: 'Fecha Inicio',

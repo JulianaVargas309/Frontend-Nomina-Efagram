@@ -241,3 +241,15 @@
 .menu-title:last-of-type {
   margin-top: 24px;
 }
+
+@media (max-width: 768px) {
+
+  .dashboard-stats,
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-card {
+    width: 100%;
+  }
+}
