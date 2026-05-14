@@ -229,12 +229,15 @@ const IntervencionBloque = ({
             </label>
             <select
               value={bloque.cliente_id || ""}
-              onChange={(e) => handleField("cliente_id", e.target.value)}
+              onChange={(e) => {
+                console.log("CLIENTE:", e.target.value);
+                handleField("cliente_id", e.target.value);
+              }}
               style={selectStyle(col)}
             >
               <option value="">Seleccione cliente</option>
               {clientes.map((c) => (
-                <option key={c._id} value={c._id}>
+                <option key={c._id || c.id} value={c._id || c.id}>
                   {c.nombre || c.razon_social || c.razonSocial || "Cliente"}
                 </option>
               ))}
@@ -330,159 +333,159 @@ const IntervencionBloque = ({
                 }}
               >
                 <div style={{ minWidth: 690 }}>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(170px, 1.6fr) 130px 130px 150px 40px",
-                    gap: 8,
-                    padding: "8px 12px",
-                    background: "#f8fafc",
-                    borderBottom: "1px solid #e6e8ef",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.4px",
-                    alignItems: "center",
-                  }}
-                >
-                  <span>Actividad</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <DollarSign size={10} /> Precio unit.
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <Hash size={10} /> Cantidad
-                  </span>
-                  <span>Total</span>
-                  <span></span>
-                </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "minmax(170px, 1.6fr) 130px 130px 150px 40px",
+                      gap: 8,
+                      padding: "8px 12px",
+                      background: "#f8fafc",
+                      borderBottom: "1px solid #e6e8ef",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#64748b",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.4px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span>Actividad</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <DollarSign size={10} /> Precio unit.
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <Hash size={10} /> Cantidad
+                    </span>
+                    <span>Total</span>
+                    <span></span>
+                  </div>
 
-                {bloque.actividades.map((act, i) => {
-                  const total =
-                    (Number(act.precio_unitario) || 0) * (Number(act.cantidad) || 0);
+                  {bloque.actividades.map((act, i) => {
+                    const total =
+                      (Number(act.precio_unitario) || 0) * (Number(act.cantidad) || 0);
 
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "minmax(170px, 1.6fr) 130px 130px 150px 40px",
-                        gap: 8,
-                        padding: "9px 12px",
-                        borderBottom:
-                          i < bloque.actividades.length - 1
-                            ? "1px solid #f0f2f5"
-                            : "none",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        <p
-                          style={{
-                            margin: 0,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "#0f172a",
-                          }}
-                        >
-                          {act.nombre}
-                        </p>
-                        {act.unidad ? (
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "minmax(170px, 1.6fr) 130px 130px 150px 40px",
+                          gap: 8,
+                          padding: "9px 12px",
+                          borderBottom:
+                            i < bloque.actividades.length - 1
+                              ? "1px solid #f0f2f5"
+                              : "none",
+                          alignItems: "center",
+                        }}
+                      >
+                        <div>
                           <p
                             style={{
                               margin: 0,
-                              fontSize: 11,
-                              color: "#94a3b8",
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: "#0f172a",
                             }}
                           >
-                            {act.unidad}
+                            {act.nombre}
                           </p>
-                        ) : null}
+                          {act.unidad ? (
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: 11,
+                                color: "#94a3b8",
+                              }}
+                            >
+                              {act.unidad}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={act.precio_unitario}
+                          onChange={(e) =>
+                            handleActField(i, "precio_unitario", e.target.value)
+                          }
+                          style={inputNumStyle}
+                        />
+
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={act.cantidad}
+                          onChange={(e) => handleActField(i, "cantidad", e.target.value)}
+                          style={inputNumStyle}
+                        />
+
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: total > 0 ? col.accent : "#94a3b8",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {fmtMoney(total)}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAct(i)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "#ef4444",
+                            padding: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: 6,
+                            opacity: 0.7,
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
+                    );
+                  })}
 
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={act.precio_unitario}
-                        onChange={(e) =>
-                          handleActField(i, "precio_unitario", e.target.value)
-                        }
-                        style={inputNumStyle}
-                      />
-
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={act.cantidad}
-                        onChange={(e) => handleActField(i, "cantidad", e.target.value)}
-                        style={inputNumStyle}
-                      />
-
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: total > 0 ? col.accent : "#94a3b8",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {fmtMoney(total)}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAct(i)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#ef4444",
-                          padding: 4,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: 6,
-                          opacity: 0.7,
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  );
-                })}
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 12px",
-                    background: col.light,
-                    borderTop: `1.5px solid ${col.border}`,
-                    gap: 12,
-                  }}
-                >
-                  <span
+                  <div
                     style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: col.accent,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 12px",
+                      background: col.light,
+                      borderTop: `1.5px solid ${col.border}`,
+                      gap: 12,
                     }}
                   >
-                    Total intervención
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 900,
-                      color: col.accent,
-                    }}
-                  >
-                    {fmtMoney(totalBloque)}
-                  </span>
-                </div>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: col.accent,
+                      }}
+                    >
+                      Total intervención
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 900,
+                        color: col.accent,
+                      }}
+                    >
+                      {fmtMoney(totalBloque)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

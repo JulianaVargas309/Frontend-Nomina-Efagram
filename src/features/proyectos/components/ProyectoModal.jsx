@@ -485,13 +485,19 @@ const ProyectoModal = ({
 
   const buildPayload = () => {
     const actividadesPorIntervencion = {};
-    let clienteId = "";
+
+    // Obtener primer cliente válido
+    const primerBloqueConCliente = intervenciones.find(
+      (b) =>
+        b.cliente_id &&
+        String(b.cliente_id).trim() !== ""
+    );
+
+    const clienteId = primerBloqueConCliente?.cliente_id || null;
+
+    console.log("CLIENTE FINAL:", clienteId);
 
     intervenciones.forEach((bloque) => {
-      if (!clienteId && bloque.cliente_id) {
-        clienteId = bloque.cliente_id;
-      }
-
       const key = bloque.intervencion_id ?? "sin_intervencion";
 
       if (!actividadesPorIntervencion[key]) {
@@ -508,18 +514,26 @@ const ProyectoModal = ({
           estado: "Pendiente",
           supervisor_id: bloque.supervisor_id || undefined,
           cliente_id_bloque: bloque.cliente_id || undefined,
-          intervencion_nombre: bloque.intervencion_nombre || undefined,
+          intervencion_nombre:
+            bloque.intervencion_nombre || undefined,
         });
       });
     });
 
     return {
       ...form,
+
       codigo: form.codigo.trim().toUpperCase(),
       nombre: form.nombre.trim(),
+
+      responsable: form.responsable || undefined,
       zona: form.zona || undefined,
-      cliente: clienteId || undefined,
-      actividades_por_intervencion: actividadesPorIntervencion,
+
+      // 🔥 ESTE ES EL IMPORTANTE
+      cliente: clienteId,
+
+      actividades_por_intervencion:
+        actividadesPorIntervencion,
     };
   };
 
@@ -558,6 +572,8 @@ const ProyectoModal = ({
       setLoading(true);
 
       const payload = buildPayload();
+      console.log("PAYLOAD PROYECTO:", payload);
+      console.log("INTERVENCIONES:", intervenciones);
 
       if (!payload.cliente) {
         setFormErrors(["Debes asignar un cliente en al menos una intervención."]);
