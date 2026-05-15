@@ -543,11 +543,36 @@
 
 
 @media (max-width: 480px) {
-  .territorial-stats { grid-template-columns: 1fr; }
-  .th-code, .zonas-table-grid td:first-child { display: none; }
-  .zonas-card { max-height: calc(100vh - 320px); }
-}
+  .territorial-stats {
+    grid-template-columns: 1fr;
+  }
 
+  /*
+    Antes aquí se ocultaba la columna Código:
+    .th-code, .zonas-table-grid td:first-child { display: none; }
+
+    Se elimina esa regla para que Zonas, Núcleos y Fincas
+    siempre muestren sus códigos en móvil.
+  */
+
+  .zonas-card {
+    max-height: calc(100vh - 320px);
+  }
+
+  .zonas-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .zonas-table-grid {
+    min-width: 640px;
+  }
+
+  .zonas-table-grid .th-code,
+  .zonas-table-grid td:first-child {
+    display: table-cell !important;
+  }
+}
 /* ======================================================
    MODAL DETALLE DE ZONA
 ====================================================== */
@@ -865,6 +890,48 @@
     white-space: nowrap;
   }
 
+}
+
+/* ======================================================
+   FIX RESPONSIVE TERRITORIAL
+   Mantiene visible la columna Código en Zonas, Núcleos y Fincas
+====================================================== */
+
+.zonas-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.zonas-table-grid {
+  width: 100%;
+}
+
+.zonas-table-grid .th-code,
+.zonas-table-grid td:first-child {
+  display: table-cell;
+}
+
+@media (max-width: 640px) {
+  .zonas-table-grid {
+    min-width: 640px;
+  }
+
+  .zonas-table-grid th,
+  .zonas-table-grid td {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 13px;
+  }
+
+  .zonas-table-grid .th-code,
+  .zonas-table-grid td:first-child {
+    width: 110px;
+    min-width: 110px;
+    display: table-cell !important;
+  }
 }
 
 
