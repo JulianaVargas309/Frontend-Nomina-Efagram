@@ -1,5 +1,5 @@
 /* ======================================================
-   RESET — neutraliza cualquier estilo global del proyecto
+   RESET — neutraliza estilos globales solo dentro de cards
 ====================================================== */
 
 .zonas-card *,
@@ -31,16 +31,20 @@
 }
 
 /* ======================================================
-   CARDS SUPERIORES
+   TARJETAS SUPERIORES
 ====================================================== */
 
 .territorial-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   flex-shrink: 0;
   margin-bottom: 14px;
   max-width: 100%;
+}
+
+.fincas-stats-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .territorial-stat-card {
@@ -103,6 +107,7 @@
   font-size: 13px;
   color: #6b7280;
   font-weight: 500;
+  line-height: 1.25;
 }
 
 .territorial-stat-text h3 {
@@ -114,7 +119,7 @@
 }
 
 /* ======================================================
-   CARD TABLA
+   CARD PRINCIPAL
 ====================================================== */
 
 .zonas-card {
@@ -164,7 +169,7 @@
 }
 
 /* ======================================================
-   BUSCADOR
+   BUSCADOR GENERAL
 ====================================================== */
 
 .zonas-search {
@@ -225,7 +230,7 @@
 }
 
 /* ======================================================
-   TABLA CON SCROLL
+   TABLA
 ====================================================== */
 
 .zonas-table-scroll {
@@ -289,7 +294,7 @@
   background: #fafcff;
 }
 
-/* ── Anchos de columna ── */
+/* Columnas */
 .th-code {
   width: 170px;
 }
@@ -303,7 +308,6 @@
   padding-right: 32px !important;
 }
 
-/* ── Acciones: centrado tanto en th como en td ── */
 .th-actions {
   width: 120px;
   text-align: center !important;
@@ -324,8 +328,14 @@
   gap: 6px;
 }
 
+/* Código siempre visible */
+.zonas-table-grid .th-code,
+.zonas-table-grid td:first-child {
+  display: table-cell;
+}
+
 /* ======================================================
-   NOMBRE — pin icono
+   NOMBRE — ICONO
 ====================================================== */
 
 .zona-name-cell {
@@ -670,7 +680,7 @@
 }
 
 /* ======================================================
-   MODAL DETALLE DE ZONA
+   MODAL DETALLE
 ====================================================== */
 
 .zdm-overlay {
@@ -857,15 +867,7 @@
 }
 
 /* ======================================================
-   FINCAS — 4 stats cards
-====================================================== */
-
-.fincas-stats-4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-/* ======================================================
-   FINCAS — barra búsqueda + filtro
+   FINCAS — BUSCADOR + FILTRO
 ====================================================== */
 
 .fincas-search-bar {
@@ -937,7 +939,7 @@
 }
 
 /* ======================================================
-   FINCAS — estilos tabla
+   FINCAS — TABLA
 ====================================================== */
 
 .fincas-table th,
@@ -1000,8 +1002,7 @@
 }
 
 /* ======================================================
-   RESPONSIVE PROFESIONAL — TERRITORIAL
-   Zonas, Núcleos y Fincas
+   RESPONSIVE — TABLET
 ====================================================== */
 
 @media (max-width: 1024px) {
@@ -1015,16 +1016,18 @@
   }
 
   .fincas-stats-4 {
-    grid-template-columns: repeat(4, minmax(180px, 1fr));
-    overflow-x: auto;
-    padding-bottom: 6px;
-    -webkit-overflow-scrolling: touch;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .zonas-search {
     width: 220px;
   }
 }
+
+/* ======================================================
+   RESPONSIVE — MÓVIL
+   Tarjetas 2 arriba y 2 abajo, sin scroll horizontal
+====================================================== */
 
 @media (max-width: 768px) {
   .territorial-wrapper {
@@ -1035,55 +1038,56 @@
   .territorial-stats,
   .fincas-stats-4 {
     display: grid !important;
-    grid-template-columns: none !important;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(190px, 220px);
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: initial !important;
+    grid-auto-columns: initial !important;
     gap: 12px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 4px 2px 10px;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    padding: 0;
     margin-bottom: 18px;
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: none !important;
   }
 
   .territorial-stats::-webkit-scrollbar,
   .fincas-stats-4::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .territorial-stats::-webkit-scrollbar-thumb,
-  .fincas-stats-4::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 999px;
+    display: none;
   }
 
   .territorial-stats > *,
-  .fincas-stats-4 > * {
-    min-width: 190px;
-    max-width: 220px;
-    scroll-snap-align: start;
+  .fincas-stats-4 > *,
+  .territorial-stat-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100%;
+    scroll-snap-align: none !important;
   }
 
   .territorial-stat-card {
-    min-width: 190px !important;
-    max-width: 220px !important;
-    padding: 18px 16px !important;
+    padding: 15px 12px !important;
     border-radius: 18px !important;
+    gap: 10px;
+    align-items: center;
   }
 
   .territorial-stat-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .territorial-stat-text {
+    min-width: 0;
   }
 
   .territorial-stat-text p {
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.25;
     white-space: normal;
   }
 
   .territorial-stat-text h3 {
-    font-size: 24px;
+    font-size: 21px;
+    line-height: 1.1;
   }
 
   .zonas-card {
@@ -1211,6 +1215,10 @@
   }
 }
 
+/* ======================================================
+   RESPONSIVE — MÓVIL PEQUEÑO
+====================================================== */
+
 @media (max-width: 480px) {
   .territorial-wrapper {
     padding: 10px 10px 20px;
@@ -1218,23 +1226,36 @@
 
   .territorial-stats,
   .fincas-stats-4 {
-    grid-auto-columns: minmax(175px, 200px);
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-columns: initial !important;
     gap: 10px;
+    overflow-x: visible !important;
   }
 
   .territorial-stats > *,
   .fincas-stats-4 > *,
   .territorial-stat-card {
-    min-width: 175px !important;
-    max-width: 200px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100%;
   }
 
   .territorial-stat-card {
-    padding: 16px 14px !important;
+    padding: 13px 10px !important;
+    gap: 9px;
+  }
+
+  .territorial-stat-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .territorial-stat-text p {
+    font-size: 11.5px;
   }
 
   .territorial-stat-text h3 {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .zonas-card-header {
@@ -1268,5 +1289,29 @@
   .zdm-panel {
     width: calc(100% - 24px);
     padding: 24px 22px 20px;
+  }
+}
+
+/* ======================================================
+   RESPONSIVE — EXTRA PEQUEÑO
+====================================================== */
+
+@media (max-width: 390px) {
+  .territorial-stat-card {
+    padding: 12px 9px !important;
+    gap: 8px;
+  }
+
+  .territorial-stat-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .territorial-stat-text p {
+    font-size: 11px;
+  }
+
+  .territorial-stat-text h3 {
+    font-size: 19px;
   }
 }
