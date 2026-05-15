@@ -42,3 +42,156 @@
   font-size: 12.5px !important;
   margin-top: 2px !important;
 }
+
+/* ======================================================
+   FIX AISLADO - CATÁLOGO DE INTERVENCIONES
+   No afecta zonas, núcleos, fincas, procesos ni personal
+====================================================== */
+
+.intervenciones-card {
+  width: 100%;
+  max-width: 100%;
+}
+
+.intervenciones-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.intervenciones-table {
+  width: 100%;
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.intervenciones-th-code,
+.intervenciones-td-code {
+  width: 140px;
+  min-width: 140px;
+  display: table-cell !important;
+}
+
+/* Sobrescribe únicamente para Intervenciones la regla global que oculta la primera columna */
+@media (max-width: 480px) {
+  .intervenciones-table .intervenciones-th-code,
+  .intervenciones-table .intervenciones-td-code,
+  .intervenciones-table td.intervenciones-td-code {
+    display: table-cell !important;
+  }
+}
+
+/* Responsive solo para esta tabla */
+@media (max-width: 640px) {
+  .intervenciones-toolbar {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 10px !important;
+  }
+
+  .intervenciones-search {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .intervenciones-btn-create {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .intervenciones-table {
+    min-width: 700px;
+  }
+
+  .intervenciones-table th,
+  .intervenciones-table td {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 13px;
+  }
+
+  .intervenciones-th-code,
+  .intervenciones-td-code {
+    width: 120px;
+    min-width: 120px;
+  }
+}
+
+/* ======================================================
+   FIX CÓDIGO EN TABLA DE INTERVENCIONES
+   Solo aplica a Catálogo de Intervenciones.
+   No afecta zonas, núcleos, fincas ni otras tablas.
+====================================================== */
+
+.zonas-table-grid.intervenciones-table {
+  width: 100%;
+  min-width: 760px;
+  table-layout: auto;
+}
+
+.zonas-table-scroll.intervenciones-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Encabezado Código */
+.zonas-table-grid.intervenciones-table th.intervenciones-th-code {
+  display: table-cell !important;
+  width: 140px !important;
+  min-width: 140px !important;
+  max-width: 140px !important;
+}
+
+/* Celda Código: anula .zonas-table-grid td:first-child */
+.zonas-table-grid.intervenciones-table tbody tr > td.intervenciones-td-code,
+.zonas-table-grid.intervenciones-table tbody tr > td.intervenciones-td-code:first-child {
+  display: table-cell !important;
+  width: 140px !important;
+  min-width: 140px !important;
+  max-width: 140px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.zonas-table-grid.intervenciones-table tbody tr > td.intervenciones-td-code .finca-codigo-badge {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Móvil: mantener código visible y permitir scroll horizontal */
+@media (max-width: 640px) {
+  .zonas-table-grid.intervenciones-table {
+    min-width: 760px !important;
+  }
+
+  .zonas-table-scroll.intervenciones-table-scroll {
+    overflow-x: auto !important;
+  }
+
+  .zonas-table-grid.intervenciones-table th.intervenciones-th-code,
+  .zonas-table-grid.intervenciones-table tbody tr > td.intervenciones-td-code,
+  .zonas-table-grid.intervenciones-table tbody tr > td.intervenciones-td-code:first-child {
+    display: table-cell !important;
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
+  }
+}
+
+/* Anulación directa de la regla global de territorial.css */
+@media (max-width: 480px) {
+  .zonas-table-grid.intervenciones-table tbody tr > td.intervenciones-td-code:first-child {
+    display: table-cell !important;
+  }
+
+  .zonas-table-grid.intervenciones-table th.intervenciones-th-code {
+    display: table-cell !important;
+  }
+}

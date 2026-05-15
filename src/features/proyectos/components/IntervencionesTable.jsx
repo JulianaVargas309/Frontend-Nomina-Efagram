@@ -96,15 +96,18 @@ export default function IntervencionesTable({
   }, [intervenciones]);
 
   return (
-    <div className="zonas-card">
+    <div className="zonas-card intervenciones-card">
       {/* HEADER */}
       <div className="zonas-card-header">
         <h2 className="zonas-card-title">Catálogo de Intervenciones</h2>
       </div>
 
       {/* BARRA DE BÚSQUEDA + BOTÓN */}
-      <div style={{ display: 'flex', gap: '12px', padding: '0 0 16px 0', alignItems: 'center' }}>
-        <div className="zonas-search" style={{ flex: 1 }}>
+      <div
+        className="intervenciones-toolbar"
+        style={{ display: 'flex', gap: '12px', padding: '0 0 16px 0', alignItems: 'center' }}
+      >
+        <div className="zonas-search intervenciones-search" style={{ flex: 1 }}>
           <Search size={16} />
           <input
             value={search}
@@ -113,7 +116,7 @@ export default function IntervencionesTable({
           />
         </div>
         <button
-          className="btn-primary"
+          className="btn-primary intervenciones-btn-create"
           onClick={() => {
             setCreateInitialValues({
               codigo: codigoSiguiente,
@@ -132,11 +135,11 @@ export default function IntervencionesTable({
       </div>
 
       {/* TABLA */}
-      <div className="zonas-table-scroll">
-        <table className="zonas-table-grid">
+      <div className="zonas-table-scroll intervenciones-table-scroll">
+        <table className="zonas-table-grid intervenciones-table">
           <thead>
             <tr>
-              <th style={{ width: '140px' }}>Código</th>
+              <th className="intervenciones-th-code" style={{ width: '140px' }}>Código</th>
               <th style={{ width: '220px' }}>Nombre</th>
               <th style={{ width: '220px' }}>Proceso</th>
               <th style={{ width: '140px' }}>Estado</th>
@@ -157,8 +160,8 @@ export default function IntervencionesTable({
 
                 return (
                   <tr key={id}>
-                    <td>
-                      <span className="finca-codigo-badge">{i?.codigo ?? '-'}</span>
+                    <td className="intervenciones-td-code">
+                      <span className="finca-codigo-badge">{i?.codigo ?? i?.code ?? i?.codigo_intervencion ?? '-'}</span>
                     </td>
                     <td>
                       <div className="zona-name-cell">
