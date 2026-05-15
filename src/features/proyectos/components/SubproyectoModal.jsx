@@ -446,9 +446,16 @@ const SubproyectoModal = ({
       setLoading(true);
 
       // 🔹 TRANSFORMAR NUCLEOS A OBJETOS EMBEBIDOS
-      const nucleosTransformados = nucleosSel.map(id => {
-        const nucleo = nucleos.find(n => n._id === id);
+      const nucleosTransformados = nucleosSel.map((id) => {
+        const nucleo = nucleos.find((n) => n._id === id || n.id === id);
         return {
+          id: nucleo?._id ?? nucleo?.id ?? id,
+          codigo:
+            nucleo?.codigo ??
+            nucleo?.code ??
+            nucleo?.codeNucleo ??
+            nucleo?.codigo_nucleo ??
+            "",
           nombre: nucleo?.nombre ?? nucleo?.nombreNucleo ?? id,
         };
       });
@@ -456,9 +463,15 @@ const SubproyectoModal = ({
       // 🔹 TRANSFORMAR SUPERVISOR A OBJETO EMBEBIDO
       const supervisorTransformado = form.supervisor
         ? (() => {
-          const sup = personas.find(p => p._id === form.supervisor);
-          return { nombre: sup?.name || sup?.nombres || sup?.nombre || form.supervisor };
-        })()
+            const sup = personas.find(
+              (p) => p._id === form.supervisor || p.id === form.supervisor
+            );
+            return {
+              nombre:
+                sup?.name || sup?.nombres || sup?.nombre || form.supervisor,
+              documento: sup?.cc ?? sup?.num_doc ?? sup?.documento ?? "",
+            };
+          })()
         : undefined;
 
       const payload = {

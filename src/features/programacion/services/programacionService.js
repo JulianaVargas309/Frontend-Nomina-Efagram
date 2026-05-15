@@ -5,56 +5,20 @@
 import httpClient from '../../../core/api/httpClient';
 
 // ================= TRANSFORMADOR =================
-// El modal envía { contrato: { codigo, nombre }, fecha_inicial, ... }
-// Esta función asegura que el payload siempre llegue en formato embebido.
+// El modal envía { contrato_id, fecha_inicial, ... }
+// Esta función asegura que el payload preserve contrato_id y no reemplace el modelo del backend.
 
 const buildProgramacionPayload = (data = {}) => {
   const payload = { ...data };
 
-  // contrato: si viene como objeto { codigo, nombre } lo respeta;
-  // si viene como contrato_id (string) lo convierte a objeto mínimo.
-  if (data.contrato && typeof data.contrato === 'object') {
-    payload.contrato = {
-      codigo: data.contrato.codigo ?? "",
-      nombre: data.contrato.nombre ?? "",
-    };
-  } else if (data.contrato_id) {
-    payload.contrato = {
-      codigo: data._contratoObj?.codigo ?? "",
-      nombre: data._contratoObj?.nombre ?? data.contrato_id,
-    };
-    delete payload.contrato_id;
-    delete payload._contratoObj;
+  if (data.contrato_id) {
+    payload.contrato_id = data.contrato_id;
+  } else if (data.contrato && typeof data.contrato === 'object') {
+    payload.contrato_id = data.contrato._id ?? data.contrato.id ?? payload.contrato_id;
   }
 
-  payload.fincas = (data.fincas || []).map(f => ({
-    nombre: f?.nombre ?? f,
-    codigo: f?.codigo ?? "",
-  }));
-
-  payload.personal = (data.personal || []).map(p => ({
-    nombre: p?.nombre ?? p,
-    documento: p?.documento ?? "",
-  }));
-
-  payload.zonas = (data.zonas || []).map(z => ({
-    nombre: z?.nombre ?? z,
-  }));
-
-  payload.nucleos = (data.nucleos || []).map(n => ({
-    nombre: n?.nombre ?? n,
-  }));
-
-  payload.actividades = (data.actividades || []).map(a => ({
-    actividad: {
-      nombre: a?.actividad?.nombre ?? a?.actividad ?? "",
-    },
-    asignacion_subproyecto: {
-      nombre: a?.asignacion_subproyecto?.nombre ?? a?.asignacion_subproyecto ?? "",
-    },
-    cantidad: Number(a?.cantidad || 0),
-    precio_unitario: Number(a?.precio_unitario || 0),
-  }));
+  delete payload.contrato;
+  delete payload._contratoObj;
 
   return payload;
 };

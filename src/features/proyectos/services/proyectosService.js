@@ -46,6 +46,28 @@ const buildProyectoPayload = (data = {}) => ({
     cantidad: Number(a?.cantidad || 0),
     precio_unitario: Number(a?.precio_unitario || 0),
   })),
+
+  actividades_por_intervencion: Object.entries(data.actividades_por_intervencion || {}).reduce(
+    (acc, [key, lista]) => ({
+      ...acc,
+      [key]: Array.isArray(lista)
+        ? lista.map((a) => ({
+            actividad: {
+              nombre: a?.actividad?.nombre ?? a?.actividad ?? "",
+            },
+            asignacion_subproyecto: {
+              nombre:
+                a?.asignacion_subproyecto?.nombre ??
+                a?.asignacion_subproyecto ??
+                "",
+            },
+            cantidad: Number(a?.cantidad || 0),
+            precio_unitario: Number(a?.precio_unitario || 0),
+          }))
+        : []
+    }),
+    {}
+  ),
 });
 
 // ================= PROYECTOS =================

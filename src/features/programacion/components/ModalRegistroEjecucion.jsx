@@ -235,6 +235,23 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
     );
   };
 
+  const handleCambiarObservaciones = (index, valor) => {
+    setDias(prev =>
+      prev.map((d, i) =>
+        i === index ? { ...d, observaciones: valor } : d
+      )
+    );
+  };
+
+  const handleCambiarTiempoDetenido = (index, valor) => {
+    const tiempo = parseFloat(valor) || 0;
+    setDias(prev =>
+      prev.map((d, i) =>
+        i === index ? { ...d, tiempo_detenido: tiempo } : d
+      )
+    );
+  };
+
   const renderDiaCard = (dia, index) => {
     const est = dia.estado || 'PENDIENTE';
     const estInfo = ESTADO_COLOR[est] || ESTADO_COLOR.PENDIENTE;

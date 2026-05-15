@@ -541,8 +541,17 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             httpClient.post('/cuadrillas', {
               codigo: `CUA-${Date.now()}-${idx}`,
               nombre: c.nombre.trim(),
-              supervisor: { cc: c.supervisor.cc, name: c.supervisor.name, cargo: c.supervisor.cargo },
-              miembros: c.miembros.map(m => { m._id, m.name, m.cc, m.cargo })
+              supervisor: {
+                cc: c.supervisor.cc,
+                name: c.supervisor.name,
+                cargo: c.supervisor.cargo,
+              },
+              miembros: c.miembros.map((m) => ({
+                _id: m._id ?? m.id,
+                name: m.name,
+                cc: m.cc,
+                cargo: m.cargo,
+              })),
             })
           )
         );
@@ -556,12 +565,49 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     }
 
     try {
+      const fincaSeleccionada = fincas.find(
+        (f) => f._id === form.finca || f.id === form.finca
+      );
+      const fincaPayload = fincaSeleccionada
+        ? {
+            id: fincaSeleccionada._id ?? fincaSeleccionada.id,
+            codigo:
+              fincaSeleccionada.codeFinca ??
+              fincaSeleccionada.codigo ??
+              fincaSeleccionada.code ??
+              "",
+            nombre:
+              fincaSeleccionada.nombreFinca ??
+              fincaSeleccionada.nombre ??
+              fincaSeleccionada.name ??
+              "",
+          }
+        : undefined;
+
+      const subproyectoSeleccionado = subproyectos.find(
+        (s) => s._id === form.subproyecto || s.id === form.subproyecto
+      );
+      const subproyectoPayload = subproyectoSeleccionado
+        ? {
+            id: subproyectoSeleccionado._id ?? subproyectoSeleccionado.id,
+            codigo:
+              subproyectoSeleccionado.codigo ??
+              subproyectoSeleccionado.code ??
+              subproyectoSeleccionado.codigo_subproyecto ??
+              "",
+            nombre:
+              subproyectoSeleccionado.nombre ??
+              subproyectoSeleccionado.name ??
+              "",
+          }
+        : undefined;
+
       const payload = {
         codigo: form.codigo.trim().toUpperCase(),
-        subproyecto: form.subproyecto,
-        finca: form.finca,
+        subproyecto: subproyectoPayload ?? form.subproyecto,
+        finca: fincaPayload,
         lotes: lotes.map((l) => ({ nombre: l.nombre })),
-        actividades: actividadesSel.map(a => ({
+        actividades: actividadesSel.map((a) => ({
           actividad: a.actividad_id,
           cantidad: Number(a.cantidad),
           precio_unitario: Number(a.precio_unitario),
