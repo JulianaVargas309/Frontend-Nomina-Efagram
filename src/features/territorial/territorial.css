@@ -27,6 +27,7 @@
   min-height: 0;
   background: #f4f6f9;
   height: 100%;
+  max-width: 100%;
 }
 
 /* ======================================================
@@ -39,6 +40,7 @@
   gap: 18px;
   flex-shrink: 0;
   margin-bottom: 14px;
+  max-width: 100%;
 }
 
 .territorial-stat-card {
@@ -50,6 +52,7 @@
   gap: 16px;
   border: 1px solid #e8edf2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  min-width: 0;
 }
 
 .territorial-stat-icon {
@@ -63,14 +66,52 @@
   border: 2px solid;
 }
 
-.territorial-stat-icon.icon-green { background: #f0faf4; border-color: #16a34a; color: #16a34a; }
-.territorial-stat-icon.icon-blue  { background: #f0f7ff; border-color: #2563eb; color: #2563eb; }
-.territorial-stat-icon.icon-red   { background: #fff0f0; border-color: #dc2626; color: #dc2626; }
+.territorial-stat-icon.icon-green {
+  background: #f0faf4;
+  border-color: #16a34a;
+  color: #16a34a;
+}
 
-.territorial-stat-icon svg { stroke: currentColor; }
+.territorial-stat-icon.icon-blue {
+  background: #f0f7ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
 
-.territorial-stat-text p  { margin: 0; font-size: 13px; color: #6b7280; font-weight: 500; }
-.territorial-stat-text h3 { margin: 2px 0 0; font-size: 22px; font-weight: 700; color: #111827; line-height: 1; }
+.territorial-stat-icon.icon-red {
+  background: #fff0f0;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.territorial-stat-icon.icon-teal {
+  background: #f0fdfa;
+  border-color: #0d9488;
+  color: #0d9488;
+}
+
+.territorial-stat-icon svg {
+  stroke: currentColor;
+}
+
+.territorial-stat-text {
+  min-width: 0;
+}
+
+.territorial-stat-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.territorial-stat-text h3 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
 
 /* ======================================================
    CARD TABLA
@@ -88,6 +129,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 0;
   margin-bottom: 20px;
+  max-width: 100%;
 }
 
 /* ======================================================
@@ -135,18 +177,22 @@
   padding: 9px 14px;
   color: #9ca3af;
   width: 260px;
+  min-width: 0;
 }
 
 .zonas-search input {
   border: none;
   outline: none;
   width: 100%;
+  min-width: 0;
   background: transparent;
   font-size: 14px;
   color: #111827;
 }
 
-.zonas-search input::placeholder { color: #9ca3af; }
+.zonas-search input::placeholder {
+  color: #9ca3af;
+}
 
 /* ======================================================
    BOTÓN PRIMARIO
@@ -169,8 +215,14 @@
   transition: background 0.2s ease;
 }
 
-.btn-primary:hover { background: #15803d !important; }
-.btn-primary:disabled { opacity: 0.6 !important; cursor: not-allowed !important; }
+.btn-primary:hover {
+  background: #15803d !important;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
 
 /* ======================================================
    TABLA CON SCROLL
@@ -178,15 +230,32 @@
 
 .zonas-table-scroll {
   flex: 1;
+  width: 100%;
+  max-width: 100%;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
-.zonas-table-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-.zonas-table-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-.zonas-table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.zonas-table-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.zonas-table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.zonas-table-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.zonas-table-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.zonas-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 
 .zonas-table-grid {
   width: 100%;
@@ -216,12 +285,23 @@
   height: 52px;
 }
 
-.zonas-table-grid tbody tr:hover { background: #fafcff; }
+.zonas-table-grid tbody tr:hover {
+  background: #fafcff;
+}
 
 /* ── Anchos de columna ── */
-.th-code    { width: 170px; }
-.th-name    { width: 270px; }
-.th-status { width: 199px; padding-right: 32px !important; }
+.th-code {
+  width: 170px;
+}
+
+.th-name {
+  width: 270px;
+}
+
+.th-status {
+  width: 199px;
+  padding-right: 32px !important;
+}
 
 /* ── Acciones: centrado tanto en th como en td ── */
 .th-actions {
@@ -252,6 +332,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .zona-pin-icon {
@@ -267,7 +348,9 @@
   color: #16a34a;
 }
 
-.zona-pin-icon svg { stroke: #16a34a; }
+.zona-pin-icon svg {
+  stroke: #16a34a;
+}
 
 /* ======================================================
    BADGES
@@ -371,7 +454,9 @@
   padding: 40px;
 }
 
-.territorial-error { color: #dc2626; }
+.territorial-error {
+  color: #dc2626;
+}
 
 /* ======================================================
    MODAL
@@ -402,8 +487,15 @@
 }
 
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
@@ -416,8 +508,18 @@
   z-index: 10;
 }
 
-.modal-title   { margin: 0; font-size: 18px; font-weight: 700; color: #111827; }
-.modal-subtitle { margin: 4px 0 0; font-size: 13px; color: #6b7280; }
+.modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modal-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
 
 .modal-close-btn {
   width: 32px !important;
@@ -443,7 +545,9 @@
   color: #111827 !important;
 }
 
-.modal-close-btn:hover { background: #f3f4f6 !important; }
+.modal-close-btn:hover {
+  background: #f3f4f6 !important;
+}
 
 .modal-body {
   display: flex;
@@ -456,13 +560,34 @@
   min-height: 0;
 }
 
-.modal-body::-webkit-scrollbar { width: 6px; }
-.modal-body::-webkit-scrollbar-track { background: transparent; }
-.modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-.modal-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
 
-.field { display: flex; flex-direction: column; gap: 7px; }
-.field span { font-size: 14px; font-weight: 600; color: #374151; }
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
 
 .field input,
 .field select {
@@ -478,9 +603,14 @@
   box-sizing: border-box;
 }
 
-.field input::placeholder { color: #9ca3af; }
+.field input::placeholder {
+  color: #9ca3af;
+}
+
 .field input:focus,
-.field select:focus { border-color: #16a34a; }
+.field select:focus {
+  border-color: #16a34a;
+}
 
 .form-error {
   font-size: 13px;
@@ -514,7 +644,9 @@
   transition: background 0.15s ease;
 }
 
-.btn-modal-cancel:hover { background: #f3f4f6 !important; }
+.btn-modal-cancel:hover {
+  background: #f3f4f6 !important;
+}
 
 .btn-modal-submit {
   padding: 11px 32px !important;
@@ -528,51 +660,15 @@
   transition: background 0.15s ease;
 }
 
-.btn-modal-submit:hover   { background: #15803d !important; }
-.btn-modal-submit:disabled { opacity: 0.6 !important; cursor: not-allowed !important; }
-
-/* ======================================================
-   RESPONSIVE
-====================================================== */
-
-@media (max-width: 1024px) {
-  .territorial-stats { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .zonas-search { width: 200px; }
-  .zonas-card { max-height: calc(100vh - 260px); }
+.btn-modal-submit:hover {
+  background: #15803d !important;
 }
 
-
-@media (max-width: 480px) {
-  .territorial-stats {
-    grid-template-columns: 1fr;
-  }
-
-  /*
-    Antes aquí se ocultaba la columna Código:
-    .th-code, .zonas-table-grid td:first-child { display: none; }
-
-    Se elimina esa regla para que Zonas, Núcleos y Fincas
-    siempre muestren sus códigos en móvil.
-  */
-
-  .zonas-card {
-    max-height: calc(100vh - 320px);
-  }
-
-  .zonas-table-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .zonas-table-grid {
-    min-width: 640px;
-  }
-
-  .zonas-table-grid .th-code,
-  .zonas-table-grid td:first-child {
-    display: table-cell !important;
-  }
+.btn-modal-submit:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
 }
+
 /* ======================================================
    MODAL DETALLE DE ZONA
 ====================================================== */
@@ -619,13 +715,38 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.zdm-close svg { stroke: #4abe8a !important; color: #4abe8a !important; }
-.zdm-close:hover { background: #4abe8a !important; color: #fff !important; }
-.zdm-close:hover svg { stroke: #fff !important; color: #fff !important; }
+.zdm-close svg {
+  stroke: #4abe8a !important;
+  color: #4abe8a !important;
+}
 
-.zdm-header { margin-bottom: 20px; padding-right: 36px; }
-.zdm-title { font-size: 18px; font-weight: 700; color: #1a1a2e; margin: 0 0 3px; }
-.zdm-subtitle { font-size: 13px; color: #8a8fa8; margin: 0; }
+.zdm-close:hover {
+  background: #4abe8a !important;
+  color: #fff !important;
+}
+
+.zdm-close:hover svg {
+  stroke: #fff !important;
+  color: #fff !important;
+}
+
+.zdm-header {
+  margin-bottom: 20px;
+  padding-right: 36px;
+}
+
+.zdm-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 3px;
+}
+
+.zdm-subtitle {
+  font-size: 13px;
+  color: #8a8fa8;
+  margin: 0;
+}
 
 .zdm-name-card {
   display: flex;
@@ -649,11 +770,29 @@
   flex-shrink: 0;
 }
 
-.zdm-pin-wrap svg { stroke: #2fa86a !important; color: #2fa86a !important; }
+.zdm-pin-wrap svg {
+  stroke: #2fa86a !important;
+  color: #2fa86a !important;
+}
 
-.zdm-name-info { display: flex; flex-direction: column; gap: 2px; }
-.zdm-name { font-size: 16px; font-weight: 700; color: #1a1a2e; }
-.zdm-code { font-size: 13px; color: #8a8fa8; }
+.zdm-name-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.zdm-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  word-break: break-word;
+}
+
+.zdm-code {
+  font-size: 13px;
+  color: #8a8fa8;
+}
 
 .zdm-estado-box {
   background: #f8f9fb;
@@ -683,17 +822,38 @@
   width: fit-content;
 }
 
-.zdm-badge.active  { background: #e6f9ef; color: #1e9956; border: 1.5px solid #b2edd0; }
-.zdm-badge.inactive { background: #fdeaea; color: #c0392b; border: 1.5px solid #f5c6c6; }
+.zdm-badge.active {
+  background: #e6f9ef;
+  color: #1e9956;
+  border: 1.5px solid #b2edd0;
+}
+
+.zdm-badge.inactive {
+  background: #fdeaea;
+  color: #c0392b;
+  border: 1.5px solid #f5c6c6;
+}
 
 @keyframes zdm-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes zdm-slide-up {
-  from { opacity: 0; transform: translate(-50%, -46%); }
-  to   { opacity: 1; transform: translate(-50%, -50%); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* ======================================================
@@ -702,12 +862,6 @@
 
 .fincas-stats-4 {
   grid-template-columns: repeat(4, 1fr);
-}
-
-.territorial-stat-icon.icon-teal {
-  background: #f0fdfa;
-  border-color: #0d9488;
-  color: #0d9488;
 }
 
 /* ======================================================
@@ -721,6 +875,7 @@
   padding: 14px 20px;
   border-bottom: 1px solid #e8edf2;
   flex-shrink: 0;
+  max-width: 100%;
 }
 
 .fincas-search-input {
@@ -733,10 +888,12 @@
   border-radius: 10px;
   padding: 10px 14px;
   color: #6b7280;
+  min-width: 0;
 }
 
 .fincas-search-input input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
@@ -744,12 +901,15 @@
   color: #111827;
 }
 
-.fincas-search-input input::placeholder { color: #9ca3af; }
+.fincas-search-input input::placeholder {
+  color: #9ca3af;
+}
 
 .fincas-select-wrap {
   position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .fincas-select {
@@ -765,7 +925,9 @@
   min-width: 180px;
 }
 
-.fincas-select:focus { border-color: #16a34a; }
+.fincas-select:focus {
+  border-color: #16a34a;
+}
 
 .fincas-select-arrow {
   position: absolute;
@@ -793,6 +955,7 @@
   font-weight: 600;
   color: #374151;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .finca-tree-icon {
@@ -819,6 +982,7 @@
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .finca-badge-inactiva {
@@ -832,108 +996,277 @@
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
-}
-
-@media (max-width: 768px) {
-
-  .ubicacion-container,
-  .ubicaciones-container,
-  .territorial-container,
-  .content,
-  .page-content {
-    width: 100%;
-    max-width: 100%;
-    padding: 10px;
-    overflow-x: hidden;
-  }
-
-  .map-container,
-  .map {
-    width: 100%;
-    height: 300px;
-  }
-
-  .cards-container,
-  .grid-container,
-  .ubicaciones-grid {
-    display: grid;
-    grid-template-columns: 1fr !important;
-    gap: 12px;
-  }
-
-  .filters,
-  .toolbar,
-  .actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .filters input,
-  .filters select,
-  .toolbar input,
-  .toolbar select,
-  .actions button {
-    width: 100%;
-  }
-
-  .table-container,
-  .table-responsive {
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
+  white-space: nowrap;
 }
 
 /* ======================================================
-   FIX RESPONSIVE TERRITORIAL
-   Mantiene visible la columna Código en Zonas, Núcleos y Fincas
+   RESPONSIVE PROFESIONAL — TERRITORIAL
+   Zonas, Núcleos y Fincas
 ====================================================== */
 
-.zonas-table-scroll {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+@media (max-width: 1024px) {
+  .territorial-wrapper {
+    padding: 12px 20px 22px;
+  }
+
+  .territorial-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .fincas-stats-4 {
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .zonas-search {
+    width: 220px;
+  }
 }
 
-.zonas-table-grid {
-  width: 100%;
-}
+@media (max-width: 768px) {
+  .territorial-wrapper {
+    padding: 12px 12px 22px;
+    overflow-x: hidden;
+  }
 
-.zonas-table-grid .th-code,
-.zonas-table-grid td:first-child {
-  display: table-cell;
-}
+  .territorial-stats,
+  .fincas-stats-4 {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(190px, 220px);
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 10px;
+    margin-bottom: 18px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
 
-@media (max-width: 640px) {
+  .territorial-stats::-webkit-scrollbar,
+  .fincas-stats-4::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .territorial-stats::-webkit-scrollbar-thumb,
+  .fincas-stats-4::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+
+  .territorial-stats > *,
+  .fincas-stats-4 > * {
+    min-width: 190px;
+    max-width: 220px;
+    scroll-snap-align: start;
+  }
+
+  .territorial-stat-card {
+    min-width: 190px !important;
+    max-width: 220px !important;
+    padding: 18px 16px !important;
+    border-radius: 18px !important;
+  }
+
+  .territorial-stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .territorial-stat-text p {
+    font-size: 13px;
+    white-space: normal;
+  }
+
+  .territorial-stat-text h3 {
+    font-size: 24px;
+  }
+
+  .zonas-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: none !important;
+    border-radius: 18px;
+  }
+
+  .zonas-card-header {
+    padding: 18px 18px 14px !important;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .zonas-card-title {
+    font-size: 20px !important;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .zonas-card-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .zonas-card-actions .zonas-search,
+  .zonas-card-actions .btn-primary {
+    width: 100% !important;
+  }
+
+  .zonas-search {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .btn-primary {
+    justify-content: center !important;
+    min-height: 44px;
+  }
+
+  .fincas-search-bar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .fincas-search-input,
+  .fincas-select-wrap,
+  .fincas-select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .fincas-select {
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .zonas-table-scroll {
+    overflow-x: auto !important;
+  }
+
   .zonas-table-grid {
-    min-width: 640px;
+    min-width: 680px !important;
   }
 
   .zonas-table-grid th,
   .zonas-table-grid td {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-    font-size: 13px;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    font-size: 13px !important;
   }
 
   .zonas-table-grid .th-code,
   .zonas-table-grid td:first-child {
-    width: 110px;
-    min-width: 110px;
     display: table-cell !important;
+    width: 120px !important;
+    min-width: 120px !important;
+  }
+
+  .th-name {
+    min-width: 220px;
+  }
+
+  .th-status {
+    min-width: 130px;
+  }
+
+  .th-actions {
+    min-width: 120px;
+  }
+
+  .modal-backdrop {
+    padding: 14px;
+    align-items: center;
+  }
+
+  .modal {
+    max-height: 82dvh;
+    border-radius: 14px;
+  }
+
+  .modal-header {
+    padding: 18px 18px 14px;
+  }
+
+  .modal-body {
+    padding: 16px 18px 18px;
+  }
+
+  .modal-actions {
+    padding: 14px 18px 18px;
+    flex-direction: column-reverse;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-submit {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
+@media (max-width: 480px) {
+  .territorial-wrapper {
+    padding: 10px 10px 20px;
+  }
 
+  .territorial-stats,
+  .fincas-stats-4 {
+    grid-auto-columns: minmax(175px, 200px);
+    gap: 10px;
+  }
 
+  .territorial-stats > *,
+  .fincas-stats-4 > *,
+  .territorial-stat-card {
+    min-width: 175px !important;
+    max-width: 200px !important;
+  }
 
+  .territorial-stat-card {
+    padding: 16px 14px !important;
+  }
+
+  .territorial-stat-text h3 {
+    font-size: 22px;
+  }
+
+  .zonas-card-header {
+    padding: 16px 16px 12px !important;
+  }
+
+  .zonas-card-title {
+    font-size: 19px !important;
+  }
+
+  .fincas-search-bar {
+    padding: 12px 14px;
+  }
+
+  .zonas-table-grid {
+    min-width: 640px !important;
+  }
+
+  .zonas-table-grid .th-code,
+  .zonas-table-grid td:first-child {
+    display: table-cell !important;
+    width: 110px !important;
+    min-width: 110px !important;
+  }
+
+  .finca-codigo-badge {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .zdm-panel {
+    width: calc(100% - 24px);
+    padding: 24px 22px 20px;
+  }
+}
