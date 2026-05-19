@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProyectos, deleteProyecto } from "../services/proyectosService";
 import { getActividadesProyecto } from "../services/subproyectosService";
+import programacionService from "../../programacion/services/programacionService";
+import BarraProgreso from "../../programacion/components/BarraProgreso";
 import "../../../assets/styles/proyectos.css";
 import ProyectoModal from "../components/ProyectoModal";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
@@ -32,6 +34,7 @@ const ProyectosPage = () => {
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [programacionesPorProyecto, setProgramacionesPorProyecto] = useState({});
 
   // modalState = { open: bool, modo: "crear"|"editar"|"ver", proyecto: obj|null }
   const [modalState, setModalState] = useState({ open: false, modo: "crear", proyecto: null });
@@ -42,6 +45,32 @@ const ProyectosPage = () => {
   const abrirEditar = (p) => setModalState({ open: true, modo: "editar", proyecto: p });
   const cerrarModal = () => setModalState(prev => ({ ...prev, open: false }));
 
+  // ── Helper: Calcular avance de proyecto basado en programaciones ──
+  const calcularAvanceProyecto = (programacionesDelProyecto) => {
+    if (!Array.isArray(programacionesDelProyecto) || programacionesDelProyecto.length === 0) {
+      return 0;
+    }
+
+    let totalProyectado = 0;
+    let totalEjecutado = 0;
+
+    programacionesDelProyecto.forEach((prog) => {
+      const cantProyectada = Number(prog.cantidad_proyectada) || 0;
+      totalProyectado += cantProyectada;
+
+      // Sumar registros diarios ejecutados
+      if (Array.isArray(prog.registros_diarios)) {
+        prog.registros_diarios.forEach((reg) => {
+          const cantEjecutada = Number(reg.cantidad_ejecutada) || 0;
+          totalEjecutado += cantEjecutada;
+        });
+      }
+    });
+
+    if (totalProyectado === 0) return 0;
+    return Math.min(Math.round((totalEjecutado / totalProyectado) * 100), 100);
+  };
+
   // ── Cargar proyectos ──
   const cargarProyectos = async () => {
     try {
@@ -50,6 +79,7 @@ const ProyectosPage = () => {
       const response = await getProyectos();
       const data = response?.data?.success ? response.data.data : [];
       setProyectos(data);
+
       // Cargar actividades de todos los proyectos para los badges
       const map = {};
       await Promise.all(data.map(async (p) => {
@@ -59,6 +89,33 @@ const ProyectosPage = () => {
         } catch { map[p._id] = []; }
       }));
       setActividadesMap(map);
+
+      // ── Cargar programaciones para calcular avance dinámico ──
+      try {
+        const programaciones = await programacionService.getAll();
+        const progData = Array.isArray(programaciones?.data)
+          ? programaciones.data
+          : Array.isArray(programaciones)
+            ? programaciones
+            : [];
+
+        // Agrupar programaciones por proyecto (a través de contratos)
+        const progMap = {};
+        data.forEach((p) => {
+          // Obtener todas las programaciones cuyos contratos pertenecen a este proyecto
+          const contratoIds = (p.contratos || []).map(c => c._id || c);
+          const progDelProyecto = progData.filter((prog) => {
+            const contratoId = prog.contrato?._id || prog.contrato_id;
+            return contratoIds.includes(contratoId);
+          });
+          progMap[p._id] = progDelProyecto;
+        });
+
+        setProgramacionesPorProyecto(progMap);
+      } catch (err) {
+        console.warn('Error cargando programaciones para avance:', err);
+        setProgramacionesPorProyecto({});
+      }
     } catch (err) {
       console.error("Error cargando proyectos:", err);
       setError("No se pudieron cargar los proyectos.");
@@ -87,7 +144,12 @@ const ProyectosPage = () => {
   const activos = proyectos.filter(p => p.estado?.toUpperCase() === "ACTIVO").length;
   const totalLotes = proyectos.reduce((acc, p) => acc + (p.lotes?.length ?? p.cantidad_lotes ?? 0), 0);
   const avancePromedio = proyectos.length > 0
-    ? Math.round(proyectos.reduce((acc, p) => acc + (p.avance ?? 0), 0) / proyectos.length)
+    ? Math.round(
+      proyectos.reduce((acc, p) => {
+        const avanceProg = calcularAvanceProyecto(programacionesPorProyecto[p._id] || []);
+        return acc + (avanceProg || p.avance || 0);
+      }, 0) / proyectos.length
+    )
     : 0;
 
   // ── Filtro búsqueda ──
@@ -196,14 +258,47 @@ const ProyectosPage = () => {
                   </span>
                 </div>
 
-                {/* Barra de avance */}
-                <div className="proy-avance-row">
-                  <span className="proy-avance-label">Avance</span>
-                  <span className="proy-avance-pct">{avance}%</span>
-                </div>
-                <div className="proy-avance-bar-bg">
-                  <div className="proy-avance-bar-fill" style={{ width: `${avance}%` }} />
-                </div>
+                {/* Barra de avance dinámica basada en programaciones */}
+                {
+                  (() => {
+                    const avanceDinamico = calcularAvanceProyecto(programacionesPorProyecto[proyecto._id] || []);
+                    const avanceTotal = avanceDinamico || proyecto.avance || 0;
+                    const hasProgramaciones = Array.isArray(programacionesPorProyecto[proyecto._id]) && programacionesPorProyecto[proyecto._id].length > 0;
+
+                    return (
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: 6,
+                        }}>
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: '#64748b',
+                          }}>
+                            Avance {hasProgramaciones ? '(por programaciones)' : ''}
+                          </span>
+                          <span style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: avanceTotal >= 75 ? '#10b981' : avanceTotal >= 50 ? '#3b82f6' : '#ef4444',
+                          }}>
+                            {avanceTotal}%
+                          </span>
+                        </div>
+                        <BarraProgreso
+                          porcentaje={avanceTotal}
+                          cantidad={0}
+                          cantidadProyectada={0}
+                          showLabel={false}
+                          className="proyecto-barra-progreso"
+                        />
+                      </div>
+                    );
+                  })()
+                }
 
                 {/* Chips de intervenciones */}
                 {intervenciones.length > 0 && (

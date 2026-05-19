@@ -19,6 +19,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
   const [contratos, setContratos] = useState([]);
   const [contratoSeleccionado, setContratoSeleccionado] = useState('');
   const [infoContrato, setInfoContrato] = useState(null);
+  const [loteSeleccionado, setLoteSeleccionado] = useState('');
   const [fechaInicial, setFechaInicial] = useState('');
   const [displayFechaInicial, setDisplayFechaInicial] = useState('');
   const fechaInicialPickerRef = useRef(null);
@@ -33,6 +34,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
     if (isOpen) {
       setContratoSeleccionado('');
       setInfoContrato(null);
+      setLoteSeleccionado('');
       setFechaInicial('');
       setDisplayFechaInicial('');
       setCantidadProyectada('');
@@ -65,6 +67,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
 
   const handleContratoChange = (id) => {
     setContratoSeleccionado(id);
+    setLoteSeleccionado('');
     setError(null);
     if (!id) { setInfoContrato(null); return; }
     const c = contratos.find(x => x._id === id);
@@ -74,22 +77,66 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
   const handleGuardar = async () => {
     setError(null);
     if (!contratoSeleccionado) { setError('Selecciona un contrato'); return; }
+    if (!loteSeleccionado) { setError('Selecciona un lote'); return; }
     if (!fechaInicial) { setError('Selecciona la fecha inicial'); return; }
     const cantNum = Number(cantidadProyectada);
     if (!cantidadProyectada || isNaN(cantNum) || cantNum <= 0) {
       setError('Ingresa la cantidad proyectada (mayor a 0)');
       return;
     }
+
+    // ── Buscar el lote objeto completo para normalizar ──────────────
+    const loteCompleto = (infoContrato?.lotes || []).find(l => {
+      const loteId = String(l?._id || l?.id || '');
+      return loteId === String(loteSeleccionado);
+    });
+
+    if (!loteCompleto) {
+      setError('Error interno: No se encontró el lote seleccionado');
+      return;
+    }
+
+    // ── Normalizar lote a objeto {codigo, nombre} ──────────────────
+    const loteNormalizado = {
+      codigo: String(loteCompleto?.codigo || loteCompleto?.nombre || loteSeleccionado).trim(),
+      nombre: String(loteCompleto?.nombre || loteCompleto?.codigo || loteSeleccionado).trim(),
+    };
+
+    if (!loteNormalizado.nombre) {
+      setError('Error: El lote no tiene nombre válido');
+      return;
+    }
+
+    // ── Normalizar actividad si existe ────────────────────────────
+    const actividadContrato = infoContrato?.actividades?.[0];
+    const actividadNormalizada = actividadContrato
+      ? {
+        codigo: String(actividadContrato?.actividad?.codigo || actividadContrato?.codigo || '').trim(),
+        nombre: String(actividadContrato?.actividad?.nombre || actividadContrato?.nombre || '').trim(),
+        unidad: String(actividadContrato?.actividad?.unidad_medida || actividadContrato?.actividad?.unidad || actividadContrato?.unidad || 'hectareas').trim(),
+      }
+      : null;
+
     try {
       setGuardando(true);
       const fechaISO = new Date(fechaInicial + 'T12:00:00.000Z').toISOString();
       const datos = {
         contrato_id: contratoSeleccionado,
+        lote: loteNormalizado,
         fecha_inicial: fechaISO,
         cantidad_proyectada: cantNum,
         valor_proyectado: Number(valorProyectado) || 0,
         observaciones: observaciones.trim(),
       };
+
+      // Si existe actividad normalizada, incluirla
+      if (actividadNormalizada?.nombre) {
+        datos.actividad = actividadNormalizada;
+      }
+
+      // Debug: Log del payload
+      console.log('📤 PAYLOAD PROGRAMACION:', JSON.stringify(datos, null, 2));
+
       await onSave(datos);
     } catch (err) {
       setError(getMensajeError(err));
@@ -125,7 +172,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
     fontWeight: 500, marginRight: 4, marginBottom: 4,
   };
 
-  const isDisabled = guardando || loading || !contratoSeleccionado || !fechaInicial || !cantidadProyectada;
+  const isDisabled = guardando || loading || !contratoSeleccionado || !loteSeleccionado || !fechaInicial || !cantidadProyectada;
 
   return (
     <div
@@ -307,6 +354,45 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                   })}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* SELECTOR DE LOTE */}
+          {infoContrato && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelSt}>
+                Lote *{' '}
+                <span style={{ color: '#94a3b8', fontWeight: 400 }}>
+                  ({(infoContrato.lotes || []).length} disponible{(infoContrato.lotes || []).length !== 1 ? 's' : ''})
+                </span>
+              </label>
+              {(infoContrato.lotes || []).length === 0 ? (
+                <div style={{ padding: 10, color: '#dc2626', fontSize: 13, background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca' }}>
+                  ⚠️ Este contrato no tiene lotes asignados.
+                </div>
+              ) : (
+                <select
+                  value={loteSeleccionado}
+                  onChange={(e) => setLoteSeleccionado(e.target.value)}
+                  disabled={guardando}
+                  style={{
+                    ...inputSt,
+                    cursor: guardando ? 'not-allowed' : 'pointer',
+                    appearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    paddingRight: '36px',
+                  }}
+                >
+                  <option value="">— Selecciona un lote —</option>
+                  {(infoContrato.lotes || []).map((l, idx) => (
+                    <option key={l?._id || idx} value={l?._id || ''}>
+                      {l?.nombre || l?.codigo || `Lote ${idx + 1}`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 
