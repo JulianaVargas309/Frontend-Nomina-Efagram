@@ -1,5 +1,5 @@
 /* ======================================================
-   RESET — neutraliza cualquier estilo global del proyecto
+   RESET — neutraliza estilos globales solo dentro de cards
 ====================================================== */
 
 .zonas-card *,
@@ -27,18 +27,24 @@
   min-height: 0;
   background: #f4f6f9;
   height: 100%;
+  max-width: 100%;
 }
 
 /* ======================================================
-   CARDS SUPERIORES
+   TARJETAS SUPERIORES
 ====================================================== */
 
 .territorial-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   flex-shrink: 0;
   margin-bottom: 14px;
+  max-width: 100%;
+}
+
+.fincas-stats-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .territorial-stat-card {
@@ -50,6 +56,7 @@
   gap: 16px;
   border: 1px solid #e8edf2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  min-width: 0;
 }
 
 .territorial-stat-icon {
@@ -63,17 +70,56 @@
   border: 2px solid;
 }
 
-.territorial-stat-icon.icon-green { background: #f0faf4; border-color: #16a34a; color: #16a34a; }
-.territorial-stat-icon.icon-blue  { background: #f0f7ff; border-color: #2563eb; color: #2563eb; }
-.territorial-stat-icon.icon-red   { background: #fff0f0; border-color: #dc2626; color: #dc2626; }
+.territorial-stat-icon.icon-green {
+  background: #f0faf4;
+  border-color: #16a34a;
+  color: #16a34a;
+}
 
-.territorial-stat-icon svg { stroke: currentColor; }
+.territorial-stat-icon.icon-blue {
+  background: #f0f7ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
 
-.territorial-stat-text p  { margin: 0; font-size: 13px; color: #6b7280; font-weight: 500; }
-.territorial-stat-text h3 { margin: 2px 0 0; font-size: 22px; font-weight: 700; color: #111827; line-height: 1; }
+.territorial-stat-icon.icon-red {
+  background: #fff0f0;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.territorial-stat-icon.icon-teal {
+  background: #f0fdfa;
+  border-color: #0d9488;
+  color: #0d9488;
+}
+
+.territorial-stat-icon svg {
+  stroke: currentColor;
+}
+
+.territorial-stat-text {
+  min-width: 0;
+}
+
+.territorial-stat-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.territorial-stat-text h3 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
 
 /* ======================================================
-   CARD TABLA
+   CARD PRINCIPAL
 ====================================================== */
 
 .zonas-card {
@@ -88,6 +134,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 0;
   margin-bottom: 20px;
+  max-width: 100%;
 }
 
 /* ======================================================
@@ -122,7 +169,7 @@
 }
 
 /* ======================================================
-   BUSCADOR
+   BUSCADOR GENERAL
 ====================================================== */
 
 .zonas-search {
@@ -135,18 +182,22 @@
   padding: 9px 14px;
   color: #9ca3af;
   width: 260px;
+  min-width: 0;
 }
 
 .zonas-search input {
   border: none;
   outline: none;
   width: 100%;
+  min-width: 0;
   background: transparent;
   font-size: 14px;
   color: #111827;
 }
 
-.zonas-search input::placeholder { color: #9ca3af; }
+.zonas-search input::placeholder {
+  color: #9ca3af;
+}
 
 /* ======================================================
    BOTÓN PRIMARIO
@@ -169,24 +220,47 @@
   transition: background 0.2s ease;
 }
 
-.btn-primary:hover { background: #15803d !important; }
-.btn-primary:disabled { opacity: 0.6 !important; cursor: not-allowed !important; }
+.btn-primary:hover {
+  background: #15803d !important;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
 
 /* ======================================================
-   TABLA CON SCROLL
+   TABLA
 ====================================================== */
 
 .zonas-table-scroll {
   flex: 1;
+  width: 100%;
+  max-width: 100%;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
-.zonas-table-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-.zonas-table-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-.zonas-table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.zonas-table-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.zonas-table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.zonas-table-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.zonas-table-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.zonas-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 
 .zonas-table-grid {
   width: 100%;
@@ -216,14 +290,24 @@
   height: 52px;
 }
 
-.zonas-table-grid tbody tr:hover { background: #fafcff; }
+.zonas-table-grid tbody tr:hover {
+  background: #fafcff;
+}
 
-/* ── Anchos de columna ── */
-.th-code    { width: 170px; }
-.th-name    { width: 270px; }
-.th-status { width: 199px; padding-right: 32px !important; }
+/* Columnas */
+.th-code {
+  width: 170px;
+}
 
-/* ── Acciones: centrado tanto en th como en td ── */
+.th-name {
+  width: 270px;
+}
+
+.th-status {
+  width: 199px;
+  padding-right: 32px !important;
+}
+
 .th-actions {
   width: 120px;
   text-align: center !important;
@@ -244,14 +328,21 @@
   gap: 6px;
 }
 
+/* Código siempre visible */
+.zonas-table-grid .th-code,
+.zonas-table-grid td:first-child {
+  display: table-cell;
+}
+
 /* ======================================================
-   NOMBRE — pin icono
+   NOMBRE — ICONO
 ====================================================== */
 
 .zona-name-cell {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .zona-pin-icon {
@@ -267,7 +358,9 @@
   color: #16a34a;
 }
 
-.zona-pin-icon svg { stroke: #16a34a; }
+.zona-pin-icon svg {
+  stroke: #16a34a;
+}
 
 /* ======================================================
    BADGES
@@ -371,7 +464,9 @@
   padding: 40px;
 }
 
-.territorial-error { color: #dc2626; }
+.territorial-error {
+  color: #dc2626;
+}
 
 /* ======================================================
    MODAL
@@ -402,8 +497,15 @@
 }
 
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
@@ -416,8 +518,18 @@
   z-index: 10;
 }
 
-.modal-title   { margin: 0; font-size: 18px; font-weight: 700; color: #111827; }
-.modal-subtitle { margin: 4px 0 0; font-size: 13px; color: #6b7280; }
+.modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modal-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
 
 .modal-close-btn {
   width: 32px !important;
@@ -443,7 +555,9 @@
   color: #111827 !important;
 }
 
-.modal-close-btn:hover { background: #f3f4f6 !important; }
+.modal-close-btn:hover {
+  background: #f3f4f6 !important;
+}
 
 .modal-body {
   display: flex;
@@ -456,13 +570,34 @@
   min-height: 0;
 }
 
-.modal-body::-webkit-scrollbar { width: 6px; }
-.modal-body::-webkit-scrollbar-track { background: transparent; }
-.modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-.modal-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
 
-.field { display: flex; flex-direction: column; gap: 7px; }
-.field span { font-size: 14px; font-weight: 600; color: #374151; }
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
 
 .field input,
 .field select {
@@ -478,9 +613,14 @@
   box-sizing: border-box;
 }
 
-.field input::placeholder { color: #9ca3af; }
+.field input::placeholder {
+  color: #9ca3af;
+}
+
 .field input:focus,
-.field select:focus { border-color: #16a34a; }
+.field select:focus {
+  border-color: #16a34a;
+}
 
 .form-error {
   font-size: 13px;
@@ -514,7 +654,9 @@
   transition: background 0.15s ease;
 }
 
-.btn-modal-cancel:hover { background: #f3f4f6 !important; }
+.btn-modal-cancel:hover {
+  background: #f3f4f6 !important;
+}
 
 .btn-modal-submit {
   padding: 11px 32px !important;
@@ -528,28 +670,17 @@
   transition: background 0.15s ease;
 }
 
-.btn-modal-submit:hover   { background: #15803d !important; }
-.btn-modal-submit:disabled { opacity: 0.6 !important; cursor: not-allowed !important; }
-
-/* ======================================================
-   RESPONSIVE
-====================================================== */
-
-@media (max-width: 1024px) {
-  .territorial-stats { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .zonas-search { width: 200px; }
-  .zonas-card { max-height: calc(100vh - 260px); }
+.btn-modal-submit:hover {
+  background: #15803d !important;
 }
 
-
-@media (max-width: 480px) {
-  .territorial-stats { grid-template-columns: 1fr; }
-  .th-code, .zonas-table-grid td:first-child { display: none; }
-  .zonas-card { max-height: calc(100vh - 320px); }
+.btn-modal-submit:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
 }
 
 /* ======================================================
-   MODAL DETALLE DE ZONA
+   MODAL DETALLE
 ====================================================== */
 
 .zdm-overlay {
@@ -594,13 +725,38 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.zdm-close svg { stroke: #4abe8a !important; color: #4abe8a !important; }
-.zdm-close:hover { background: #4abe8a !important; color: #fff !important; }
-.zdm-close:hover svg { stroke: #fff !important; color: #fff !important; }
+.zdm-close svg {
+  stroke: #4abe8a !important;
+  color: #4abe8a !important;
+}
 
-.zdm-header { margin-bottom: 20px; padding-right: 36px; }
-.zdm-title { font-size: 18px; font-weight: 700; color: #1a1a2e; margin: 0 0 3px; }
-.zdm-subtitle { font-size: 13px; color: #8a8fa8; margin: 0; }
+.zdm-close:hover {
+  background: #4abe8a !important;
+  color: #fff !important;
+}
+
+.zdm-close:hover svg {
+  stroke: #fff !important;
+  color: #fff !important;
+}
+
+.zdm-header {
+  margin-bottom: 20px;
+  padding-right: 36px;
+}
+
+.zdm-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 3px;
+}
+
+.zdm-subtitle {
+  font-size: 13px;
+  color: #8a8fa8;
+  margin: 0;
+}
 
 .zdm-name-card {
   display: flex;
@@ -624,11 +780,29 @@
   flex-shrink: 0;
 }
 
-.zdm-pin-wrap svg { stroke: #2fa86a !important; color: #2fa86a !important; }
+.zdm-pin-wrap svg {
+  stroke: #2fa86a !important;
+  color: #2fa86a !important;
+}
 
-.zdm-name-info { display: flex; flex-direction: column; gap: 2px; }
-.zdm-name { font-size: 16px; font-weight: 700; color: #1a1a2e; }
-.zdm-code { font-size: 13px; color: #8a8fa8; }
+.zdm-name-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.zdm-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  word-break: break-word;
+}
+
+.zdm-code {
+  font-size: 13px;
+  color: #8a8fa8;
+}
 
 .zdm-estado-box {
   background: #f8f9fb;
@@ -658,35 +832,42 @@
   width: fit-content;
 }
 
-.zdm-badge.active  { background: #e6f9ef; color: #1e9956; border: 1.5px solid #b2edd0; }
-.zdm-badge.inactive { background: #fdeaea; color: #c0392b; border: 1.5px solid #f5c6c6; }
+.zdm-badge.active {
+  background: #e6f9ef;
+  color: #1e9956;
+  border: 1.5px solid #b2edd0;
+}
+
+.zdm-badge.inactive {
+  background: #fdeaea;
+  color: #c0392b;
+  border: 1.5px solid #f5c6c6;
+}
 
 @keyframes zdm-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes zdm-slide-up {
-  from { opacity: 0; transform: translate(-50%, -46%); }
-  to   { opacity: 1; transform: translate(-50%, -50%); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* ======================================================
-   FINCAS — 4 stats cards
-====================================================== */
-
-.fincas-stats-4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.territorial-stat-icon.icon-teal {
-  background: #f0fdfa;
-  border-color: #0d9488;
-  color: #0d9488;
-}
-
-/* ======================================================
-   FINCAS — barra búsqueda + filtro
+   FINCAS — BUSCADOR + FILTRO
 ====================================================== */
 
 .fincas-search-bar {
@@ -696,6 +877,7 @@
   padding: 14px 20px;
   border-bottom: 1px solid #e8edf2;
   flex-shrink: 0;
+  max-width: 100%;
 }
 
 .fincas-search-input {
@@ -708,10 +890,12 @@
   border-radius: 10px;
   padding: 10px 14px;
   color: #6b7280;
+  min-width: 0;
 }
 
 .fincas-search-input input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
@@ -719,12 +903,15 @@
   color: #111827;
 }
 
-.fincas-search-input input::placeholder { color: #9ca3af; }
+.fincas-search-input input::placeholder {
+  color: #9ca3af;
+}
 
 .fincas-select-wrap {
   position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .fincas-select {
@@ -740,7 +927,9 @@
   min-width: 180px;
 }
 
-.fincas-select:focus { border-color: #16a34a; }
+.fincas-select:focus {
+  border-color: #16a34a;
+}
 
 .fincas-select-arrow {
   position: absolute;
@@ -750,7 +939,7 @@
 }
 
 /* ======================================================
-   FINCAS — estilos tabla
+   FINCAS — TABLA
 ====================================================== */
 
 .fincas-table th,
@@ -768,6 +957,7 @@
   font-weight: 600;
   color: #374151;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .finca-tree-icon {
@@ -794,6 +984,7 @@
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .finca-badge-inactiva {
@@ -807,66 +998,320 @@
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+/* ======================================================
+   RESPONSIVE — TABLET
+====================================================== */
 
-  .ubicacion-container,
-  .ubicaciones-container,
-  .territorial-container,
-  .content,
-  .page-content {
-    width: 100%;
-    max-width: 100%;
-    padding: 10px;
+@media (max-width: 1024px) {
+  .territorial-wrapper {
+    padding: 12px 20px 22px;
+  }
+
+  .territorial-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .fincas-stats-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .zonas-search {
+    width: 220px;
+  }
+}
+
+/* ======================================================
+   RESPONSIVE — MÓVIL
+   Tarjetas 2 arriba y 2 abajo, sin scroll horizontal
+====================================================== */
+
+@media (max-width: 768px) {
+  .territorial-wrapper {
+    padding: 12px 12px 22px;
     overflow-x: hidden;
   }
 
-  .map-container,
-  .map {
-    width: 100%;
-    height: 300px;
-  }
-
-  .cards-container,
-  .grid-container,
-  .ubicaciones-grid {
-    display: grid;
-    grid-template-columns: 1fr !important;
+  .territorial-stats,
+  .fincas-stats-4 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: initial !important;
+    grid-auto-columns: initial !important;
     gap: 12px;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    padding: 0;
+    margin-bottom: 18px;
+    scroll-snap-type: none !important;
   }
 
-  .filters,
-  .toolbar,
-  .actions {
-    display: flex;
-    flex-direction: column;
+  .territorial-stats::-webkit-scrollbar,
+  .fincas-stats-4::-webkit-scrollbar {
+    display: none;
+  }
+
+  .territorial-stats > *,
+  .fincas-stats-4 > *,
+  .territorial-stat-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100%;
+    scroll-snap-align: none !important;
+  }
+
+  .territorial-stat-card {
+    padding: 15px 12px !important;
+    border-radius: 18px !important;
     gap: 10px;
+    align-items: center;
+  }
+
+  .territorial-stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .territorial-stat-text {
+    min-width: 0;
+  }
+
+  .territorial-stat-text p {
+    font-size: 12px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .territorial-stat-text h3 {
+    font-size: 21px;
+    line-height: 1.1;
+  }
+
+  .zonas-card {
     width: 100%;
+    max-width: 100%;
+    max-height: none !important;
+    border-radius: 18px;
   }
 
-  .filters input,
-  .filters select,
-  .toolbar input,
-  .toolbar select,
-  .actions button {
+  .zonas-card-header {
+    padding: 18px 18px 14px !important;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .zonas-card-title {
+    font-size: 20px !important;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .zonas-card-actions {
     width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .table-container,
-  .table-responsive {
+  .zonas-card-actions .zonas-search,
+  .zonas-card-actions .btn-primary {
+    width: 100% !important;
+  }
+
+  .zonas-search {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .btn-primary {
+    justify-content: center !important;
+    min-height: 44px;
+  }
+
+  .fincas-search-bar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .fincas-search-input,
+  .fincas-select-wrap,
+  .fincas-select {
     width: 100%;
-    overflow-x: auto;
+    max-width: 100%;
   }
 
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+  .fincas-select {
+    min-width: 0;
+    min-height: 44px;
   }
 
+  .zonas-table-scroll {
+    overflow-x: auto !important;
+  }
+
+  .zonas-table-grid {
+    min-width: 680px !important;
+  }
+
+  .zonas-table-grid th,
+  .zonas-table-grid td {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    font-size: 13px !important;
+  }
+
+  .zonas-table-grid .th-code,
+  .zonas-table-grid td:first-child {
+    display: table-cell !important;
+    width: 120px !important;
+    min-width: 120px !important;
+  }
+
+  .th-name {
+    min-width: 220px;
+  }
+
+  .th-status {
+    min-width: 130px;
+  }
+
+  .th-actions {
+    min-width: 120px;
+  }
+
+  .modal-backdrop {
+    padding: 14px;
+    align-items: center;
+  }
+
+  .modal {
+    max-height: 82dvh;
+    border-radius: 14px;
+  }
+
+  .modal-header {
+    padding: 18px 18px 14px;
+  }
+
+  .modal-body {
+    padding: 16px 18px 18px;
+  }
+
+  .modal-actions {
+    padding: 14px 18px 18px;
+    flex-direction: column-reverse;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-submit {
+    width: 100% !important;
+    justify-content: center !important;
+  }
 }
 
+/* ======================================================
+   RESPONSIVE — MÓVIL PEQUEÑO
+====================================================== */
 
+@media (max-width: 480px) {
+  .territorial-wrapper {
+    padding: 10px 10px 20px;
+  }
 
+  .territorial-stats,
+  .fincas-stats-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-columns: initial !important;
+    gap: 10px;
+    overflow-x: visible !important;
+  }
 
+  .territorial-stats > *,
+  .fincas-stats-4 > *,
+  .territorial-stat-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .territorial-stat-card {
+    padding: 13px 10px !important;
+    gap: 9px;
+  }
+
+  .territorial-stat-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .territorial-stat-text p {
+    font-size: 11.5px;
+  }
+
+  .territorial-stat-text h3 {
+    font-size: 20px;
+  }
+
+  .zonas-card-header {
+    padding: 16px 16px 12px !important;
+  }
+
+  .zonas-card-title {
+    font-size: 19px !important;
+  }
+
+  .fincas-search-bar {
+    padding: 12px 14px;
+  }
+
+  .zonas-table-grid {
+    min-width: 640px !important;
+  }
+
+  .zonas-table-grid .th-code,
+  .zonas-table-grid td:first-child {
+    display: table-cell !important;
+    width: 110px !important;
+    min-width: 110px !important;
+  }
+
+  .finca-codigo-badge {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .zdm-panel {
+    width: calc(100% - 24px);
+    padding: 24px 22px 20px;
+  }
+}
+
+/* ======================================================
+   RESPONSIVE — EXTRA PEQUEÑO
+====================================================== */
+
+@media (max-width: 390px) {
+  .territorial-stat-card {
+    padding: 12px 9px !important;
+    gap: 8px;
+  }
+
+  .territorial-stat-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .territorial-stat-text p {
+    font-size: 11px;
+  }
+
+  .territorial-stat-text h3 {
+    font-size: 19px;
+  }
+}

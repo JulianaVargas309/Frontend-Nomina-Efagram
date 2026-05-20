@@ -7,6 +7,8 @@ import {
   getAsignaciones,
   cancelarAsignacion,
 } from '../services/subproyectosService';
+import { getEstadoDistribucion } from '../utils/porcentajeUtils';
+import { usePorcentajesLocales } from '../hooks/usePorcentajesLocales';
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
@@ -23,6 +25,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
+  TrendingUp,
 } from 'lucide-react';
 
 const ErrorBanner = ({ errors }) => {
@@ -191,6 +194,7 @@ const SubproyectoModal = ({
     fecha_inicio: '',
     fecha_fin_estimada: '',
     observaciones: '',
+    porcentaje_distribuido: 0,
   });
 
   const [displayFechas, setDisplayFechas] = useState({
@@ -242,6 +246,7 @@ const SubproyectoModal = ({
             fecha_inicio: subproyecto.fecha_inicio?.slice(0, 10) ?? '',
             fecha_fin_estimada: subproyecto.fecha_fin_estimada?.slice(0, 10) ?? '',
             observaciones: subproyecto.observaciones ?? '',
+            porcentaje_distribuido: subproyecto.porcentaje_distribuido ?? 0,
           });
 
           setDisplayFechas({
@@ -249,7 +254,13 @@ const SubproyectoModal = ({
             fecha_fin_estimada: formatIsoToDisplay(subproyecto.fecha_fin_estimada),
           });
 
-          setNucleosSel(subproyecto.nucleos?.map((n) => n._id ?? n) ?? []);
+          // ✅ CAMBIO 3: Soportar núcleos como objetos con id, _id, value o codigo
+          setNucleosSel(
+            subproyecto.nucleos?.map((n) => {
+              if (typeof n === 'string') return n;
+              return String(n.id ?? n._id ?? n.value ?? n.codigo ?? '');
+            }).filter(Boolean) ?? []
+          );
           setSelectedCuadrillas((subproyecto.cuadrillas ?? []).map((c) => c._id ?? c));
 
           const asRes = await getAsignaciones({ subproyecto: subproyecto._id });
@@ -262,6 +273,7 @@ const SubproyectoModal = ({
             fecha_inicio: '',
             fecha_fin_estimada: '',
             observaciones: '',
+            porcentaje_distribuido: 0,
           });
           setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
           setNucleosSel([]);
@@ -279,10 +291,14 @@ const SubproyectoModal = ({
     cargar();
   }, [isOpen, proyecto, subproyecto, modoEditar, subproyectosActuales]);
 
+  // ✅ CAMBIO 4: Toggle de núcleos mejorado con comparación segura
   const toggleNucleo = (id) => {
+    const safeId = String(id);
     setFormErrors([]);
     setNucleosSel((prev) =>
-      prev.includes(id) ? prev.filter((n) => n !== id) : [...prev, id]
+      prev.map(String).includes(safeId)
+        ? prev.filter((n) => String(n) !== safeId)
+        : [...prev, safeId]
     );
   };
 
@@ -450,14 +466,79 @@ const SubproyectoModal = ({
     try {
       setLoading(true);
 
+      // ✅ CAMBIO 2: Normalizar núcleos como objetos
+      const nucleosNormalizados = nucleosSel
+        .map((id) => {
+          const nucleo = nucleos.find((n) => {
+            const nucleoId = n._id ?? n.id ?? n.value ?? n.codigo;
+            return String(nucleoId) === String(id);
+          });
+
+          if (!nucleo) return null;
+
+          return {
+            id: String(nucleo._id ?? nucleo.id ?? nucleo.value ?? nucleo.codigo ?? ''),
+            codigo: String(nucleo.codigo ?? nucleo.code ?? ''),
+            nombre: String(nucleo.nombre ?? nucleo.name ?? ''),
+          };
+        })
+        .filter(Boolean);
+
+      // Validar que todos los núcleos se normalizaron correctamente
+      if (nucleosSel.length > 0 && nucleosNormalizados.length !== nucleosSel.length) {
+        setFormErrors(['Uno o más núcleos seleccionados no tienen información válida']);
+        setLoading(false);
+        return;
+      }
+
+      // Normalizar supervisor si existe
+      const supervisorSeleccionado = form.supervisor ? personas.find((p) => {
+        const personaId = p._id ?? p.id ?? p.value ?? p.cc ?? p.documento ?? p.num_doc ?? p.cedula;
+        return String(personaId) === String(form.supervisor);
+      }) : null;
+
       const payload = {
-        ...form,
         codigo: form.codigo.trim().toUpperCase(),
         nombre: form.nombre.trim(),
-        proyecto: proyecto._id,
-        nucleos: nucleosSel,
+        proyecto: proyecto._id ?? proyecto.id,
+        nucleos: nucleosNormalizados,
         cuadrillas: selectedCuadrillas,
+        fecha_inicio: form.fecha_inicio || undefined,
+        fecha_fin_estimada: form.fecha_fin_estimada || undefined,
+        observaciones: form.observaciones?.trim() || undefined,
+        porcentaje_distribuido: Number(form.porcentaje_distribuido) || 0,
       };
+
+      // 🔍 DEBUG: Ver payload que se envía al backend
+      console.log('📤 Payload enviando al backend:', payload);
+
+      // Solo agregar supervisor si hay uno seleccionado
+      if (supervisorSeleccionado) {
+        payload.supervisor = {
+          nombre: String(
+            supervisorSeleccionado.nombre ??
+            supervisorSeleccionado.name ??
+            supervisorSeleccionado.nombres ??
+            `${supervisorSeleccionado.nombres ?? ''} ${supervisorSeleccionado.apellidos ?? ''}`.trim() ??
+            supervisorSeleccionado.nombre_completo ??
+            ''
+          ).trim(),
+          documento: String(
+            supervisorSeleccionado.documento ??
+            supervisorSeleccionado.cc ??
+            supervisorSeleccionado.num_doc ??
+            supervisorSeleccionado.cedula ??
+            ''
+          ).trim(),
+        };
+      }
+
+      // Validar proyecto
+      if (!payload.proyecto) {
+        setFormErrors(['No se encontró el proyecto seleccionado']);
+        setLoading(false);
+        return;
+      }
 
       let subId;
 
@@ -701,7 +782,10 @@ const SubproyectoModal = ({
                 <SearchableSelect
                   options={personas}
                   value={form.supervisor}
-                  onChange={(id) => setForm((p) => ({ ...p, supervisor: id }))}
+                  onChange={(id) => {
+                    setFormErrors([]);
+                    setForm((p) => ({ ...p, supervisor: id }));
+                  }}
                   placeholder="— Seleccione supervisor (opcional) —"
                   searchPlaceholder="Buscar por nombre o documento…"
                   disabled={loadData}
@@ -733,7 +817,7 @@ const SubproyectoModal = ({
                   }
                 />
               </div>
-              
+
               <div className="modal-grid">
                 {renderDateField({
                   label: 'Fecha Inicio',
@@ -779,46 +863,50 @@ const SubproyectoModal = ({
                       gap: 8,
                     }}
                   >
-                    {nucleos.map((n) => (
-                      <div
-                        key={n._id}
-                        onClick={() => toggleNucleo(n._id)}
-                        style={{
-                          padding: '10px 14px',
-                          border: `1.5px solid ${nucleosSel.includes(n._id) ? '#1f8f57' : '#e6e8ef'
-                            }`,
-                          background: nucleosSel.includes(n._id) ? '#f0faf4' : '#fff',
-                          borderRadius: 10,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                        }}
-                      >
+                    {/* ✅ CAMBIO 5: Render mejorado de núcleos soportando múltiples formatos de ID */}
+                    {nucleos.map((n) => {
+                      const nucleoId = String(n._id ?? n.id ?? n.value ?? n.codigo ?? '');
+                      const selected = nucleosSel.map(String).includes(nucleoId);
+
+                      return (
                         <div
+                          key={nucleoId}
+                          onClick={() => toggleNucleo(nucleoId)}
                           style={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: 4,
-                            border: `2px solid ${nucleosSel.includes(n._id) ? '#1f8f57' : '#cbd5e1'
-                              }`,
-                            background: nucleosSel.includes(n._id) ? '#1f8f57' : '#fff',
+                            padding: '10px 14px',
+                            border: `1.5px solid ${selected ? '#1f8f57' : '#e6e8ef'}`,
+                            background: selected ? '#f0faf4' : '#fff',
+                            borderRadius: 10,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
+                            gap: 8,
                           }}
                         >
-                          {nucleosSel.includes(n._id) && (
-                            <CheckCircle2 size={10} color="#fff" strokeWidth={3} />
-                          )}
+                          <div
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: 4,
+                              border: `2px solid ${selected ? '#1f8f57' : '#cbd5e1'}`,
+                              background: selected ? '#1f8f57' : '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {selected && (
+                              <CheckCircle2 size={10} color="#fff" strokeWidth={3} />
+                            )}
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
+                            {n.nombre ?? n.name ?? 'Sin nombre'}
+                          </span>
                         </div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
-                          {n.nombre}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -854,12 +942,42 @@ const SubproyectoModal = ({
                 <textarea
                   name="observaciones"
                   value={form.observaciones}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, observaciones: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setFormErrors([]);
+                    setForm((p) => ({ ...p, observaciones: e.target.value }));
+                  }}
                   placeholder="Observaciones opcionales..."
                   rows={3}
                 />
+              </div>
+
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <TrendingUp size={13} /> Porcentaje distribuido del proyecto
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input
+                    type="number"
+                    name="porcentaje_distribuido"
+                    value={form.porcentaje_distribuido}
+                    onChange={(e) => {
+                      setFormErrors([]);
+                      const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
+                      setForm((p) => ({ ...p, porcentaje_distribuido: val }));
+                    }}
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', minWidth: 40 }}>
+                    {Number(form.porcentaje_distribuido).toFixed(1)}%
+                  </span>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
+                  Asigna qué porcentaje del proyecto corresponde a este subproyecto. La suma total de todos los subproyectos debe ser 100%.
+                </p>
               </div>
 
               <SectionHeader

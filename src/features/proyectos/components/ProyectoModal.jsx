@@ -254,6 +254,57 @@ const getNextProyectoCode = (proyectos = [], prefijo = "PRY") => {
   return `${prefijo}-${padProyectoNumber(maxNumber + 1)}`;
 };
 
+// ── Helpers de texto seguro para evitar renderizar objetos ──
+const getText = (value, fallback = 'Sin dato') => {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value);
+  }
+
+  if (typeof value === 'object') {
+    return String(
+      value.nombre ??
+      value.name ??
+      value.razon_social ??
+      value.nombre_comercial ??
+      value.codigo ??
+      value.code ??
+      value.documento ??
+      value.cc ??
+      fallback
+    );
+  }
+
+  return fallback;
+};
+
+const getCodeNameText = (value, fallback = 'Sin dato') => {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value);
+  }
+
+  if (typeof value === 'object') {
+    const codigo = value.codigo ?? value.code ?? '';
+    const nombre =
+      value.nombre ??
+      value.name ??
+      value.razon_social ??
+      value.nombre_comercial ??
+      '';
+
+    if (codigo && nombre) return `${codigo} - ${nombre}`;
+    if (nombre) return String(nombre);
+    if (codigo) return String(codigo);
+
+    return fallback;
+  }
+
+  return fallback;
+};
+
 const ProyectoModal = ({
   isOpen,
   onClose,
@@ -679,10 +730,7 @@ const ProyectoModal = ({
       0
     );
 
-    const clienteNombre =
-      proyecto.cliente?.nombre ??
-      proyecto.cliente?.razon_social ??
-      "Sin cliente";
+    const clienteNombre = getText(proyecto.cliente, "Sin cliente");
 
     const responsableNombre = proyecto.responsable
       ? (`${proyecto.responsable.nombres ?? ""} ${proyecto.responsable.apellidos ?? ""}`.trim() || "—")
@@ -890,7 +938,7 @@ const ProyectoModal = ({
               <InfoRow
                 icon={MapPin}
                 label="Zona"
-                value={proyecto.zona?.nombre ?? proyecto.zona ?? "Sin zona"}
+                value={getCodeNameText(proyecto.zona, 'Sin zona')}
               />
               <InfoRow
                 icon={Tag}

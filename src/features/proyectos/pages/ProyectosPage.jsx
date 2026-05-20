@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProyectos, deleteProyecto } from "../services/proyectosService";
 import { getActividadesProyecto } from "../services/subproyectosService";
+import programacionService from "../../programacion/services/programacionService";
+import BarraProgreso from "../../programacion/components/BarraProgreso";
 import "../../../assets/styles/proyectos.css";
 import ProyectoModal from "../components/ProyectoModal";
 import DashboardLayout from "../../../app/layouts/DashboardLayout";
@@ -24,6 +26,133 @@ const INTERVENCION_LABEL = {
   establecimiento: "Establecimiento", mantenimiento: "Mantenimiento", no_programadas: "No programadas",
 };
 
+// ── Helpers de texto seguro para evitar renderizar objetos ──
+const getText = (value, fallback = 'Sin dato') => {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value);
+  }
+
+  if (typeof value === 'object') {
+    return String(
+      value.nombre ??
+      value.name ??
+      value.razon_social ??
+      value.nombre_comercial ??
+      value.codigo ??
+      value.code ??
+      value.documento ??
+      value.cc ??
+      fallback
+    );
+  }
+
+  return fallback;
+};
+
+const getCodeNameText = (value, fallback = 'Sin dato') => {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value);
+  }
+
+  if (typeof value === 'object') {
+    const codigo = value.codigo ?? value.code ?? '';
+    const nombre =
+      value.nombre ??
+      value.name ??
+      value.razon_social ??
+      value.nombre_comercial ??
+      '';
+
+    if (codigo && nombre) return `${codigo} - ${nombre}`;
+    if (nombre) return String(nombre);
+    if (codigo) return String(codigo);
+
+    return fallback;
+  }
+
+  return fallback;
+};
+
+// ── Helpers de normalización para IDs y datos ──
+const getId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return String(value._id ?? value.id ?? value.value ?? "");
+};
+
+const normalizeList = (response) => {
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.programaciones)) return response.programaciones;
+  if (Array.isArray(response?.contratos)) return response.contratos;
+  if (Array.isArray(response)) return response;
+  return [];
+};
+
+const getProyectoIdFromContrato = (contrato) => {
+  return getId(
+    contrato?.proyecto_id ??
+    contrato?.proyecto ??
+    contrato?.subproyecto?.proyecto_id ??
+    contrato?.subproyecto?.proyecto
+  );
+};
+
+const getContratoIdFromProgramacion = (programacion) => {
+  return getId(
+    programacion?.contrato_id ??
+    programacion?.contrato?._id ??
+    programacion?.contrato?.id ??
+    programacion?.contrato
+  );
+};
+
+const calcularAvanceNumerico = (programacionesDelProyecto) => {
+  if (!Array.isArray(programacionesDelProyecto) || programacionesDelProyecto.length === 0) {
+    return 0;
+  }
+
+  let totalProyectado = 0;
+  let totalEjecutado = 0;
+
+  programacionesDelProyecto.forEach((prog) => {
+    totalProyectado += Number(prog.cantidad_proyectada) || 0;
+
+    // Soportar diferentes estructuras de registros diarios
+    if (Array.isArray(prog.registros_diarios)) {
+      prog.registros_diarios.forEach((reg) => {
+        totalEjecutado += Number(reg.cantidad_ejecutada) || 0;
+      });
+    }
+
+    if (Array.isArray(prog.registrosDiarios)) {
+      prog.registrosDiarios.forEach((reg) => {
+        totalEjecutado += Number(reg.cantidad_ejecutada) || 0;
+      });
+    }
+
+    if (Array.isArray(prog.registros)) {
+      prog.registros.forEach((reg) => {
+        totalEjecutado += Number(reg.cantidad_ejecutada) || 0;
+      });
+    }
+
+    // Algunas programaciones pueden tener cantidad_ejecutada directa
+    totalEjecutado += Number(prog.cantidad_ejecutada) || 0;
+  });
+
+  if (totalProyectado <= 0) return 0;
+
+  return Math.min(
+    Math.round((totalEjecutado / totalProyectado) * 100),
+    100
+  );
+};
+
 // ── Componente principal ──────────────────────────────────
 const ProyectosPage = () => {
   const navigate = useNavigate();
@@ -32,6 +161,7 @@ const ProyectosPage = () => {
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [programacionesPorProyecto, setProgramacionesPorProyecto] = useState({});
 
   // modalState = { open: bool, modo: "crear"|"editar"|"ver", proyecto: obj|null }
   const [modalState, setModalState] = useState({ open: false, modo: "crear", proyecto: null });
@@ -42,6 +172,11 @@ const ProyectosPage = () => {
   const abrirEditar = (p) => setModalState({ open: true, modo: "editar", proyecto: p });
   const cerrarModal = () => setModalState(prev => ({ ...prev, open: false }));
 
+  // ── Helper: Calcular avance de proyecto basado en programaciones ──
+  const calcularAvanceProyecto = (programacionesDelProyecto) => {
+    return calcularAvanceNumerico(programacionesDelProyecto);
+  };
+
   // ── Cargar proyectos ──
   const cargarProyectos = async () => {
     try {
@@ -50,6 +185,7 @@ const ProyectosPage = () => {
       const response = await getProyectos();
       const data = response?.data?.success ? response.data.data : [];
       setProyectos(data);
+
       // Cargar actividades de todos los proyectos para los badges
       const map = {};
       await Promise.all(data.map(async (p) => {
@@ -59,6 +195,63 @@ const ProyectosPage = () => {
         } catch { map[p._id] = []; }
       }));
       setActividadesMap(map);
+
+      // ── Cargar programaciones y contratos para calcular avance dinámico ──
+      try {
+        const { getContratos } = await import("../../contratos/services/contratosService");
+        const [programacionesRes, contratosRes] = await Promise.all([
+          programacionService.getAll(),
+          getContratos(),
+        ]);
+
+        const progData = normalizeList(programacionesRes);
+        const contratosData = normalizeList(contratosRes);
+
+        // Crear mapa de contratos por proyecto
+        const contratosPorProyecto = {};
+
+        contratosData.forEach((contrato) => {
+          const proyectoId = getProyectoIdFromContrato(contrato);
+          const contratoId = getId(contrato);
+
+          if (!proyectoId || !contratoId) return;
+
+          if (!contratosPorProyecto[proyectoId]) {
+            contratosPorProyecto[proyectoId] = new Set();
+          }
+
+          contratosPorProyecto[proyectoId].add(String(contratoId));
+        });
+
+        // Crear mapa de programaciones por proyecto
+        const progMap = {};
+
+        data.forEach((proyecto) => {
+          const proyectoId = getId(proyecto);
+          const contratoIds = contratosPorProyecto[proyectoId] ?? new Set();
+
+          progMap[proyectoId] = progData.filter((prog) => {
+            const contratoId = getContratoIdFromProgramacion(prog);
+            return contratoId && contratoIds.has(String(contratoId));
+          });
+        });
+
+        console.log("✅ AVANCE PROYECTOS:", {
+          proyectos: data.length,
+          contratos: contratosData.length,
+          programaciones: progData.length,
+          contratosPorProyecto: Object.keys(contratosPorProyecto).length,
+          progMap: Object.entries(progMap).map(([id, progs]) => ({
+            proyectoId: id,
+            cantidadProgramaciones: progs.length
+          }))
+        });
+
+        setProgramacionesPorProyecto(progMap);
+      } catch (err) {
+        console.warn("⚠️ Error cargando programaciones para avance:", err);
+        setProgramacionesPorProyecto({});
+      }
     } catch (err) {
       console.error("Error cargando proyectos:", err);
       setError("No se pudieron cargar los proyectos.");
@@ -87,15 +280,21 @@ const ProyectosPage = () => {
   const activos = proyectos.filter(p => p.estado?.toUpperCase() === "ACTIVO").length;
   const totalLotes = proyectos.reduce((acc, p) => acc + (p.lotes?.length ?? p.cantidad_lotes ?? 0), 0);
   const avancePromedio = proyectos.length > 0
-    ? Math.round(proyectos.reduce((acc, p) => acc + (p.avance ?? 0), 0) / proyectos.length)
+    ? Math.round(
+      proyectos.reduce((acc, p) => {
+        const avanceProg = calcularAvanceProyecto(programacionesPorProyecto[p._id] || []);
+        return acc + (avanceProg || p.avance || 0);
+      }, 0) / proyectos.length
+    )
     : 0;
 
   // ── Filtro búsqueda ──
   const proyectosFiltrados = proyectos.filter(p => {
     const q = busqueda.toLowerCase();
+    const clienteTexto = getText(p.cliente, '').toLowerCase();
     return (
       p.nombre?.toLowerCase().includes(q) ||
-      p.cliente?.nombre?.toLowerCase().includes(q) ||
+      clienteTexto.includes(q) ||
       p.codigo?.toLowerCase().includes(q)
     );
   });
@@ -163,7 +362,7 @@ const ProyectosPage = () => {
             const actsProyecto = actividadesMap[proyecto._id] ?? [];
             const intervByObj = actsProyecto.reduce((acc, a) => {
               const id = a.intervencion?._id ?? a.intervencion ?? "sin_tipo";
-              const nombre = a.intervencion?.nombre ?? id;
+              const nombre = getText(a.intervencion, id);
               if (!acc[id]) acc[id] = { nombre, acts: [], monto: 0 };
               acc[id].acts.push(a);
               acc[id].monto += (a.precio_unitario || 0) * (a.cantidad_total || 0);
@@ -188,7 +387,7 @@ const ProyectosPage = () => {
                   <div className="proy-card-title-block">
                     <h3 className="proy-card-nombre">{proyecto.nombre}</h3>
                     <p className="proy-card-cliente">
-                      {proyecto.cliente?.nombre ?? proyecto.cliente?.razon_social ?? "Sin cliente"}
+                      {getText(proyecto.cliente, "Sin cliente")}
                     </p>
                   </div>
                   <span className={`proy-estado-chip proy-estado-chip--${estado?.toLowerCase()}`}>
@@ -196,14 +395,53 @@ const ProyectosPage = () => {
                   </span>
                 </div>
 
-                {/* Barra de avance */}
-                <div className="proy-avance-row">
-                  <span className="proy-avance-label">Avance</span>
-                  <span className="proy-avance-pct">{avance}%</span>
-                </div>
-                <div className="proy-avance-bar-bg">
-                  <div className="proy-avance-bar-fill" style={{ width: `${avance}%` }} />
-                </div>
+                {/* Barra de avance dinámica basada en programaciones */}
+                {
+                  (() => {
+                    const proyectoId = getId(proyecto);
+                    const programacionesProyecto = programacionesPorProyecto[proyectoId] || [];
+                    const avanceDinamico = calcularAvanceProyecto(programacionesProyecto);
+
+                    const avanceTotal = programacionesProyecto.length > 0
+                      ? avanceDinamico
+                      : Number(proyecto.avance) || 0;
+
+                    const hasProgramaciones = programacionesProyecto.length > 0;
+
+                    return (
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: 6,
+                        }}>
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: '#64748b',
+                          }}>
+                            Avance {hasProgramaciones ? `(${programacionesProyecto.length} programaciones)` : '(manual)'}
+                          </span>
+                          <span style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: avanceTotal >= 75 ? '#10b981' : avanceTotal >= 50 ? '#3b82f6' : '#ef4444',
+                          }}>
+                            {avanceTotal}%
+                          </span>
+                        </div>
+                        <BarraProgreso
+                          porcentaje={avanceTotal}
+                          cantidad={0}
+                          cantidadProyectada={0}
+                          showLabel={false}
+                          className="proyecto-barra-progreso"
+                        />
+                      </div>
+                    );
+                  })()
+                }
 
                 {/* Chips de intervenciones */}
                 {intervenciones.length > 0 && (

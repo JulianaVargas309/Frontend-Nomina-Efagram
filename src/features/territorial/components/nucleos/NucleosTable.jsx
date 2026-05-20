@@ -107,10 +107,7 @@ export default function NucleosTable({ nucleos = [], zonas = [], search = '', se
                             placeholder="Buscar núcleo..."
                         />
                     </div>
-                    <button className="btn-primary" onClick={() => setOpenCreate(true)}>
-                        <Plus size={16} />
-                        Nuevo Núcleo
-                    </button>
+                    
                 </div>
             </div>
 

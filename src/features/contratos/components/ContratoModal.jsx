@@ -3,7 +3,7 @@ import {
   FileText, MapPin, Layers, Wrench, Users,
   Search, X, Plus, PlusCircle, Pencil, Calendar, GitBranch, DollarSign,
   AlertCircle, UserCheck, UserX, ChevronDown, ChevronUp, Trash2,
-  ClipboardList, Settings2, UsersRound, FolderOpen, LayoutList,
+  ClipboardList, Settings2, UsersRound, FolderOpen, LayoutList, TrendingUp,
 } from 'lucide-react';
 import {
   getFincas,
@@ -204,6 +204,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     codigo: '', subproyecto: '', finca: '',
     fecha_inicio: '', fecha_fin: '',
     observaciones: '', estado: 'PENDIENTE',
+    porcentaje_distribuido: 0,
   });
 
   const [displayFechas, setDisplayFechas] = useState({
@@ -378,6 +379,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio: toDateInput(contrato.fecha_inicio),
         fecha_fin: toDateInput(contrato.fecha_fin),
         observaciones: contrato.observaciones ?? '',
+        porcentaje_distribuido: contrato.porcentaje_distribuido ?? 0,
         estado: contrato.estado ?? 'PENDIENTE',
       });
 
@@ -437,6 +439,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       fecha_fin: '',
       observaciones: '',
       estado: 'PENDIENTE',
+      porcentaje_distribuido: 0,
     });
     setLotes([]);
     setNuevoLote('');
@@ -565,9 +568,9 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         i !== cuadrillaIdx
           ? c
           : {
-              ...c,
-              miembros: c.miembros.filter((m) => String(getPersonaId(m)) !== String(pid)),
-            }
+            ...c,
+            miembros: c.miembros.filter((m) => String(getPersonaId(m)) !== String(pid)),
+          }
       )
     );
 
@@ -623,7 +626,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         const supervisorNormalizado = normalizarPersonaParaCuadrilla(c.supervisor);
 
         if (!supervisorNormalizado) {
-          return setError(`Cuadrilla ${i + 1}: el supervisor debe tener cédula y nombre`);
+          return setError(`Cuadrilla ${i + 1}: el líder debe tener cédula y nombre`);
         }
 
         if (!Array.isArray(c.miembros) || c.miembros.length === 0) {
@@ -647,14 +650,14 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
           ccs.add(miembro.cc);
 
           if (miembro.cc === supervisorNormalizado.cc) {
-            return setError(`Cuadrilla ${i + 1}: el supervisor no puede estar también como miembro`);
+            return setError(`Cuadrilla ${i + 1}: el líder no puede estar también como miembro`);
           }
         }
       }
 
       try {
         setSaving(true);
-        
+
         // ✅ CREACIÓN DE CUADRILLAS CORREGIDA
         const resultados = await Promise.all(
           cuadrillas.map((c, idx) => {
@@ -715,6 +718,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         cuadrillas: cuadrillaIds,
         fecha_inicio: form.fecha_inicio || null,
         fecha_fin: form.fecha_fin || null,
+        porcentaje_distribuido: Number(form.porcentaje_distribuido) || 0,
         observaciones: String(form.observaciones ?? '').trim(),
       };
 
@@ -1103,6 +1107,36 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                     onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} />
                 </div>
               </div>
+
+              <div className="form-section">
+                <div className="form-field">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <TrendingUp size={13} /> Porcentaje distribuido del subproyecto
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <input
+                      type="number"
+                      name="porcentaje_distribuido"
+                      value={form.porcentaje_distribuido}
+                      onChange={(e) => {
+                        const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
+                        setForm((p) => ({ ...p, porcentaje_distribuido: val }));
+                      }}
+                      placeholder="0"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', minWidth: 40 }}>
+                      {Number(form.porcentaje_distribuido).toFixed(1)}%
+                    </span>
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
+                    Asigna qué porcentaje del subproyecto corresponde a este contrato. La suma total de todos los contratos del subproyecto debe igualar el porcentaje del subproyecto.
+                  </p>
+                </div>
+              </div>
             </>
           )}
 
@@ -1265,7 +1299,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                 {cua.nombre.trim() || `Cuadrilla ${cuaIdx + 1}`}
                               </p>
                               <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>
-                                {cua.supervisor ? `Supervisor: ${cua.supervisor.nombres ?? cua.supervisor.name} ${cua.supervisor.apellidos ?? ''}` : 'Sin supervisor'} · {cua.miembros.length} miembro(s)
+                                {cua.supervisor ? `Líder: ${cua.supervisor.nombres ?? cua.supervisor.name} ${cua.supervisor.apellidos ?? ''}` : 'Sin líder'} · {cua.miembros.length} miembro(s)
                               </p>
                             </div>
                           </div>
@@ -1297,7 +1331,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                             {cua.supervisor && (
                               <div style={{ background: '#eff6ff', border: '1.5px solid #3b82f6', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div>
-                                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase' }}>⭐ Supervisor</p>
+                                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase' }}>⭐ Líder</p>
                                   <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700 }}>{cua.supervisor.nombres ?? cua.supervisor.name} {cua.supervisor.apellidos ?? ''}</p>
                                   <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>{cua.supervisor.tipo_doc} {cua.supervisor.num_doc ?? cua.supervisor.cc}</p>
                                 </div>
@@ -1333,7 +1367,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
                             <div>
                               <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
-                                
+
                               </p>
                               <div style={{ position: 'relative', marginBottom: 10 }}>
                                 <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
@@ -1363,7 +1397,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                                           <button onClick={() => seleccionarSupervisor(cuaIdx, p)}
                                             style={{ background: '#eff6ff', border: '1.5px solid #3b82f6', color: '#1d4ed8', padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <UserCheck size={12} /> Supervisor
+                                            <UserCheck size={12} /> Líder
                                           </button>
                                           <button onClick={() => agregarMiembro(cuaIdx, p)}
                                             style={{ background: '#f0faf4', border: '1.5px solid #1f8f57', color: '#1f8f57', padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
