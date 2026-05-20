@@ -14,8 +14,8 @@ import {
 } from '../services/contratosService';
 import SearchableSelect from "../../proyectos/components/SearchableSelect";
 import { getPersonal } from '../../proyectos/services/personalService';
-import httpClient from '../../../core/api/httpClient'; \nimport '../../../assets/styles/modal-responsive.css';
-
+import httpClient from '../../../core/api/httpClient';
+import '../../../assets/styles/modal-responsive.css';
 // ══════════════════════════════════════════════════════════════════
 // ✅ HELPERS DE NORMALIZACIÓN (AGREGADOS)
 // ══════════════════════════════════════════════════════════════════
