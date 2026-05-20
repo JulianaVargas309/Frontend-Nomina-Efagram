@@ -10,6 +10,7 @@ import {
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
+import CuadrillasSelectionModal from './CuadrillasSelectionModal';
 import { CalendarDays } from "lucide-react";
 import {
   FolderGit2,
@@ -199,6 +200,8 @@ const SubproyectoModal = ({
 
   const [nucleos, setNucleos] = useState([]);
   const [nucleosSel, setNucleosSel] = useState([]);
+  const [selectedCuadrillas, setSelectedCuadrillas] = useState([]);
+  const [cuadrillaModalOpen, setCuadrillaModalOpen] = useState(false);
   const [personas, setPersonas] = useState([]);
   const [actDisponibles, setActDisponibles] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
@@ -247,6 +250,7 @@ const SubproyectoModal = ({
           });
 
           setNucleosSel(subproyecto.nucleos?.map((n) => n._id ?? n) ?? []);
+          setSelectedCuadrillas((subproyecto.cuadrillas ?? []).map((c) => c._id ?? c));
 
           const asRes = await getAsignaciones({ subproyecto: subproyecto._id });
           setAsignaciones(asRes?.data?.data ?? []);
@@ -261,6 +265,7 @@ const SubproyectoModal = ({
           });
           setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
           setNucleosSel([]);
+          setSelectedCuadrillas([]);
           setAsignaciones([]);
           setNuevasAsigs([]);
         }
@@ -451,6 +456,7 @@ const SubproyectoModal = ({
         nombre: form.nombre.trim(),
         proyecto: proyecto._id,
         nucleos: nucleosSel,
+        cuadrillas: selectedCuadrillas,
       };
 
       let subId;
@@ -815,6 +821,32 @@ const SubproyectoModal = ({
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Users size={13} /> Cuadrillas
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setCuadrillaModalOpen(true)}
+                  style={{
+                    background: '#eff6ff',
+                    border: '1.5px solid #bfdbfe',
+                    color: '#2563eb',
+                    padding: '10px 16px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                  }}
+                >
+                  Seleccionar cuadrillas
+                </button>
+                <p style={{ margin: '8px 0 0', fontSize: 13, color: '#64748b' }}>
+                  {selectedCuadrillas.length > 0
+                    ? `${selectedCuadrillas.length} cuadrilla(s) seleccionada(s)`
+                    : 'Sin cuadrillas seleccionadas'}
+                </p>
               </div>
 
               <div className="form-group">
@@ -1206,6 +1238,12 @@ const SubproyectoModal = ({
         </div>
         <div style={{ padding: '16px 24px', borderTop: '1px solid #f0f2f5' }}>
           <ErrorBanner errors={formErrors} />
+          <CuadrillasSelectionModal
+            open={cuadrillaModalOpen}
+            selectedIds={selectedCuadrillas}
+            onConfirm={(ids) => setSelectedCuadrillas(ids)}
+            onClose={() => setCuadrillaModalOpen(false)}
+          />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <button

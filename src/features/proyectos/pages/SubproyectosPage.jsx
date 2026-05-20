@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../../app/layouts/DashboardLayout';
 import SubproyectoModal from '../components/SubproyectoModal';
@@ -47,6 +47,51 @@ const calcularTotalesHoras = (resumen) => {
   );
 };
 
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error rendering SubproyectosPage:', error, errorInfo);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.resetKey !== prevProps.resetKey && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            background: '#fee2e2',
+            border: '1px solid #fecaca',
+            borderRadius: 16,
+            padding: 24,
+            color: '#991b1b',
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Error al mostrar los subproyectos.</p>
+          <p style={{ margin: '12px 0 0', color: '#7f1d1d' }}>
+            Intenta recargar la pantalla o selecciona otro proyecto.
+          </p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 const SubproyectosPage = () => {
   const [searchParams] = useSearchParams();
   const proyectoIdParam = searchParams.get('proyecto');
@@ -57,6 +102,7 @@ const SubproyectosPage = () => {
   const [subproyectos, setSubproyectos] = useState([]);
   const [resumenHoras, setResumenHoras] = useState({});
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [modalState, setModalState] = useState({ open: false, sub: null });
   const [gestionarModal, setGestionarModal] = useState({ open: false, sub: null });
 
@@ -85,6 +131,7 @@ const SubproyectosPage = () => {
       setLoading(true);
 
       try {
+        setLoadError('');
         const res = await getSubproyectos({ proyecto: proyectoSel });
         const subs = ordenarPorCreacion(res?.data?.data ?? []);
 
@@ -104,6 +151,9 @@ const SubproyectosPage = () => {
         setProyectoObj(proyectos.find((p) => p._id === proyectoSel) ?? null);
       } catch (err) {
         console.error(err);
+        setLoadError('No se pudieron cargar los subproyectos. Intenta de nuevo.');
+        setSubproyectos([]);
+        setResumenHoras({});
       } finally {
         setLoading(false);
       }
@@ -127,6 +177,7 @@ const SubproyectosPage = () => {
     if (!proyectoSel) return;
 
     setLoading(true);
+    setLoadError('');
 
     try {
       const res = await getSubproyectos({ proyecto: proyectoSel });
@@ -146,6 +197,9 @@ const SubproyectosPage = () => {
       setResumenHoras(resumenTemp);
     } catch (err) {
       console.error(err);
+      setLoadError('No se pudieron recargar los subproyectos. Intenta de nuevo.');
+      setSubproyectos([]);
+      setResumenHoras({});
     } finally {
       setLoading(false);
     }
@@ -156,7 +210,8 @@ const SubproyectosPage = () => {
 
   return (
     <DashboardLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <ErrorBoundary resetKey={proyectoSel}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2
@@ -319,6 +374,21 @@ const SubproyectosPage = () => {
           )}
         </div>
 
+        {proyectoSel && loadError && (
+          <div
+            style={{
+              padding: '18px 20px',
+              background: '#fee2e2',
+              border: '1px solid #fecaca',
+              borderRadius: 14,
+              color: '#991b1b',
+            }}
+          >
+            <p style={{ margin: 0, fontWeight: 700 }}>Error cargando subproyectos</p>
+            <p style={{ margin: '8px 0 0' }}>{loadError}</p>
+          </div>
+        )}
+
         {proyectoSel && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {[
@@ -380,7 +450,69 @@ const SubproyectosPage = () => {
           </div>
         )}
 
-        {proyectoSel && !loading && subproyectos.length === 0 && (
+        {proyectoSel && !loading && loadError && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '24px 20px',
+              background: '#fee2e2',
+              border: '1px solid #fecaca',
+              borderRadius: 16,
+              color: '#991b1b',
+            }}
+          >
+            <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700 }}>Error cargando subproyectos</p>
+            <p style={{ margin: 0, fontSize: 14 }}>{loadError}</p>
+            <button
+              onClick={recargar}
+              style={{
+                marginTop: 12,
+                background: '#1f8f57',
+                color: '#fff',
+                border: 'none',
+                padding: '10px 16px',
+                borderRadius: 10,
+                cursor: 'pointer',
+                fontWeight: 700,
+              }}
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {proyectoSel && !loading && loadError && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '24px 20px',
+              background: '#fee2e2',
+              border: '1px solid #fecaca',
+              borderRadius: 16,
+              color: '#991b1b',
+            }}
+          >
+            <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700 }}>Error cargando subproyectos</p>
+            <p style={{ margin: 0, fontSize: 14 }}>{loadError}</p>
+            <button
+              onClick={recargar}
+              style={{
+                marginTop: 12,
+                background: '#1f8f57',
+                color: '#fff',
+                border: 'none',
+                padding: '10px 16px',
+                borderRadius: 10,
+                cursor: 'pointer',
+                fontWeight: 700,
+              }}
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {proyectoSel && !loading && !loadError && subproyectos.length === 0 && (
           <div
             style={{
               textAlign: 'center',
@@ -657,6 +789,7 @@ const SubproyectosPage = () => {
           </div>
         )}
       </div>
+      </ErrorBoundary>
 
       <SubproyectoModal
         isOpen={modalState.open}
