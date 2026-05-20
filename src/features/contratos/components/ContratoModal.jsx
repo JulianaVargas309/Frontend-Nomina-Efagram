@@ -162,24 +162,6 @@ const nuevaCuadrillaVacia = (idx) => ({
   expandida: true,
 });
 
-const BarraCantidad = ({ disponible, total }) => {
-  const totalNum = Number(total) || 0;
-  const dispNum = Number(disponible) || 0;
-  const pct = totalNum > 0 ? Math.min(100, Math.round(((totalNum - dispNum) / totalNum) * 100)) : 0;
-  const color = dispNum <= 0 ? '#dc2626' : dispNum / totalNum < 0.2 ? '#e67e22' : '#1f8f57';
-  return (
-    <div style={{ marginTop: 4 }}>
-      <div style={{ height: 5, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 999 }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
-        <span>Comprometido: {fmt(totalNum - dispNum)}</span>
-        <span style={{ color }}>Disponible: {fmt(dispNum)}</span>
-      </div>
-    </div>
-  );
-};
-
 const InfoRow = ({ icon, label, children }) => {
   const Icon = icon;
   return (
@@ -1104,36 +1086,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                     onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} />
                 </div>
               </div>
-
-              <div className="form-section">
-                <div className="form-field">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <TrendingUp size={13} /> Porcentaje distribuido del subproyecto
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <input
-                      type="number"
-                      name="porcentaje_distribuido"
-                      value={form.porcentaje_distribuido}
-                      onChange={(e) => {
-                        const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
-                        setForm((p) => ({ ...p, porcentaje_distribuido: val }));
-                      }}
-                      placeholder="0"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      style={{ flex: 1 }}
-                    />
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', minWidth: 40 }}>
-                      {Number(form.porcentaje_distribuido).toFixed(1)}%
-                    </span>
-                  </div>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
-                    Asigna qué porcentaje del subproyecto corresponde a este contrato. La suma total de todos los contratos del subproyecto debe igualar el porcentaje del subproyecto.
-                  </p>
-                </div>
-              </div>
             </>
           )}
 
@@ -1174,7 +1126,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                   <p style={{ margin: '2px 0 4px', fontSize: 12, color: '#64748b' }}>
                                     {disp.actividad?.codigo} · {disp.unidad} · Precio ref: <strong>${fmt(disp.precio_unitario_referencia)}</strong>
                                   </p>
-                                  <BarraCantidad disponible={disp.cantidad_disponible} total={typeof disp.cantidad_asignada_subproyecto === 'number' ? disp.cantidad_asignada_subproyecto : (disp.cantidad_asignada_subproyecto?.cantidad || 0)} />
                                 </div>
                                 <div style={{ flexShrink: 0 }}>
                                   {yaAgregada
