@@ -604,6 +604,8 @@ const SubproyectosPage = () => {
                               {Number(s.porcentaje_distribuido || 0).toFixed(1)}%
                             </span>
                           </div>
+
+                          
                         </td>
 
                         <td

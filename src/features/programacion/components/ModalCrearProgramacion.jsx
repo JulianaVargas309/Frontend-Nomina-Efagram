@@ -397,8 +397,13 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
           )}
 
           {/* FECHAS */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 14px', marginBottom: 14 }}>
-            <div>
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            gap: '14px', 
+            marginBottom: 14,
+          }}>
+            <div style={{ flex: '1 1 100%', minWidth: '140px' }}>
               <label style={labelSt}>
                 <Calendar size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                 Fecha Inicial *
@@ -528,7 +533,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                 </small>
               )}
             </div>
-            <div>
+            <div style={{ flex: '1 1 100%', minWidth: '140px' }}>
               <label style={labelSt}>
                 <Calendar size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                 Fecha Final (calculada)
@@ -543,8 +548,13 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
           </div>
 
           {/* PROYECTADO */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 14px', marginBottom: 14 }}>
-            <div>
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            gap: '14px', 
+            marginBottom: 14 
+          }}>
+            <div style={{ flex: '1 1 100%', minWidth: '140px' }}>
               <label style={labelSt}>
                 <Hash size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                 Cantidad Proyectada *
@@ -553,7 +563,7 @@ export default function ModalCrearProgramacion({ isOpen, onClose, onSave }) {
                 placeholder="Ej: 2.5" value={cantidadProyectada}
                 onChange={e => setCantidadProyectada(e.target.value)} disabled={guardando} />
             </div>
-            <div>
+            <div style={{ flex: '1 1 100%', minWidth: '140px' }}>
               <label style={labelSt}>
                 <DollarSign size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                 Valor Proyectado ($)

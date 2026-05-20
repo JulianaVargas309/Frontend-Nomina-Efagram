@@ -10,6 +10,9 @@ export const endpoints = {
     create: '/proyectos',
     update: (id) => `/proyectos/${id}`,
     delete: (id) => `/proyectos/${id}`,
+    progreso: (id) => `/proyectos/${id}/progreso`,
+    progresoTodos: '/proyectos/progresos/todos',
+    subproyectosProgreso: (id) => `/proyectos/${id}/subproyectos-progreso`,
   },
   clientes: {
     getAll: '/clientes',
@@ -39,5 +42,8 @@ export const endpoints = {
     update: (id) => `/contratos/${id}`,
     delete: (id) => `/contratos/${id}`,
     trabajadoresDisponibles: (id) => `/contratos/${id}/trabajadores-disponibles`,
+  },
+  subproyectos: {
+    progreso: (id) => `/subproyectos/${id}/progreso`,
   },
 };

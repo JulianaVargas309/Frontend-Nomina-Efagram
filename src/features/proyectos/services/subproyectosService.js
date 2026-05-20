@@ -1,4 +1,5 @@
 import httpClient from '../../../core/api/httpClient';
+import { endpoints } from '../../../core/api/endpoints';
 
 // ─── Actividades del proyecto ───────────────────────────────────────
 export const getActividadesProyecto = (params) =>
@@ -34,6 +35,10 @@ export const deleteSubproyecto = (id) =>
 
 export const getNucleosDisponibles = (subproyectoId) =>
   httpClient.get(`/subproyectos/${subproyectoId}/nucleos-disponibles`);
+
+// ─── Progreso ───────────────────────────────────────────────────────
+export const getProgresoSubproyecto = (id) =>
+  httpClient.get(endpoints.subproyectos.progreso(id));
 
 // ─── Asignaciones ───────────────────────────────────────────────────
 export const getAsignaciones = (params) =>

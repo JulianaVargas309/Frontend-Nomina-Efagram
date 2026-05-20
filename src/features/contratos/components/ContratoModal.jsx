@@ -14,7 +14,7 @@ import {
 } from '../services/contratosService';
 import SearchableSelect from "../../proyectos/components/SearchableSelect";
 import { getPersonal } from '../../proyectos/services/personalService';
-import httpClient from '../../../core/api/httpClient';
+import httpClient from '../../../core/api/httpClient'; \nimport '../../../assets/styles/modal-responsive.css';
 
 // ══════════════════════════════════════════════════════════════════
 // ✅ HELPERS DE NORMALIZACIÓN (AGREGADOS)
@@ -784,14 +784,15 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                     <span
                       key={l._id ?? l.codigo}
                       style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                        padding: '4px 10px', borderRadius: 8,
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '5px 10px', borderRadius: 8,
                         background: '#f0faf4', border: '1px solid rgba(31,143,87,0.25)',
-                        fontSize: 12, fontWeight: 600, color: '#1f8f57',
+                        fontSize: 12, fontWeight: 600, color: '#1f8f57', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}
+                      title={l.nombre}
                     >
                       <span style={{ color: '#94a3b8', fontWeight: 500 }}>#{l.codigo}</span>
-                      {l.nombre}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nombre}</span>
                     </span>
                   ))}
                 </div>
@@ -799,11 +800,11 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
             </InfoRow>
 
             <InfoRow icon={Wrench} label="Actividades">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowX: 'auto' }}>
                 {(c.actividades ?? []).map((a, i) => (
-                  <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px' }}>
+                  <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', minWidth: 0 }}>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{a.actividad?.nombre ?? '—'}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
+                    <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       Cant: <strong>{fmt(a.cantidad)}</strong> · Precio: <strong>${fmt(a.precio_unitario)}</strong> · Total: <strong>${fmt((a.cantidad ?? 0) * (a.precio_unitario ?? 0))}</strong>
                     </p>
                   </div>
@@ -814,14 +815,14 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
               </div>
             </InfoRow>
             <InfoRow icon={Users} label={`Cuadrillas (${(c.cuadrillas ?? []).length})`}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowX: 'auto' }}>
                 {(c.cuadrillas ?? []).map((cua, i) => {
                   const miembros = (cua.miembros ?? []).filter(m => m.activo).map(m => m.persona ?? m);
                   return (
-                    <div key={cua._id ?? i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px' }}>
+                    <div key={cua._id ?? i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', minWidth: 0 }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{cua.nombre} <span style={{ color: '#94a3b8', fontSize: 11 }}>({cua.codigo})</span></p>
-                      <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {miembros.map((p, idx) => <span key={`miembro-${p._id || idx}`} className="chip">{p.nombres} {p.apellidos}</span>)}
+                      <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
+                        {miembros.map((p, idx) => <span key={`miembro-${p._id || idx}`} className="chip" style={{ fontSize: 11 }}>{p.nombres} {p.apellidos}</span>)}
                       </div>
                     </div>
                   );
@@ -852,7 +853,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
 
   return (
     <div className="modal-overlay">
-      <div className="modal-contrato" onClick={e => e.stopPropagation()} style={{ maxWidth: 860, width: '100%' }}>
+      <div className="modal-contrato" onClick={e => e.stopPropagation()} style={{ maxWidth: '860px', width: '100%', boxSizing: 'border-box' }}>
 
         <div className="modal-contrato-header">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -864,19 +865,19 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
 
-        <div style={{ display: 'flex', borderBottom: '1px solid #e6e8ef', padding: '0 24px' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid #e6e8ef', padding: '0 16px', gap: 4, overflowX: 'auto', minHeight: '48px' }}>
           {TABS.map(t => {
             const TabIcon = t.icon;
             return (
               <button key={t.key} onClick={() => setTab(t.key)} style={{
-                padding: '11px 18px', border: 'none', background: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: tab === t.key ? 700 : 500,
+                padding: '11px 12px', border: 'none', background: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: tab === t.key ? 700 : 500,
                 color: tab === t.key ? '#1f8f57' : '#64748b',
                 borderBottom: tab === t.key ? '2.5px solid #1f8f57' : '2.5px solid transparent',
-                display: 'flex', alignItems: 'center', gap: 6,
+                display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', flexShrink: 0,
               }}>
-                <TabIcon size={14} />
-                {t.texto}
+                <TabIcon size={13} />
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.texto}</span>
               </button>
             );
           })}
@@ -1009,17 +1010,17 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                 </div>
 
                 <div className="form-field" style={{ marginTop: 16 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <Layers size={13} /> Lotes * — {lotes.length} definido(s)
                   </label>
 
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <input
                       value={nuevoLote}
                       onChange={(e) => setNuevoLote(e.target.value)}
                       onKeyDown={handleLoteKeyDown}
                       placeholder="Nombre del lote, ej: Lote Norte"
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, minWidth: '150px' }}
                     />
                     <button
                       type="button"
@@ -1032,7 +1033,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                         color: nuevoLote.trim() ? '#fff' : '#94a3b8',
                         fontWeight: 700, fontSize: 13,
                         cursor: nuevoLote.trim() ? 'pointer' : 'not-allowed',
-                        whiteSpace: 'nowrap', height: 38,
+                        whiteSpace: 'nowrap', height: 38, flexShrink: 0,
                       }}
                     >
                       <Plus size={15} /> Agregar
@@ -1200,17 +1201,17 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                       <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                         📝 Cantidades y precios
                       </p>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px 150px 90px 32px', gap: 8, padding: '8px 14px', background: '#f8fafc', borderRadius: '10px 10px 0 0', border: '1px solid #e2e8f0', borderBottom: 'none', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-                        <span>Actividad</span><span>Cantidad</span><span>Precio unitario</span><span>Total</span><span></span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) minmax(90px, 120px) minmax(90px, 120px) minmax(70px, 90px) 32px', gap: 8, padding: '8px 12px', background: '#f8fafc', borderRadius: '10px 10px 0 0', border: '1px solid #e2e8f0', borderBottom: 'none', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', overflowX: 'auto' }}>
+                        <span>Actividad</span><span style={{ textAlign: 'center' }}>Cantidad</span><span style={{ textAlign: 'center' }}>Precio</span><span style={{ textAlign: 'center' }}>Total</span><span></span>
                       </div>
-                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '0 0 10px 10px', overflow: 'auto', maxHeight: '400px' }}>
                         {actividadesSel.map((a, i) => {
                           const errCant = errorCantidad(a);
                           const total = (Number(a.cantidad) || 0) * (Number(a.precio_unitario) || 0);
                           return (
                             <div key={i} style={{
-                              display: 'grid', gridTemplateColumns: '1fr 150px 150px 90px 32px',
-                              gap: 8, padding: '10px 14px', alignItems: 'center',
+                              display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) minmax(90px, 120px) minmax(90px, 120px) minmax(70px, 90px) 32px',
+                              gap: 8, padding: '10px 12px', alignItems: 'center',
                               borderBottom: i < actividadesSel.length - 1 ? '1px solid #f0f2f5' : 'none',
                               background: errCant && errCant !== 'Requerida' ? '#fff5f5' : '#fff',
                             }}>
@@ -1247,10 +1248,10 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                           );
                         })}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                        <div style={{ background: '#f0faf4', border: '1.5px solid #1f8f57', borderRadius: 10, padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <DollarSign size={15} color="#1f8f57" />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#1f8f57' }}>Valor total: ${fmt(valorTotal)}</span>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10, flexWrap: 'wrap', gap: 8 }}>
+                        <div style={{ background: '#f0faf4', border: '1.5px solid #1f8f57', borderRadius: 10, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <DollarSign size={14} color="#1f8f57" />
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#1f8f57' }}>Valor total: ${fmt(valorTotal)}</span>
                         </div>
                       </div>
                     </div>
@@ -1346,12 +1347,12 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                   {cua.miembros.map(p => {
                                     const pid = getPersonaId(p);
                                     return (
-                                      <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 12px' }}>
-                                        <div>
+                                      <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 10px', gap: 8, flexWrap: 'wrap' }}>
+                                        <div style={{ flex: 1, minWidth: '120px' }}>
                                           <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres ?? p.name} {p.apellidos ?? ''}</p>
                                           <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.num_doc ?? p.cc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
                                         </div>
-                                        <button onClick={() => quitarMiembro(cuaIdx, pid)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
+                                        <button onClick={() => quitarMiembro(cuaIdx, pid)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', flexShrink: 0 }}>
                                           <UserX size={15} />
                                         </button>
                                       </div>
@@ -1365,8 +1366,8 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                               <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
 
                               </p>
-                              <div style={{ position: 'relative', marginBottom: 10 }}>
-                                <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                              <div style={{ position: 'relative', marginBottom: 10, width: '100%' }}>
+                                <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
                                 <input
                                   placeholder="Buscar por nombre o cédula..."
                                   value={busqueda}
@@ -1385,19 +1386,19 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
                                   {personasDisp.map(p => {
                                     const pid = getPersonaId(p);
                                     return (
-                                      <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 12px' }}>
-                                        <div>
+                                      <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 10px', gap: 8, flexWrap: 'wrap' }}>
+                                        <div style={{ flex: 1, minWidth: '120px' }}>
                                           <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{p.nombres ?? p.name}</p>
                                           <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{p.tipo_doc} {p.num_doc ?? p.cc}{p.cargo ? ` · ${p.cargo}` : ''}</p>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                        <div style={{ display: 'flex', gap: 4, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                           <button onClick={() => seleccionarSupervisor(cuaIdx, p)}
-                                            style={{ background: '#eff6ff', border: '1.5px solid #3b82f6', color: '#1d4ed8', padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <UserCheck size={12} /> Líder
+                                            style={{ background: '#eff6ff', border: '1.5px solid #3b82f6', color: '#1d4ed8', padding: '4px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
+                                            <UserCheck size={11} /> Líder
                                           </button>
                                           <button onClick={() => agregarMiembro(cuaIdx, p)}
-                                            style={{ background: '#f0faf4', border: '1.5px solid #1f8f57', color: '#1f8f57', padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <Plus size={12} /> Agregar
+                                            style={{ background: '#f0faf4', border: '1.5px solid #1f8f57', color: '#1f8f57', padding: '4px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
+                                            <Plus size={11} /> Agregar
                                           </button>
                                         </div>
                                       </div>

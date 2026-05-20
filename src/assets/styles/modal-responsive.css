@@ -1,0 +1,86 @@
+/* ════════════════════════════════════════════════════════════════
+   MEJORAS RESPONSIVAS PARA MODALES
+════════════════════════════════════════════════════════════════ */
+
+/* Overflow y text handling */
+.modal-body {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.info-value {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Scroll styling para elementos con overflow */
+[style*="overflow-x: auto"] {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+[style*="overflow-x: auto"]::-webkit-scrollbar {
+    height: 6px;
+}
+
+[style*="overflow-x: auto"]::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Asegurar que los inputs tengan tamaño mínimo en móvil */
+@media (max-width: 480px) {
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+        min-height: 36px;
+        font-size: 16px;
+        /* Prevenir zoom en inputs en iOS */
+    }
+
+    button {
+        min-height: 36px;
+    }
+
+    /* Mejorar espaciado en móvil */
+    .modal-overlay {
+        padding: 8px;
+    }
+
+    .modal-body {
+        padding: 12px 14px;
+    }
+
+    /* Asegurar que el contenido no se corte */
+    div[style*="display: grid"],
+    div[style*="gridTemplateColumns"] {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* Tabs responsive */
+    [style*="display: flex"][style*="borderBottom"][style*="padding: 0"] {
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+    /* Botones más pequeños */
+    button[style*="fontSize: 13"] {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}

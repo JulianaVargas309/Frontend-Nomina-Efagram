@@ -7,8 +7,6 @@ import {
   getAsignaciones,
   cancelarAsignacion,
 } from '../services/subproyectosService';
-import { getEstadoDistribucion } from '../utils/porcentajeUtils';
-import { usePorcentajesLocales } from '../hooks/usePorcentajesLocales';
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
@@ -24,7 +22,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
-  TrendingUp,
 } from 'lucide-react';
 
 const ErrorBanner = ({ errors }) => {
@@ -193,7 +190,6 @@ const SubproyectoModal = ({
     fecha_inicio: '',
     fecha_fin_estimada: '',
     observaciones: '',
-    porcentaje_distribuido: 0,
   });
 
   const [displayFechas, setDisplayFechas] = useState({
@@ -243,7 +239,6 @@ const SubproyectoModal = ({
             fecha_inicio: subproyecto.fecha_inicio?.slice(0, 10) ?? '',
             fecha_fin_estimada: subproyecto.fecha_fin_estimada?.slice(0, 10) ?? '',
             observaciones: subproyecto.observaciones ?? '',
-            porcentaje_distribuido: subproyecto.porcentaje_distribuido ?? 0,
           });
 
           setDisplayFechas({
@@ -269,7 +264,6 @@ const SubproyectoModal = ({
             fecha_inicio: '',
             fecha_fin_estimada: '',
             observaciones: '',
-            porcentaje_distribuido: 0,
           });
           setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
           setNucleosSel([]);
@@ -500,11 +494,7 @@ const SubproyectoModal = ({
         fecha_inicio: form.fecha_inicio || undefined,
         fecha_fin_estimada: form.fecha_fin_estimada || undefined,
         observaciones: form.observaciones?.trim() || undefined,
-        porcentaje_distribuido: Number(form.porcentaje_distribuido) || 0,
       };
-
-      // 🔍 DEBUG: Ver payload que se envía al backend
-      console.log('📤 Payload enviando al backend:', payload);
 
       // Solo agregar supervisor si hay uno seleccionado
       if (supervisorSeleccionado) {
@@ -811,7 +801,7 @@ const SubproyectoModal = ({
                   }
                 />
               </div>
-
+              
               <div className="modal-grid">
                 {renderDateField({
                   label: 'Fecha Inicio',
@@ -917,35 +907,6 @@ const SubproyectoModal = ({
                   placeholder="Observaciones opcionales..."
                   rows={3}
                 />
-              </div>
-
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <TrendingUp size={13} /> Porcentaje distribuido del proyecto
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input
-                    type="number"
-                    name="porcentaje_distribuido"
-                    value={form.porcentaje_distribuido}
-                    onChange={(e) => {
-                      setFormErrors([]);
-                      const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
-                      setForm((p) => ({ ...p, porcentaje_distribuido: val }));
-                    }}
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', minWidth: 40 }}>
-                    {Number(form.porcentaje_distribuido).toFixed(1)}%
-                  </span>
-                </div>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
-                  Asigna qué porcentaje del proyecto corresponde a este subproyecto. La suma total de todos los subproyectos debe ser 100%.
-                </p>
               </div>
 
               <SectionHeader
@@ -1368,3 +1329,5 @@ const SubproyectoModal = ({
 };
 
 export default SubproyectoModal;
+
+
