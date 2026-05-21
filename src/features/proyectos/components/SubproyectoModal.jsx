@@ -7,8 +7,6 @@ import {
   getAsignaciones,
   cancelarAsignacion,
 } from '../services/subproyectosService';
-import { getEstadoDistribucion } from '../utils/porcentajeUtils';
-import { usePorcentajesLocales } from '../hooks/usePorcentajesLocales';
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
@@ -499,9 +497,6 @@ const SubproyectoModal = ({
         observaciones: form.observaciones?.trim() || undefined,
       };
 
-      // 🔍 DEBUG: Ver payload que se envía al backend
-      console.log('📤 Payload enviando al backend:', payload);
-
       // Solo agregar supervisor si hay uno seleccionado
       if (supervisorSeleccionado) {
         payload.supervisor = {
@@ -806,7 +801,7 @@ const SubproyectoModal = ({
                   }
                 />
               </div>
-
+              
               <div className="modal-grid">
                 {renderDateField({
                   label: 'Fecha Inicio',
@@ -1334,3 +1329,5 @@ const SubproyectoModal = ({
 };
 
 export default SubproyectoModal;
+
+

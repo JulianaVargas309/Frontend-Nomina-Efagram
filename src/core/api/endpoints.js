@@ -47,4 +47,7 @@ export const endpoints = {
     delete: (id) => `/contratos/${id}`,
     trabajadoresDisponibles: (id) => `/contratos/${id}/trabajadores-disponibles`,
   },
+  subproyectos: {
+    progreso: (id) => `/subproyectos/${id}/progreso`,
+  },
 };

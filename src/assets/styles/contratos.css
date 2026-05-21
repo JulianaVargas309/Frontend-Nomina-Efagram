@@ -5,16 +5,16 @@
 
 /* ── Variables (reutiliza las globales si ya están declaradas) ── */
 :root {
-  --c-bg:        #f6f7fb;
-  --c-card:      #ffffff;
-  --c-border:    #e6e8ef;
-  --c-text:      #0f172a;
-  --c-muted:     #64748b;
-  --c-green:     #1f8f57;
-  --c-green-2:   #2bb673;
-  --c-red:       #dc2626;
-  --c-shadow:    0 10px 30px rgba(15,23,42,0.06);
-  --c-radius:    14px;
+  --c-bg: #f6f7fb;
+  --c-card: #ffffff;
+  --c-border: #e6e8ef;
+  --c-text: #0f172a;
+  --c-muted: #64748b;
+  --c-green: #1f8f57;
+  --c-green-2: #2bb673;
+  --c-red: #dc2626;
+  --c-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --c-radius: 14px;
 }
 
 /* ── Contenedor general ───────────────────────────────────────── */
@@ -135,13 +135,18 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  box-shadow: 0 6px 16px rgba(31,143,87,0.2);
+  box-shadow: 0 6px 16px rgba(31, 143, 87, 0.2);
   transition: background 0.2s, transform 0.08s;
   white-space: nowrap;
 }
 
-.btn-crear-contrato:hover { background: #19784a; }
-.btn-crear-contrato:active { transform: translateY(1px); }
+.btn-crear-contrato:hover {
+  background: #19784a;
+}
+
+.btn-crear-contrato:active {
+  transform: translateY(1px);
+}
 
 /* ── Tabla ───────────────────────────────────────────────────── */
 .contratos-table-wrap {
@@ -202,10 +207,29 @@
   border: 1px solid transparent;
 }
 
-.badge-ACTIVO    { background: rgba(31,143,87,0.1);  border-color: rgba(31,143,87,0.3);  color: #1f8f57; }
-.badge-BORRADOR  { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); color: #3b82f6; }
-.badge-CERRADO   { background: rgba(100,116,139,0.1);border-color: rgba(100,116,139,0.3);color: #64748b; }
-.badge-CANCELADO { background: rgba(220,38,38,0.1);  border-color: rgba(220,38,38,0.3);  color: #dc2626; }
+.badge-ACTIVO {
+  background: rgba(31, 143, 87, 0.1);
+  border-color: rgba(31, 143, 87, 0.3);
+  color: #1f8f57;
+}
+
+.badge-BORRADOR {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+}
+
+.badge-CERRADO {
+  background: rgba(100, 116, 139, 0.1);
+  border-color: rgba(100, 116, 139, 0.3);
+  color: #64748b;
+}
+
+.badge-CANCELADO {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #dc2626;
+}
 
 /* ── Acciones de fila ────────────────────────────────────────── */
 .row-actions {
@@ -229,9 +253,20 @@
   line-height: 1;
 }
 
-.btn-icon:hover          { background: #e2e8f0; border-color: #cbd5e1; }
-.btn-icon.btn-danger:hover { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.3); }
-.btn-icon:disabled       { opacity: 0.4; cursor: not-allowed; }
+.btn-icon:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.btn-icon.btn-danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* ── Chips de actividades/lotes ──────────────────────────────── */
 .chips-wrap {
@@ -275,8 +310,8 @@
 }
 
 .contratos-error {
-  background: rgba(220,38,38,0.07);
-  border: 1px solid rgba(220,38,38,0.2);
+  background: rgba(220, 38, 38, 0.07);
+  border: 1px solid rgba(220, 38, 38, 0.2);
   border-radius: 10px;
   padding: 14px 18px;
   color: var(--c-red);
@@ -290,7 +325,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15,23,42,0.5);
+  background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(3px);
   z-index: 1000;
   display: flex;
@@ -307,7 +342,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 60px rgba(15,23,42,0.18);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
   overflow: hidden;
 }
 
@@ -340,7 +375,10 @@
   transition: background 0.15s;
 }
 
-.modal-close-btn:hover { background: #e2e8f0; color: var(--c-text); }
+.modal-close-btn:hover {
+  background: #e2e8f0;
+  color: var(--c-text);
+}
 
 .modal-body {
   flex: 1;
@@ -456,7 +494,7 @@
 
 .actividad-checkbox.selected {
   border-color: var(--c-green);
-  background: rgba(31,143,87,0.07);
+  background: rgba(31, 143, 87, 0.07);
 }
 
 .actividad-checkbox input[type="checkbox"] {
@@ -517,7 +555,9 @@
   outline: none;
 }
 
-.trabajadores-buscador input:focus { border-color: var(--c-green); }
+.trabajadores-buscador input:focus {
+  border-color: var(--c-green);
+}
 
 .btn-buscar {
   background: var(--c-green);
@@ -531,8 +571,14 @@
   transition: background 0.2s;
 }
 
-.btn-buscar:hover { background: #19784a; }
-.btn-buscar:disabled { background: #94a3b8; cursor: not-allowed; }
+.btn-buscar:hover {
+  background: #19784a;
+}
+
+.btn-buscar:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
 
 .trabajadores-resultados {
   max-height: 180px;
@@ -549,9 +595,13 @@
   gap: 10px;
 }
 
-.trabajador-item:last-child { border-bottom: none; }
+.trabajador-item:last-child {
+  border-bottom: none;
+}
 
-.trabajador-item:hover { background: #f8fafc; }
+.trabajador-item:hover {
+  background: #f8fafc;
+}
 
 .trabajador-info .trab-nombre {
   font-size: 13.5px;
@@ -566,9 +616,9 @@
 }
 
 .btn-agregar-trab {
-  background: rgba(31,143,87,0.1);
+  background: rgba(31, 143, 87, 0.1);
   color: var(--c-green);
-  border: 1px solid rgba(31,143,87,0.25);
+  border: 1px solid rgba(31, 143, 87, 0.25);
   border-radius: 7px;
   padding: 5px 11px;
   font-size: 12px;
@@ -579,8 +629,14 @@
   flex-shrink: 0;
 }
 
-.btn-agregar-trab:hover { background: rgba(31,143,87,0.18); }
-.btn-agregar-trab:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-agregar-trab:hover {
+  background: rgba(31, 143, 87, 0.18);
+}
+
+.btn-agregar-trab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .trabajadores-actuales {
   padding: 10px 16px;
@@ -596,6 +652,150 @@
   text-align: center;
   color: var(--c-muted);
   font-size: 13px;
+}
+
+/* ================================================================
+   MEDIA QUERIES - MODAL RESPONSIVO
+================================================================ */
+
+/* Tablets y pantallas medianas (768px y menores) */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-contrato {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+
+  .modal-contrato-header {
+    padding: 16px 18px;
+  }
+
+  .modal-contrato-header h3 {
+    font-size: 16px;
+  }
+
+  .modal-body {
+    padding: 16px 18px;
+    gap: 16px;
+  }
+
+  .modal-footer {
+    padding: 12px 18px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .form-field {
+    gap: 4px;
+  }
+
+  .form-field label {
+    font-size: 11px;
+  }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .form-section-title {
+    font-size: 11px;
+    padding-bottom: 6px;
+  }
+}
+
+/* Móviles (480px y menores) */
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .modal-contrato {
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 12px;
+  }
+
+  .modal-contrato-header {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+  }
+
+  .modal-contrato-header h3 {
+    font-size: 14px;
+  }
+
+  .modal-close-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  .modal-body {
+    padding: 12px 14px;
+    gap: 14px;
+  }
+
+  .modal-footer {
+    padding: 10px 14px;
+    gap: 6px;
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer button {
+    font-size: 12px;
+    padding: 9px 12px;
+    width: 100%;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .form-field {
+    gap: 3px;
+  }
+
+  .form-field label {
+    font-size: 10px;
+  }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .form-section-title {
+    font-size: 10px;
+    padding-bottom: 5px;
+  }
+
+  .actividades-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .chips-wrap {
+    gap: 3px;
+  }
+
+  .chip {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
 }
 
 .miembro-item {
@@ -633,7 +833,9 @@
   flex-shrink: 0;
 }
 
-.btn-remover-trab:hover { color: var(--c-red); }
+.btn-remover-trab:hover {
+  color: var(--c-red);
+}
 
 /* ── Botones del modal ───────────────────────────────────────── */
 .btn-cancelar {
@@ -648,7 +850,9 @@
   transition: background 0.15s;
 }
 
-.btn-cancelar:hover { background: #e2e8f0; }
+.btn-cancelar:hover {
+  background: #e2e8f0;
+}
 
 .btn-guardar {
   background: var(--c-green);
@@ -660,11 +864,18 @@
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
-  box-shadow: 0 4px 12px rgba(31,143,87,0.2);
+  box-shadow: 0 4px 12px rgba(31, 143, 87, 0.2);
 }
 
-.btn-guardar:hover { background: #19784a; }
-.btn-guardar:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+.btn-guardar:hover {
+  background: #19784a;
+}
+
+.btn-guardar:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
 /* ── Info row (modo ver) ─────────────────────────────────────── */
 .info-row {
@@ -675,7 +886,9 @@
   border-bottom: 1px solid #f0f2f5;
 }
 
-.info-row:last-child { border-bottom: none; }
+.info-row:last-child {
+  border-bottom: none;
+}
 
 .info-icon-wrap {
   width: 32px;
