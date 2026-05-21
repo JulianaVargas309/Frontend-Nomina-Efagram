@@ -19,6 +19,24 @@ export const deleteProyecto = (id) => {
   return httpClient.delete(endpoints.proyectos.delete(id));
 };
 
+// ================= PROGRESO DE PROYECTOS =================
+
+export const getProgresoProyecto = (id) => {
+  return httpClient.get(endpoints.proyectos.progreso(id));
+};
+
+export const getProgresoSubproyectos = (id) => {
+  return httpClient.get(endpoints.proyectos.subproyectosProgreso(id));
+};
+
+export const getProgresosAll = () => {
+  return httpClient.get(endpoints.proyectos.progresosAll);
+};
+
+export const getProgresoSubproyecto = (id) => {
+  return httpClient.get(endpoints.subproyectos.progreso(id));
+};
+
 // ================= CLIENTES =================
 
 export const getClientes = () => {
