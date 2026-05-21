@@ -12,7 +12,7 @@ import { usePorcentajesLocales } from '../hooks/usePorcentajesLocales';
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
-import CuadrillasSelectionModal from './CuadrillasSelectionModal';
+
 import { CalendarDays } from "lucide-react";
 import {
   FolderGit2,
@@ -25,7 +25,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
-  TrendingUp,
 } from 'lucide-react';
 
 const ErrorBanner = ({ errors }) => {
@@ -194,7 +193,6 @@ const SubproyectoModal = ({
     fecha_inicio: '',
     fecha_fin_estimada: '',
     observaciones: '',
-    porcentaje_distribuido: 0,
   });
 
   const [displayFechas, setDisplayFechas] = useState({
@@ -204,12 +202,10 @@ const SubproyectoModal = ({
 
   const [nucleos, setNucleos] = useState([]);
   const [nucleosSel, setNucleosSel] = useState([]);
-  const [selectedCuadrillas, setSelectedCuadrillas] = useState([]);
-  const [cuadrillaModalOpen, setCuadrillaModalOpen] = useState(false);
-  const [personas, setPersonas] = useState([]);
   const [actDisponibles, setActDisponibles] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [nuevasAsigs, setNuevasAsigs] = useState([]);
+  const [personas, setPersonas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadData, setLoadData] = useState(false);
   const [formErrors, setFormErrors] = useState([]);
@@ -246,7 +242,6 @@ const SubproyectoModal = ({
             fecha_inicio: subproyecto.fecha_inicio?.slice(0, 10) ?? '',
             fecha_fin_estimada: subproyecto.fecha_fin_estimada?.slice(0, 10) ?? '',
             observaciones: subproyecto.observaciones ?? '',
-            porcentaje_distribuido: subproyecto.porcentaje_distribuido ?? 0,
           });
 
           setDisplayFechas({
@@ -261,7 +256,6 @@ const SubproyectoModal = ({
               return String(n.id ?? n._id ?? n.value ?? n.codigo ?? '');
             }).filter(Boolean) ?? []
           );
-          setSelectedCuadrillas((subproyecto.cuadrillas ?? []).map((c) => c._id ?? c));
 
           const asRes = await getAsignaciones({ subproyecto: subproyecto._id });
           setAsignaciones(asRes?.data?.data ?? []);
@@ -273,11 +267,9 @@ const SubproyectoModal = ({
             fecha_inicio: '',
             fecha_fin_estimada: '',
             observaciones: '',
-            porcentaje_distribuido: 0,
           });
           setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
           setNucleosSel([]);
-          setSelectedCuadrillas([]);
           setAsignaciones([]);
           setNuevasAsigs([]);
         }
@@ -502,11 +494,9 @@ const SubproyectoModal = ({
         nombre: form.nombre.trim(),
         proyecto: proyecto._id ?? proyecto.id,
         nucleos: nucleosNormalizados,
-        cuadrillas: selectedCuadrillas,
         fecha_inicio: form.fecha_inicio || undefined,
         fecha_fin_estimada: form.fecha_fin_estimada || undefined,
         observaciones: form.observaciones?.trim() || undefined,
-        porcentaje_distribuido: Number(form.porcentaje_distribuido) || 0,
       };
 
       // 🔍 DEBUG: Ver payload que se envía al backend
@@ -516,7 +506,6 @@ const SubproyectoModal = ({
       if (supervisorSeleccionado) {
         payload.supervisor = {
           nombre: String(
-            supervisorSeleccionado.nombre ??
             supervisorSeleccionado.name ??
             supervisorSeleccionado.nombres ??
             `${supervisorSeleccionado.nombres ?? ''} ${supervisorSeleccionado.apellidos ?? ''}`.trim() ??
@@ -912,32 +901,6 @@ const SubproyectoModal = ({
               </div>
 
               <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Users size={13} /> Cuadrillas
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setCuadrillaModalOpen(true)}
-                  style={{
-                    background: '#eff6ff',
-                    border: '1.5px solid #bfdbfe',
-                    color: '#2563eb',
-                    padding: '10px 16px',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    fontWeight: 700,
-                  }}
-                >
-                  Seleccionar cuadrillas
-                </button>
-                <p style={{ margin: '8px 0 0', fontSize: 13, color: '#64748b' }}>
-                  {selectedCuadrillas.length > 0
-                    ? `${selectedCuadrillas.length} cuadrilla(s) seleccionada(s)`
-                    : 'Sin cuadrillas seleccionadas'}
-                </p>
-              </div>
-
-              <div className="form-group">
                 <label>Observaciones</label>
                 <textarea
                   name="observaciones"
@@ -949,35 +912,6 @@ const SubproyectoModal = ({
                   placeholder="Observaciones opcionales..."
                   rows={3}
                 />
-              </div>
-
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <TrendingUp size={13} /> Porcentaje distribuido del proyecto
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input
-                    type="number"
-                    name="porcentaje_distribuido"
-                    value={form.porcentaje_distribuido}
-                    onChange={(e) => {
-                      setFormErrors([]);
-                      const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
-                      setForm((p) => ({ ...p, porcentaje_distribuido: val }));
-                    }}
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', minWidth: 40 }}>
-                    {Number(form.porcentaje_distribuido).toFixed(1)}%
-                  </span>
-                </div>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
-                  Asigna qué porcentaje del proyecto corresponde a este subproyecto. La suma total de todos los subproyectos debe ser 100%.
-                </p>
               </div>
 
               <SectionHeader
@@ -1356,12 +1290,6 @@ const SubproyectoModal = ({
         </div>
         <div style={{ padding: '16px 24px', borderTop: '1px solid #f0f2f5' }}>
           <ErrorBanner errors={formErrors} />
-          <CuadrillasSelectionModal
-            open={cuadrillaModalOpen}
-            selectedIds={selectedCuadrillas}
-            onConfirm={(ids) => setSelectedCuadrillas(ids)}
-            onClose={() => setCuadrillaModalOpen(false)}
-          />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <button

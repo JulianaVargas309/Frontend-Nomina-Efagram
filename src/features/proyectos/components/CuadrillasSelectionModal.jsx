@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import httpClient from '../../../core/api/httpClient';
 import { CheckCircle2, X } from 'lucide-react';
 
@@ -15,9 +15,24 @@ const CuadrillasSelectionModal = ({
   const [error, setError] = useState('');
   const [availableCuadrillas, setAvailableCuadrillas] = useState(cuadrillas);
 
+  // Solo actualizar selection cuando selectedIds cambia DESPUÉS de que el modal esté abierto
   useEffect(() => {
     if (!open) return;
-    setSelection(Array.isArray(selectedIds) ? [...selectedIds] : []);
+    
+    // Solo actualizar si realmente cambió la selección
+    setSelection((prev) => {
+      const newIds = Array.isArray(selectedIds) ? selectedIds : [];
+      if (JSON.stringify(prev) !== JSON.stringify(newIds)) {
+        return newIds;
+      }
+      return prev;
+    });
+  }, [open]);
+
+  // Cargar cuadrillas solo una vez cuando se abre el modal
+  useEffect(() => {
+    if (!open) return;
+    
     setError('');
 
     if (Array.isArray(cuadrillas) && cuadrillas.length > 0) {
@@ -39,7 +54,7 @@ const CuadrillasSelectionModal = ({
     };
 
     loadCuadrillas();
-  }, [open, selectedIds, cuadrillas]);
+  }, [open, cuadrillas]);
 
   const toggleCuadrilla = (id) => {
     setSelection((prev) =>
@@ -134,4 +149,14 @@ const CuadrillasSelectionModal = ({
   );
 };
 
-export default CuadrillasSelectionModal;
+export default React.memo(CuadrillasSelectionModal, (prevProps, nextProps) => {
+  // Comparación personalizada para evitar re-renders innecesarios
+  return (
+    prevProps.open === nextProps.open &&
+    prevProps.title === nextProps.title &&
+    JSON.stringify(prevProps.selectedIds) === JSON.stringify(nextProps.selectedIds) &&
+    JSON.stringify(prevProps.cuadrillas) === JSON.stringify(nextProps.cuadrillas) &&
+    prevProps.onConfirm === nextProps.onConfirm &&
+    prevProps.onClose === nextProps.onClose
+  );
+});
