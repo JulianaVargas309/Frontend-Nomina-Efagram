@@ -55,10 +55,13 @@ const SubproyectosPage = () => {
 
       try {
         const res = await getSubproyectos({ proyecto: proyectoSel });
-        const subs = res?.data?.data ?? [];
+        console.log('✅ Respuesta de getSubproyectos:', res);
 
+        const subs = res?.data?.data ?? res?.data ?? [];
+        console.log('📋 Subproyectos procesados:', subs);
         setSubproyectos(subs);
 
+        // 📊 Cargar programaciones para cada subproyecto
         const resumenTemp = {};
         for (const s of subs) {
           try {
@@ -522,7 +525,6 @@ const SubproyectosPage = () => {
                           {s.estado}
                         </span>
                       </td>
-
                       <td style={{ padding: '13px 16px', width: '130px', minWidth: '130px' }}>
                         <div
                           style={{

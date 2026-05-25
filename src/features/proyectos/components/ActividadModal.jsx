@@ -333,13 +333,13 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
 
           <div
             style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "16px",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "0 16px",
               marginBottom: 16,
             }}
           >
-            <div style={{ flex: "1 1 100%", minWidth: "140px" }}>
+            <div>
               <label style={labelStyle}>
                 <div
                   style={{
@@ -376,7 +376,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
               </p>
             </div>
 
-            <div style={{ flex: "1 1 100%", minWidth: "140px" }}>
+            <div>
               <label style={labelStyle}>
                 <div
                   style={{
@@ -411,13 +411,13 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
 
           <div
             style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "16px",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "0 16px",
               marginBottom: 16,
             }}
           >
-            <div style={{ flex: "1 1 100%", minWidth: "140px" }}>
+            <div>
               <label style={labelStyle}>
                 <div
                   style={{
@@ -459,7 +459,7 @@ const ActividadModal = ({ isOpen, onClose, onSuccess, actividadEditar = null }) 
               )}
             </div>
 
-            <div style={{ flex: "1 1 100%", minWidth: "140px" }}>
+            <div>
               <label style={labelStyle}>
                 <div
                   style={{

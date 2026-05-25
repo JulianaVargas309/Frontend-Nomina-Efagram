@@ -332,11 +332,11 @@ const IntervencionBloque = ({
                   overflowY: "hidden",
                 }}
               >
-                <div style={{ minWidth: "100%" }}>
+                <div style={{ minWidth: 690 }}>
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                      gridTemplateColumns: "minmax(170px, 1.6fr) 130px 130px 150px 40px",
                       gap: 8,
                       padding: "8px 12px",
                       background: "#f8fafc",
@@ -369,7 +369,7 @@ const IntervencionBloque = ({
                         key={i}
                         style={{
                           display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                          gridTemplateColumns: "minmax(170px, 1.6fr) 130px 130px 150px 40px",
                           gap: 8,
                           padding: "9px 12px",
                           borderBottom:

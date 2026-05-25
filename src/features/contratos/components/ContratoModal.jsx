@@ -354,6 +354,10 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         '';
       const subId = contrato.subproyecto?._id ?? contrato.subproyecto ?? '';
 
+      // Obtener el porcentaje del subproyecto (no del contrato anterior)
+      const subproyectoSel = subproyectos.find(s => (s._id ?? s.id) === subId);
+      const porcentajeDelSubproyecto = subproyectoSel?.porcentaje_distribuido ?? 0;
+
       setForm({
         codigo: contrato.codigo ?? '',
         subproyecto: subId,
@@ -361,7 +365,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio: toDateInput(contrato.fecha_inicio),
         fecha_fin: toDateInput(contrato.fecha_fin),
         observaciones: contrato.observaciones ?? '',
-        porcentaje_distribuido: contrato.porcentaje_distribuido ?? 0,
+        porcentaje_distribuido: porcentajeDelSubproyecto,
         estado: contrato.estado ?? 'PENDIENTE',
       });
 
@@ -397,6 +401,7 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_fin: '',
         observaciones: '',
         estado: 'PENDIENTE',
+        porcentaje_distribuido: 0,
       });
 
       setLotes([]);
@@ -446,7 +451,15 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   };
 
   const handleSubproyectoChange = (subId) => {
-    setForm(p => ({ ...p, subproyecto: subId }));
+    // Obtener el porcentaje del subproyecto seleccionado
+    const subproyectoSel = subproyectos.find(s => (s._id ?? s.id) === subId);
+    const porcentajeDelSubproyecto = subproyectoSel?.porcentaje_distribuido ?? 0;
+
+    setForm(p => ({
+      ...p,
+      subproyecto: subId,
+      porcentaje_distribuido: porcentajeDelSubproyecto,
+    }));
     setActividadesSel([]);
     cargarActividadesDisponibles(subId, contrato?._id ?? contrato?.id ?? null);
   };

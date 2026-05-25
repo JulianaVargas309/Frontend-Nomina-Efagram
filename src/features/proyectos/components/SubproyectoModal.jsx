@@ -12,6 +12,7 @@ import { usePorcentajesLocales } from '../hooks/usePorcentajesLocales';
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
+import httpEfaStack from '../../../core/api/httpEfastack';
 import { CalendarDays } from "lucide-react";
 import {
   FolderGit2,
@@ -317,9 +318,29 @@ const SubproyectoModal = ({
         setPersonas(Array.isArray(pd) ? pd : []);
         setActDisponibles(aRes?.data?.data ?? []);
 
-        const nucleosParams = getZonaQueryParams(proyecto);
-        const nRes = await httpClient.get('/nucleos', { params: nucleosParams });
-        setNucleos(nRes?.data?.data ?? []);
+        // Intentar cargar núcleos desde EFASTACK con múltiples estrategias
+        let zonaId = null;
+        if (proyecto.zona?._id) zonaId = proyecto.zona._id;
+        else if (proyecto.zona?.id) zonaId = proyecto.zona.id;
+        else if (proyecto.zona?.codigo) zonaId = proyecto.zona.codigo;
+        else if (typeof proyecto.zona === 'string') zonaId = proyecto.zona;
+        else if (proyecto.zona_id) zonaId = proyecto.zona_id;
+
+        let nucleosParams = zonaId ? { zona: zonaId } : {};
+        let nRes;
+        try {
+          nRes = await httpEfaStack.get('/nucleos', { params: nucleosParams });
+        } catch (err) {
+          // Fallback: intentar sin params
+          try {
+            nRes = await httpEfaStack.get('/nucleos');
+          } catch (err2) {
+            nRes = null;
+          }
+        }
+
+        const nucleosCargados = nRes ? (nRes?.data?.data ?? nRes?.data ?? []) : [];
+        setNucleos(Array.isArray(nucleosCargados) ? nucleosCargados : []);
 
         if (modoEditar && subproyecto) {
           const asRes = await getAsignaciones({ subproyecto: subproyecto._id });
@@ -545,7 +566,7 @@ const SubproyectoModal = ({
     try {
       setLoading(true);
 
-      // ✅ CAMBIO 2: Normalizar núcleos como objetos
+      // ✅ CAMBIO 2: Normalizar núcleos con propiedades correctas de EFASTACK
       const nucleosNormalizados = nucleosSel
         .map((id) => {
           const nucleo = nucleos.find((n) => {
@@ -556,9 +577,9 @@ const SubproyectoModal = ({
           if (!nucleo) return null;
 
           return {
-            id: String(nucleo._id ?? nucleo.id ?? nucleo.value ?? nucleo.codigo ?? ''),
-            codigo: String(nucleo.codigo ?? nucleo.code ?? ''),
-            nombre: String(nucleo.nombre ?? nucleo.name ?? ''),
+            id: String(nucleo._id ?? nucleo.id ?? nucleo.value ?? ''),
+            codigo: String(nucleo.codeNucleo ?? nucleo.codigo ?? nucleo.code ?? ''),
+            nombre: String(nucleo.nombreNucleo ?? nucleo.nombre ?? nucleo.name ?? ''),
           };
         })
         .filter(Boolean);
@@ -912,7 +933,8 @@ const SubproyectoModal = ({
                     }}
                   >
                     <AlertCircle size={14} style={{ display: 'inline', marginRight: 6 }} />
-                    No hay núcleos disponibles. Asegúrate de que el proyecto tenga una zona asignada.
+                    <strong>Sin núcleos disponibles.</strong> Abre la consola (F12) para ver detalles del error.
+                    {proyecto?.zona && <span> Zona asignada: {typeof proyecto.zona === 'object' ? proyecto.zona.nombre || proyecto.zona._id : proyecto.zona}</span>}
                   </div>
                 ) : (
                   <div
@@ -922,9 +944,12 @@ const SubproyectoModal = ({
                       gap: 8,
                     }}
                   >
-                    {/* ✅ CAMBIO 5: Render mejorado de núcleos soportando múltiples formatos de ID */}
+                    {/* ✅ CAMBIO 5: Render mejorado de núcleos con propiedades correctas de EFASTACK */}
                     {nucleos.map((n) => {
+                      // EFASTACK usa: _id, nombreNucleo, codeNucleo, codeZona
                       const nucleoId = String(n._id ?? n.id ?? n.value ?? n.codigo ?? '');
+                      const nucleoNombre = n.nombreNucleo ?? n.nombre ?? n.name ?? n.designacion ?? `Núcleo ${n.codeNucleo}` ?? 'Sin nombre';
+                      const nucleoCodigo = n.codeNucleo ?? n.codigo ?? n.code ?? '';
                       const selected = nucleosSel.map(String).includes(nucleoId);
 
                       return (
@@ -960,9 +985,16 @@ const SubproyectoModal = ({
                               <CheckCircle2 size={10} color="#fff" strokeWidth={3} />
                             )}
                           </div>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
-                            {n.nombre ?? n.name ?? 'Sin nombre'}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
+                              {nucleoNombre}
+                            </span>
+                            {nucleoCodigo && (
+                              <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                                Código: {nucleoCodigo}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

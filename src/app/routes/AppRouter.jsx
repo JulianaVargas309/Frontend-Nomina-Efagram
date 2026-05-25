@@ -35,8 +35,7 @@ import ProgramacionPage from '../../features/programacion/pages/ProgramacionPage
 // Reportes
 import ReportesPage from '../../features/reportes/pages/ReportesPage';
 
-// Cargos
-import CatalogoCargosPage from '../../features/proyectos/pages/CatalogoCargosPage';
+
 
 export default function AppRouter() {
   return (
@@ -70,7 +69,6 @@ export default function AppRouter() {
       <Route path="/configuracion/catalogo-usuarios" element={<PrivateRoute><CatalogoUsuariosPage /></PrivateRoute>} />
       <Route path="/configuracion/catalogo-intervenciones" element={<PrivateRoute><CatalogoIntervencionesPage /></PrivateRoute>} />
       <Route path="/configuracion/catalogo-procesos" element={<PrivateRoute><CatalogoProcesosPage /></PrivateRoute>} />
-      <Route path="/configuracion/catalogo-cargos" element={<PrivateRoute><CatalogoCargosPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/zonas" element={<PrivateRoute><ZonasPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/nucleos" element={<PrivateRoute><NucleosPage /></PrivateRoute>} />
       <Route path="/configuracion/ubicacion/fincas" element={<PrivateRoute><FincasPage /></PrivateRoute>} />
