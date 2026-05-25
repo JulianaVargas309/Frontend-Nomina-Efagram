@@ -131,6 +131,7 @@ const SubproyectosPage = () => {
         setSubproyectos([]);
         setProyectoObj(null);
         setResumenHoras({});
+        setProgramacionesPorSubproyecto({});
         return;
       }
 
@@ -155,7 +156,10 @@ const SubproyectosPage = () => {
 
         setSubproyectos(subsEnriquecidos);
 
+        // 📊 Cargar programaciones para cada subproyecto
         const resumenTemp = {};
+        const programacionesTemp = {};
+
         for (const s of subsEnriquecidos) {
           try {
             const r = await getResumenHorasSubproyecto(s._id);
@@ -163,8 +167,32 @@ const SubproyectosPage = () => {
           } catch (e) {
             resumenTemp[s._id] = [];
           }
+
+          // ⭐ NUEVO: Cargar programaciones del subproyecto a través de sus contratos
+          try {
+            const contratosRes = await getContratos({ subproyecto: s._id });
+            const contratos = contratosRes?.data ?? [];
+
+            let programacionesDelSubproyecto = [];
+            for (const contrato of contratos) {
+              try {
+                const progRes = await programacionService.getPorContrato(contrato._id);
+                const progs = progRes?.data ?? [];
+                programacionesDelSubproyecto = [...programacionesDelSubproyecto, ...progs];
+              } catch (e) {
+                console.warn(`No se pudieron cargar programaciones del contrato ${contrato._id}`);
+              }
+            }
+
+            programacionesTemp[s._id] = programacionesDelSubproyecto;
+            console.log(`📋 Programaciones del subproyecto ${s._id}:`, programacionesDelSubproyecto.length);
+          } catch (e) {
+            console.warn(`Error cargando contratos del subproyecto ${s._id}`);
+            programacionesTemp[s._id] = [];
+          }
         }
 
+        setProgramacionesPorSubproyecto(programacionesTemp);
         setResumenHoras(resumenTemp);
         setProyectoObj(proyectos.find((p) => p._id === proyectoSel) ?? null);
       } catch (err) {
@@ -595,17 +623,18 @@ const SubproyectosPage = () => {
 
                         <td style={{ padding: '13px 16px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {/* ⭐ NUEVO: Mostrar el avance REAL de ejecución */}
                             <BarraProgreso
-                              porcentaje={Number(s.porcentaje_distribuido) || 0}
+                              porcentaje={calcularAvanceNumerico(programacionesPorSubproyecto[s._id] || [])}
                               showLabel={false}
                               className="subproyecto-barra-progreso"
                             />
                             <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
-                              {Number(s.porcentaje_distribuido || 0).toFixed(1)}%
+                              {Math.round(calcularAvanceNumerico(programacionesPorSubproyecto[s._id] || []))}% Ejecución
                             </span>
                           </div>
 
-                          
+
                         </td>
 
                         <td
