@@ -27,6 +27,7 @@ import SubproyectosPage from '../../features/proyectos/pages/SubproyectosPage';
 // Contratos
 import ContratosPage from '../../features/contratos/pages/ContratosPage';
 import ContratosPorAprobarPage from '../../features/contratos/pages/ContratosPorAprobarPage';
+import ProgresoProyectoPage from '../../features/proyectos/pages/ProgresoProyectoPage';
 
 // Programación
 import ProgramacionPage from '../../features/programacion/pages/ProgramacionPage';
@@ -50,6 +51,7 @@ export default function AppRouter() {
       {/* ─── PROYECTOS ─── */}
       <Route path="/proyectos" element={<PrivateRoute><ProyectosPage /></PrivateRoute>} />
       <Route path="/proyectos/subproyectos" element={<PrivateRoute><SubproyectosPage /></PrivateRoute>} />
+      <Route path="/proyectos/:proyectoId/progreso" element={<PrivateRoute><ProgresoProyectoPage /></PrivateRoute>} />
       <Route path="/proyectos/contratos" element={<PrivateRoute><ContratosPage /></PrivateRoute>} />
       <Route path="/proyectos/contratos/por-aprobar" element={<PrivateRoute><ContratosPorAprobarPage /></PrivateRoute>} />
 

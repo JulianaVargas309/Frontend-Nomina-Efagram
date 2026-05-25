@@ -460,6 +460,7 @@ const SubproyectosPage = () => {
                     { label: 'Proyecto', width: null },
                     { label: 'Cliente', width: null },
                     { label: 'Nombre', width: null },
+                    { label: 'Progreso', width: '180px' },
                     { label: 'Horas Trabajadas', width: null },
                     { label: 'Horas No Trabajadas', width: null },
                     { label: 'Cuadrillas', width: null },
@@ -534,6 +535,42 @@ const SubproyectosPage = () => {
 
                       <td style={{ padding: '13px 16px', fontSize: 13, color: '#0f172a' }}>
                         {s.nombre}
+                      </td>
+
+                      <td style={{ padding: '13px 16px', minWidth: 180, width: '180px' }}>
+                        {typeof s.porcentaje === 'number' || typeof s.porcentaje_distribuido === 'number' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: '#0f172a',
+                              }}
+                            >
+                              {`${Math.round(s.porcentaje ?? s.porcentaje_distribuido ?? 0)}%`}
+                            </div>
+                            <div
+                              style={{
+                                width: '100%',
+                                height: 10,
+                                borderRadius: 999,
+                                background: '#e2e8f0',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: `${Math.min(Math.max(s.porcentaje ?? s.porcentaje_distribuido ?? 0, 0), 100)}%`,
+                                  height: '100%',
+                                  background: '#3b82f6',
+                                  borderRadius: 999,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ color: '#64748b' }}>Sin progreso</span>
+                        )}
                       </td>
 
                       <td
