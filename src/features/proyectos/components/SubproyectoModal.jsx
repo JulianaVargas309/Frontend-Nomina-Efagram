@@ -10,6 +10,7 @@ import {
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
+import httpEfaStack from '../../../core/api/httpEfastack';
 
 import { CalendarDays } from "lucide-react";
 import {
@@ -227,10 +228,103 @@ const SubproyectoModal = ({
         setPersonas(Array.isArray(pd) ? pd : []);
         setActDisponibles(aRes?.data?.data ?? []);
 
-        const zonaId = proyecto.zona?._id ?? proyecto.zona ?? null;
-        const nucleosParams = zonaId ? { zona: zonaId } : {};
-        const nRes = await httpClient.get('/nucleos', { params: nucleosParams });
-        setNucleos(nRes?.data?.data ?? []);
+        // 🔍 DEBUG COMPLETO DE ZONA
+        console.log('📦 Objeto proyecto completo:', proyecto);
+        console.log('📦 proyecto.zona (expandido):', JSON.stringify(proyecto.zona, null, 2));
+        console.log('📦 proyecto.zona_id:', proyecto.zona_id);
+        console.log('📦 proyecto._id:', proyecto._id);
+        console.log('📦 Propiedades de proyecto.zona:', Object.keys(proyecto.zona || {}));
+        
+        // Intentar extraer zona ID de múltiples formas
+        let zonaId = null;
+        if (proyecto.zona?._id) {
+          zonaId = proyecto.zona._id;
+          console.log('✅ Zona encontrada por: proyecto.zona._id =', zonaId);
+        } else if (proyecto.zona?.id) {
+          zonaId = proyecto.zona.id;
+          console.log('✅ Zona encontrada por: proyecto.zona.id =', zonaId);
+        } else if (proyecto.zona?.codigo) {
+          zonaId = proyecto.zona.codigo;
+          console.log('✅ Zona encontrada por: proyecto.zona.codigo =', zonaId);
+        } else if (typeof proyecto.zona === 'string') {
+          zonaId = proyecto.zona;
+          console.log('✅ Zona encontrada por: proyecto.zona (string) =', zonaId);
+        } else if (proyecto.zona_id) {
+          zonaId = proyecto.zona_id;
+          console.log('✅ Zona encontrada por: proyecto.zona_id =', zonaId);
+        } else if (proyecto.zona) {
+          console.warn('⚠️  proyecto.zona existe pero NO tiene id/codigo:', proyecto.zona);
+        }
+        
+        console.log('🎯 Zona ID final:', zonaId);
+        
+        // Hacer llamada a API CON log de parámetros
+        let nucleosParams = zonaId ? { zona: zonaId } : {};
+        console.log('📡 Intento 1 - Llamando a /nucleos desde EFASTACK con params:', nucleosParams);
+        
+        let nRes = await httpEfaStack.get('/nucleos', { params: nucleosParams });
+        console.log('📡 Response /nucleos completo:', nRes.data);
+        
+        let nucleosCargados = nRes?.data?.data ?? nRes?.data ?? [];
+        
+        console.log('📡 Respuesta /nucleos:', { 
+          status: nRes.status,
+          dataKeys: Object.keys(nRes.data || {}),
+          cantidad: nucleosCargados.length,
+          esArray: Array.isArray(nucleosCargados),
+        });
+
+        // Si sin zona ID tampoco trae nada, intentar con codigo como parámetro
+        if (nucleosCargados.length === 0 && zonaId && proyecto.zona?.codigo) {
+          console.log('⚠️  Sin resultados con "zona", intentando con "codigo"...');
+          nucleosParams = { codigo: proyecto.zona.codigo };
+          nRes = await httpEfaStack.get('/nucleos', { params: nucleosParams });
+          nucleosCargados = nRes?.data?.data ?? nRes?.data ?? [];
+          console.log('📍 Resultado con codigo:', nucleosCargados.length);
+        }
+
+        // Si sin zona ID tampoco trae nada, intentar con zona_id como parámetro
+        if (nucleosCargados.length === 0 && zonaId) {
+          console.log('⚠️  Sin resultados con "zona", intentando con "zona_id"...');
+          nucleosParams = { zona_id: zonaId };
+          nRes = await httpEfaStack.get('/nucleos', { params: nucleosParams });
+          nucleosCargados = nRes?.data?.data ?? nRes?.data ?? [];
+          console.log('📍 Resultado con zona_id:', nucleosCargados.length);
+        }
+
+        // Si aún no hay resultados, intentar con zoneId (English)
+        if (nucleosCargados.length === 0 && zonaId) {
+          console.log('⚠️  Sin resultados, intentando con "zoneId"...');
+          nucleosParams = { zoneId: zonaId };
+          nRes = await httpEfaStack.get('/nucleos', { params: nucleosParams });
+          nucleosCargados = nRes?.data?.data ?? nRes?.data ?? [];
+          console.log('📍 Resultado con zoneId:', nucleosCargados.length);
+        }
+
+        // Si sin zona ID tampoco trae nada, intentar obtener TODOS los núcleos
+        if (nucleosCargados.length === 0 && !zonaId) {
+          console.log('⚠️  No hay núcleos con params vacíos, intentando sin filtro...');
+          nRes = await httpEfaStack.get('/nucleos');
+          nucleosCargados = nRes?.data?.data ?? nRes?.data ?? [];
+          console.log('📍 Núcleos sin filtro:', nucleosCargados.length);
+          console.log('📍 Response sin filtro:', nRes.data);
+        }
+
+        // Último intento: sin filtro (si aún no hay resultados con zona)
+        if (nucleosCargados.length === 0 && zonaId) {
+          console.log('⚠️  Sin resultados incluso con zona, intentando obtener TODOS...', { zonaId });
+          nRes = await httpEfaStack.get('/nucleos');
+          nucleosCargados = nRes?.data?.data ?? nRes?.data ?? [];
+          console.log('📍 TODOS los núcleos:', nucleosCargados.length);
+          console.log('📍 Response TODOS:', nRes.data);
+        }
+        
+        console.log('✅ Núcleos finales a mostrar:', nucleosCargados.length);
+        if (nucleosCargados.length > 0) {
+          console.log('📍 Estructura del primer núcleo:', JSON.stringify(nucleosCargados[0], null, 2));
+          console.log('📍 Propiedades del primer núcleo:', Object.keys(nucleosCargados[0]));
+        }
+        setNucleos(nucleosCargados);
 
         if (modoEditar && subproyecto) {
           setForm({
@@ -456,7 +550,7 @@ const SubproyectoModal = ({
     try {
       setLoading(true);
 
-      // ✅ CAMBIO 2: Normalizar núcleos como objetos
+      // ✅ CAMBIO 2: Normalizar núcleos con propiedades correctas de EFASTACK
       const nucleosNormalizados = nucleosSel
         .map((id) => {
           const nucleo = nucleos.find((n) => {
@@ -467,9 +561,9 @@ const SubproyectoModal = ({
           if (!nucleo) return null;
 
           return {
-            id: String(nucleo._id ?? nucleo.id ?? nucleo.value ?? nucleo.codigo ?? ''),
-            codigo: String(nucleo.codigo ?? nucleo.code ?? ''),
-            nombre: String(nucleo.nombre ?? nucleo.name ?? ''),
+            id: String(nucleo._id ?? nucleo.id ?? nucleo.value ?? ''),
+            codigo: String(nucleo.codeNucleo ?? nucleo.codigo ?? nucleo.code ?? ''),
+            nombre: String(nucleo.nombreNucleo ?? nucleo.nombre ?? nucleo.name ?? ''),
           };
         })
         .filter(Boolean);
@@ -837,7 +931,8 @@ const SubproyectoModal = ({
                     }}
                   >
                     <AlertCircle size={14} style={{ display: 'inline', marginRight: 6 }} />
-                    No hay núcleos disponibles. Asegúrate de que el proyecto tenga una zona asignada.
+                    <strong>Sin núcleos disponibles.</strong> Abre la consola (F12) para ver detalles del error.
+                    {proyecto?.zona && <span> Zona asignada: {typeof proyecto.zona === 'object' ? proyecto.zona.nombre || proyecto.zona._id : proyecto.zona}</span>}
                   </div>
                 ) : (
                   <div
@@ -847,9 +942,12 @@ const SubproyectoModal = ({
                       gap: 8,
                     }}
                   >
-                    {/* ✅ CAMBIO 5: Render mejorado de núcleos soportando múltiples formatos de ID */}
+                    {/* ✅ CAMBIO 5: Render mejorado de núcleos con propiedades correctas de EFASTACK */}
                     {nucleos.map((n) => {
+                      // EFASTACK usa: _id, nombreNucleo, codeNucleo, codeZona
                       const nucleoId = String(n._id ?? n.id ?? n.value ?? n.codigo ?? '');
+                      const nucleoNombre = n.nombreNucleo ?? n.nombre ?? n.name ?? n.designacion ?? `Núcleo ${n.codeNucleo}` ?? 'Sin nombre';
+                      const nucleoCodigo = n.codeNucleo ?? n.codigo ?? n.code ?? '';
                       const selected = nucleosSel.map(String).includes(nucleoId);
 
                       return (
@@ -885,9 +983,16 @@ const SubproyectoModal = ({
                               <CheckCircle2 size={10} color="#fff" strokeWidth={3} />
                             )}
                           </div>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
-                            {n.nombre ?? n.name ?? 'Sin nombre'}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
+                              {nucleoNombre}
+                            </span>
+                            {nucleoCodigo && (
+                              <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                                Código: {nucleoCodigo}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
