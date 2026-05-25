@@ -10,6 +10,7 @@ import {
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
+
 import { CalendarDays } from "lucide-react";
 import {
   FolderGit2,
@@ -199,10 +200,10 @@ const SubproyectoModal = ({
 
   const [nucleos, setNucleos] = useState([]);
   const [nucleosSel, setNucleosSel] = useState([]);
-  const [personas, setPersonas] = useState([]);
   const [actDisponibles, setActDisponibles] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [nuevasAsigs, setNuevasAsigs] = useState([]);
+  const [personas, setPersonas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadData, setLoadData] = useState(false);
   const [formErrors, setFormErrors] = useState([]);
@@ -500,7 +501,6 @@ const SubproyectoModal = ({
       if (supervisorSeleccionado) {
         payload.supervisor = {
           nombre: String(
-            supervisorSeleccionado.nombre ??
             supervisorSeleccionado.name ??
             supervisorSeleccionado.nombres ??
             `${supervisorSeleccionado.nombres ?? ''} ${supervisorSeleccionado.apellidos ?? ''}`.trim() ??

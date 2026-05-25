@@ -7,6 +7,7 @@ import {
     Settings, MapPin, Wrench, GitBranch, FileText, Activity, Briefcase, LogOut
 } from "lucide-react";
 import { useAuth } from "../../app/providers/useAuth";
+import { getContratos } from "../../features/contratos/services/contratosService";
 import "./sidebar.css";
 
 const SIDEBAR_SCROLL_KEY = "efagram_sidebar_scroll_top";
@@ -17,6 +18,7 @@ export default function Sidebar() {
     const location = useLocation();
     const sidebarRef = useRef(null);
     const { user, logout } = useAuth();
+    const [contratosPendientes, setContratosPendientes] = useState(0);
 
     const handleLogout = async () => {
         if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
@@ -24,6 +26,26 @@ export default function Sidebar() {
             navigate('/login', { replace: true });
         }
     };
+
+    // ✅ Cargar contador de contratos pendientes
+    useEffect(() => {
+        const cargarPendientes = async () => {
+            try {
+                const res = await getContratos();
+                const lista = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+                const pendientes = lista.filter(c => c.estado === 'PENDIENTE').length;
+                setContratosPendientes(pendientes);
+            } catch (error) {
+                console.error('Error al cargar contratos pendientes:', error);
+                setContratosPendientes(0);
+            }
+        };
+
+        cargarPendientes();
+        // Recargar cada 30 segundos para mantener actualizado
+        const interval = setInterval(cargarPendientes, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     const isEjecucion = location.pathname.startsWith("/ejecucion");
     const isProyectos = location.pathname.startsWith("/proyectos");
@@ -218,9 +240,34 @@ export default function Sidebar() {
                 <div
                     className={`menu-item ${isProyectos ? "active" : ""}`}
                     onClick={toggleProyectos}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
                 >
-                    <Folder size={18} /><span>Proyectos</span>
-                    <ChevronDown size={16} className={`arrow ${openProyectos ? "rotate" : ""}`} />
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Folder size={18} /><span>Proyectos</span>
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {contratosPendientes > 0 && (
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minWidth: 18,
+                                    height: 18,
+                                    borderRadius: '50%',
+                                    background: '#ef4444',
+                                    color: '#fff',
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    flexShrink: 0,
+                                }}
+                                title={`${contratosPendientes} contratos por aprobar`}
+                            >
+                                {contratosPendientes > 99 ? '99+' : contratosPendientes}
+                            </span>
+                        )}
+                        <ChevronDown size={16} className={`arrow ${openProyectos ? "rotate" : ""}`} />
+                    </div>
                 </div>
                 {openProyectos && (
                     <div className="submenu">
@@ -239,8 +286,59 @@ export default function Sidebar() {
                         <div
                             className={`submenu-item ${isActiveSub("/proyectos/contratos")}`}
                             onClick={() => navigatePreservingSidebar("/proyectos/contratos")}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
                         >
-                            <FileText size={16} />Contratos
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <FileText size={16} />Contratos
+                            </span>
+                            {contratosPendientes > 0 && (
+                                <span
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        minWidth: 18,
+                                        height: 18,
+                                        borderRadius: '50%',
+                                        background: '#fbbf24',
+                                        color: '#78350f',
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        flexShrink: 0,
+                                    }}
+                                    title={`${contratosPendientes} contratos por aprobar`}
+                                >
+                                    {contratosPendientes > 99 ? '99+' : contratosPendientes}
+                                </span>
+                            )}
+                        </div>
+                        <div
+                            className={`submenu-item ${isActiveSub("/proyectos/contratos/por-aprobar")}`}
+                            onClick={() => navigatePreservingSidebar("/proyectos/contratos/por-aprobar")}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+                        >
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Clock size={16} />Por Aprobar
+                            </span>
+                            {contratosPendientes > 0 && (
+                                <span
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        minWidth: 20,
+                                        height: 20,
+                                        borderRadius: '50%',
+                                        background: '#ef4444',
+                                        color: '#fff',
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {contratosPendientes > 99 ? '99+' : contratosPendientes}
+                                </span>
+                            )}
                         </div>
                     </div>
                 )}

@@ -997,6 +997,419 @@
   color: #1f8f57;
 }
 
+/* ================================================================
+   ESTILOS PARA COMPONENTES DE PROGRESO CASCADA
+   ================================================================ */
+
+/* ── Progress Bar Container ── */
+.progress-container {
+  margin-bottom: 16px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.progress-percent {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  transition: width 0.5s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-status {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Project Progress List ── */
+.proyectos-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.proyectos-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.proyectos-list-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.proyectos-list-update {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.proyecto-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.proyecto-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.proyecto-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.proyecto-card-icon {
+  color: #6366f1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.proyecto-card-info {
+  flex: 1;
+}
+
+.proyecto-card-nombre {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.proyecto-card-descripcion {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.proyecto-card-stats {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ── Project Detail Progress ── */
+.project-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.btn-volver {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #6366f1;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.btn-volver:hover {
+  color: #4f46e5;
+}
+
+.project-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  color: white;
+}
+
+.project-header h2 {
+  margin: 0 0 16px;
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+}
+
+.project-header-description {
+  margin: 0 0 16px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.project-progress-main {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.project-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.project-progress-label-text {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.project-progress-percent {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.project-progress-bar-main {
+  width: 100%;
+  height: 28px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.project-progress-bar-fill-main {
+  height: 100%;
+  background-color: #10b981;
+  transition: width 0.5s ease-in-out;
+}
+
+.project-stats {
+  margin: 16px 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* ── Subproyectos Section ── */
+.subproyectos-section h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subproyectos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subproyecto-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.subproyecto-header-btn {
+  width: 100%;
+  padding: 16px;
+  background: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.2s ease;
+  text-align: left;
+}
+
+.subproyecto-header-btn:hover {
+  background: #f9fafb;
+}
+
+.subproyecto-header-btn.expanded {
+  background: #f3f4f6;
+}
+
+.subproyecto-chevron {
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.subproyecto-info {
+  flex: 1;
+  text-align: left;
+}
+
+.subproyecto-nombre {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.subproyecto-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subproyecto-percent {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.subproyecto-estado-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.subproyecto-estado-badge--completado {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.subproyecto-estado-badge--en-progreso {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.subproyecto-content {
+  padding: 16px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.subproyecto-detalles {
+  margin-top: 12px;
+}
+
+.subproyecto-detalles-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.subproyecto-detalles-table {
+  background: white;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.subproyecto-detalles-row {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.subproyecto-detalles-row:last-child {
+  border-bottom: none;
+}
+
+.subproyecto-detalles-cantidad {
+  color: #6b7280;
+}
+
+.subproyecto-detalles-percent {
+  font-weight: 600;
+}
+
+.subproyecto-detalles-percent--completado {
+  color: #10b981;
+}
+
+.subproyecto-detalles-percent--progreso {
+  color: #3b82f6;
+}
+
+.subproyecto-detalles-mas {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #6366f1;
+  font-weight: 600;
+  text-align: center;
+}
+
+.empty-state {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+/* ── Animaciones ── */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .proy-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-header {
+    padding: 16px;
+  }
+
+  .project-header h2 {
+    font-size: 18px;
+  }
+
+  .subproyecto-header-btn {
+    padding: 12px;
+  }
+
+  .subproyecto-nombre {
+    font-size: 13px;
+  }
+}
+
 .proy-btn-accion--view svg {
   stroke: #1f8f57;
 }

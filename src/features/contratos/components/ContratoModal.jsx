@@ -715,8 +715,12 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_fin: form.fecha_fin || null,
         porcentaje_distribuido: Number(form.porcentaje_distribuido) || 0,
         observaciones: String(form.observaciones ?? '').trim(),
-        estado: modo === 'crear' ? 'ACTIVO' : form.estado,
       };
+
+      // En edición, agregar el estado
+      if (modo === 'editar') {
+        payload.estado = form.estado;
+      }
 
       if (modo === 'editar' && contrato) {
         await updateContrato(contrato._id ?? contrato.id, payload);
