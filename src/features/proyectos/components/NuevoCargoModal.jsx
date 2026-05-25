@@ -41,6 +41,7 @@ export default function NuevoCargoModal({
   useEffect(() => {
     if (!isOpen) return;
 
+    
     const values = initialValues || cargo || {};
     const codigoValue = values.codigo || nextCode;
 
