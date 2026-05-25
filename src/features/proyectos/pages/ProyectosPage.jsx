@@ -368,13 +368,18 @@ const ProyectosPage = () => {
               acc[id].monto += (a.precio_unitario || 0) * (a.cantidad_total || 0);
               return acc;
             }, {});
-            const intervenciones = Object.values(intervByObj);
-
-            // Fallback: proyectos antiguos con actividades_por_intervencion
             const intervOld = actsProyecto.length === 0
               ? Object.entries(proyecto.actividades_por_intervencion ?? {}).filter(([, arr]) => Array.isArray(arr) && arr.length > 0)
               : [];
             const presupuesto = proyecto.presupuesto_por_intervencion ?? {};
+            const intervenciones = Object.values(intervByObj);
+
+            const totalActividades = proyecto.total_actividades ??
+              (actsProyecto.length || intervOld.reduce((acc, [, arr]) => acc + arr.length, 0));
+
+            const totalProyecto = proyecto.total_proyecto ?? proyecto.valor_total ??
+              (intervenciones.reduce((acc, iv) => acc + (iv.monto || 0), 0) +
+                Object.values(presupuesto).reduce((acc, p) => acc + (p?.monto_presupuestado || 0), 0));
 
             return (
               <div key={proyecto._id} className="proy-card">
@@ -389,6 +394,18 @@ const ProyectosPage = () => {
                     <p className="proy-card-cliente">
                       {getText(proyecto.cliente, "Sin cliente")}
                     </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8, fontSize: 13, color: '#475569' }}>
+                      <span>Total actividades: <strong>{totalActividades ?? 0}</strong></span>
+                      <span>Total proyecto: <strong>{fmtMonto(totalProyecto) ?? '—'}</strong></span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6, fontSize: 12, color: '#64748b' }}>
+                      {proyecto.zona ? (
+                        <span>Zona: {getCodeNameText(proyecto.zona, 'Sin zona')}</span>
+                      ) : null}
+                      {proyecto.responsable ? (
+                        <span>Responsable: {getText(proyecto.responsable)}</span>
+                      ) : null}
+                    </div>
                   </div>
                   <span className={`proy-estado-chip proy-estado-chip--${estado?.toLowerCase()}`}>
                     {ESTADO_LABEL[estado] ?? proyecto.estado}

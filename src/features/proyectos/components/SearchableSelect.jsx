@@ -23,7 +23,44 @@ const SearchableSelect = ({
       )
     : options;
 
-  const selected = options.find((o) => o._id === value);
+  const normalizeOptionId = (opt) => {
+    if (!opt) return "";
+    return String(
+      opt._id ??
+      opt.id ??
+      opt.value ??
+      opt.codigo ??
+      opt.code ??
+      opt.documento ??
+      opt.cc ??
+      opt.name ??
+      opt.nombreZona ??
+      opt.nombre ??
+      ""
+    );
+  };
+
+  const normalizeValue = (val) => {
+    if (val === null || val === undefined) return "";
+    if (typeof val === "object") {
+      return String(
+        val._id ??
+        val.id ??
+        val.value ??
+        val.codigo ??
+        val.code ??
+        val.documento ??
+        val.cc ??
+        val.name ??
+        val.nombreZona ??
+        val.nombre ??
+        ""
+      );
+    }
+    return String(val);
+  };
+
+  const selected = options.find((o) => normalizeOptionId(o) === normalizeValue(value));
 
   useEffect(() => {
     if (open) setTimeout(() => searchRef.current?.focus(), 50);
@@ -41,7 +78,8 @@ const SearchableSelect = ({
   }, []);
 
   const handleSelect = (opt) => {
-    onChange(opt._id);
+    const selectedId = normalizeOptionId(opt);
+    onChange(selectedId);
     setOpen(false);
     setQuery("");
   };
@@ -123,29 +161,34 @@ const SearchableSelect = ({
                 Sin resultados
               </p>
             ) : (
-              filtered.map((opt) => (
-                <div
-                  key={opt._id}
-                  onClick={() => handleSelect(opt)}
-                  style={{
-                    padding: "9px 10px",
-                    borderRadius: 8,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    background: opt._id === value ? "#e8f5ee" : "transparent",
-                    color: opt._id === value ? "#1f8f57" : "#0f172a",
-                    fontWeight: opt._id === value ? 600 : 400,
-                  }}
-                  onMouseEnter={(e) => { if (opt._id !== value) e.currentTarget.style.background = "#f1f5f9"; }}
-                  onMouseLeave={(e) => { if (opt._id !== value) e.currentTarget.style.background = "transparent"; }}
-                >
-                  {renderOption ? renderOption(opt) : <span style={{ flex: 1 }}>{opt.nombre ?? opt.name}</span>}
-                  {opt._id === value && <Check size={14} color="#1f8f57" style={{ flexShrink: 0 }} />}
-                </div>
-              ))
+              filtered.map((opt, idx) => {
+                const optionValue = normalizeOptionId(opt);
+                const isSelected = optionValue === normalizeValue(value);
+
+                return (
+                  <div
+                    key={optionValue || idx}
+                    onClick={() => handleSelect(opt)}
+                    style={{
+                      padding: "9px 10px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      background: isSelected ? "#e8f5ee" : "transparent",
+                      color: isSelected ? "#1f8f57" : "#0f172a",
+                      fontWeight: isSelected ? 600 : 400,
+                    }}
+                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f1f5f9"; }}
+                    onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    {renderOption ? renderOption(opt) : <span style={{ flex: 1 }}>{opt.nombre ?? opt.name}</span>}
+                    {isSelected && <Check size={14} color="#1f8f57" style={{ flexShrink: 0 }} />}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

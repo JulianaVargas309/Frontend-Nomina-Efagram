@@ -357,6 +357,123 @@ const ProyectoModal = ({
     fecha_fin_estimada: "",
   });
 
+  const normalizeIntervencionesFromProyecto = (proyecto) => {
+    const bloques = [];
+    const raw = proyecto && (proyecto.actividades_por_intervencion || proyecto.actividades || proyecto.actividades_proyecto) || {};
+
+    const extractId = (value) => {
+      if (!value) return "";
+      if (typeof value === "string") return value;
+      return value._id || value.id || value.value || value.codigo || value.code || "";
+    };
+
+    const normalizeAct = (act) => ({
+      catalogo_id:
+        act.actividad_id ||
+        extractId(act.actividad) ||
+        act.catalogo_id ||
+        act._id ||
+        "",
+      nombre:
+        act.nombre ||
+        (act.actividad && (act.actividad.nombre || act.actividad.name)) ||
+        "",
+      precio_unitario: Number(act.precio_unitario || act.precio || 0) || 0,
+      cantidad: Number(act.cantidad || act.cantidad_total || 0) || 0,
+      unidad:
+        act.unidad ||
+        (act.actividad && (act.actividad.unidad_medida || act.actividad.unidad)) ||
+        "UNIDAD",
+      estado: act.estado || "Pendiente",
+      cliente_id_bloque:
+        act.cliente_id || extractId(act.cliente) || undefined,
+      intervencion_nombre: act.intervencion_nombre || undefined,
+      supervisor_id:
+        act.supervisor_id || extractId(act.supervisor) || undefined,
+    });
+
+    if (Array.isArray(raw)) {
+      raw.forEach((block, index) => {
+        const acts = Array.isArray(block.actividades) ? block.actividades : [];
+        if (acts.length === 0) return;
+
+        const firstAct = acts[0] || {};
+        const intervencionId =
+          block.intervencion_id ||
+          extractId(block.intervencion) ||
+          firstAct.intervencion_id ||
+          extractId(firstAct.intervencion) ||
+          "";
+        const intervencionNombre =
+          block.intervencion_nombre ||
+          (block.intervencion && (block.intervencion.nombre || block.intervencion.name)) ||
+          firstAct.intervencion_nombre ||
+          (firstAct.intervencion && (firstAct.intervencion.nombre || firstAct.intervencion.name)) ||
+          `intervencion-${index}`;
+        const clienteId =
+          block.cliente_id ||
+          extractId(block.cliente) ||
+          firstAct.cliente_id ||
+          extractId(firstAct.cliente) ||
+          "";
+        const supervisorId =
+          block.supervisor_id ||
+          extractId(block.supervisor) ||
+          firstAct.supervisor_id ||
+          extractId(firstAct.supervisor) ||
+          "";
+
+        bloques.push({
+          _uid: `migrado-${index}-${Math.random().toString(36).slice(2, 8)}`,
+          intervencion_id: intervencionId,
+          intervencion_nombre: intervencionNombre,
+          cliente_id: clienteId,
+          supervisor_id: supervisorId,
+          actividades: acts.map(normalizeAct),
+        });
+      });
+
+      return bloques;
+    }
+
+    if (!raw || typeof raw !== "object") {
+      return [];
+    }
+
+    Object.entries(raw).forEach(([key, acts]) => {
+      if (!Array.isArray(acts) || acts.length === 0) return;
+
+      const firstAct = acts[0] || {};
+      const intervencionId =
+        firstAct.intervencion_id ||
+        extractId(firstAct.intervencion) ||
+        "";
+      const intervencionNombre =
+        firstAct.intervencion_nombre ||
+        (firstAct.intervencion && (firstAct.intervencion.nombre || firstAct.intervencion.name)) ||
+        key;
+      const clienteId =
+        firstAct.cliente_id ||
+        extractId(firstAct.cliente) ||
+        "";
+      const supervisorId =
+        firstAct.supervisor_id ||
+        extractId(firstAct.supervisor) ||
+        "";
+
+      bloques.push({
+        _uid: `${key}-${Math.random().toString(36).slice(2, 8)}`,
+        intervencion_id: intervencionId,
+        intervencion_nombre: intervencionNombre,
+        cliente_id: clienteId,
+        supervisor_id: supervisorId,
+        actividades: acts.map(normalizeAct),
+      });
+    });
+
+    return bloques;
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -366,8 +483,8 @@ const ProyectoModal = ({
       setForm({
         codigo: proyecto.codigo ?? "",
         nombre: proyecto.nombre ?? "",
-        responsable: proyecto.responsable?._id ?? proyecto.responsable ?? "",
-        zona: proyecto.zona?._id ?? proyecto.zona ?? "",
+        responsable: getEntityId(proyecto.responsable),
+        zona: getEntityId(proyecto.zona),
         fecha_inicio: toDateInput(proyecto.fecha_inicio),
         fecha_fin_estimada: toDateInput(proyecto.fecha_fin_estimada),
         tipo_contrato: proyecto.tipo_contrato ?? "FIJO_TODO_COSTO",
@@ -380,7 +497,7 @@ const ProyectoModal = ({
         fecha_fin_estimada: formatIsoToDisplay(proyecto.fecha_fin_estimada),
       });
 
-      setIntervenciones([]);
+      setIntervenciones(normalizeIntervencionesFromProyecto(proyecto));
     } else {
       setForm({
         ...initialForm,
@@ -421,6 +538,24 @@ const ProyectoModal = ({
       cargar();
     }
   }, [isOpen, modo, proyecto, modoEditar, modoVer, initialForm, proyectosActuales]);
+
+  const getEntityId = (entity) => {
+    if (!entity) return "";
+    if (typeof entity === "string" || typeof entity === "number") return String(entity);
+    return String(
+      entity._id ??
+      entity.id ??
+      entity.value ??
+      entity.codigo ??
+      entity.code ??
+      entity.documento ??
+      entity.cc ??
+      entity.nombreZona ??
+      entity.nombre ??
+      entity.name ??
+      ""
+    );
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -534,8 +669,61 @@ const ProyectoModal = ({
     </div>
   );
 
+  const normalizeIntervencionKey = (bloque) => {
+    const raw = String(bloque.intervencion_nombre ?? bloque.intervencion_id ?? "").trim().toLowerCase();
+
+    if (raw.includes("mantenimiento")) return "mantenimiento";
+    if (raw.includes("establecimiento")) return "establecimiento";
+    if (
+      raw.includes("no programadas") ||
+      raw.includes("no_programadas") ||
+      raw.includes("no programada") ||
+      raw.includes("no_programada")
+    ) {
+      return "no_programadas";
+    }
+
+    return bloque.intervencion_id ? String(bloque.intervencion_id) : "sin_intervencion";
+  };
+
+  const buildZonaPayload = (zonaObj) => {
+    if (!zonaObj) return undefined;
+
+    return {
+      _id: zonaObj._id ?? zonaObj.id ?? undefined,
+      nombre:
+        zonaObj.nombreZona ?? zonaObj.nombre ?? zonaObj.name ?? undefined,
+      codigo:
+        zonaObj.codeZona ?? zonaObj.codigo ?? zonaObj.code ?? undefined,
+    };
+  };
+
+  const buildResponsablePayload = (persona) => {
+    if (!persona) return undefined;
+
+    const nombre = [persona.nombres, persona.apellidos]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || persona.name || persona.nombre;
+
+    return {
+      _id: persona._id ?? persona.id ?? undefined,
+      nombres: persona.nombres ?? undefined,
+      apellidos: persona.apellidos ?? undefined,
+      nombre: nombre || undefined,
+      documento:
+        persona.cc ?? persona.num_doc ?? persona.documento ?? persona.dni ?? undefined,
+      cargo:
+        persona.cargo ?? persona.rol ?? persona.puesto ?? persona.position ?? undefined,
+    };
+  };
+
   const buildPayload = () => {
-    const actividadesPorIntervencion = {};
+    const actividadesPorIntervencion = {
+      mantenimiento: [],
+      establecimiento: [],
+      no_programadas: [],
+    };
 
     // Obtener primer cliente válido
     const primerBloqueConCliente = intervenciones.find(
@@ -546,10 +734,28 @@ const ProyectoModal = ({
 
     const clienteId = primerBloqueConCliente?.cliente_id || null;
 
-    console.log("CLIENTE FINAL:", clienteId);
+    const normalizeId = (entity) => {
+      if (!entity) return "";
+      if (typeof entity === "string" || typeof entity === "number") return String(entity);
+      return String(entity._id ?? entity.id ?? entity.value ?? entity.codigo ?? entity.code ?? "");
+    };
+
+    const selectedZona = zonas.find((z) => normalizeId(z) === normalizeId(form.zona));
+    const selectedResponsable = personas.find((p) => normalizeId(p) === normalizeId(form.responsable));
+
+    const zonaPayload = selectedZona
+      ? buildZonaPayload(selectedZona)
+      : form.zona
+      ? buildZonaPayload({ _id: normalizeId(form.zona) })
+      : undefined;
+    const responsablePayload = selectedResponsable
+      ? buildResponsablePayload(selectedResponsable)
+      : form.responsable
+      ? buildResponsablePayload({ _id: normalizeId(form.responsable) })
+      : undefined;
 
     intervenciones.forEach((bloque) => {
-      const key = bloque.intervencion_id ?? "sin_intervencion";
+      const key = normalizeIntervencionKey(bloque);
 
       if (!actividadesPorIntervencion[key]) {
         actividadesPorIntervencion[key] = [];
@@ -577,10 +783,20 @@ const ProyectoModal = ({
       codigo: form.codigo.trim().toUpperCase(),
       nombre: form.nombre.trim(),
 
-      responsable: form.responsable || undefined,
-      zona: form.zona || undefined,
+      zona: zonaPayload || form.zona || undefined,
+      zona_id: String(normalizeId(form.zona) || zonaPayload?._id || "") || undefined,
+      responsable: responsablePayload || form.responsable || undefined,
+      responsable_id: String(normalizeId(form.responsable) || responsablePayload?._id || "") || undefined,
+      zona_nombre: zonaPayload?.nombre,
+      zona_codigo: zonaPayload?.codigo,
+      responsable_nombre: responsablePayload?.nombre,
+      responsable_documento: responsablePayload?.documento,
+      responsable_cargo: responsablePayload?.cargo,
 
-      // 🔥 ESTE ES EL IMPORTANTE
+      nucleos: [],
+      fincas: [],
+      personal: [],
+
       cliente: clienteId,
 
       actividades_por_intervencion:
@@ -603,6 +819,10 @@ const ProyectoModal = ({
 
     if (!form.zona) {
       errores.push("Debes seleccionar una zona.");
+    }
+
+    if (!form.responsable) {
+      errores.push("Debes seleccionar un responsable.");
     }
 
     if (intervenciones.length === 0) {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import {
   createSubproyecto,
   updateSubproyecto,
@@ -7,14 +7,16 @@ import {
   getAsignaciones,
   cancelarAsignacion,
 } from '../services/subproyectosService';
+import { getEstadoDistribucion } from '../utils/porcentajeUtils';
+import { usePorcentajesLocales } from '../hooks/usePorcentajesLocales';
 import SearchableSelect from "./SearchableSelect";
 import { getPersonal } from '../services/personalService';
 import httpClient from '../../../core/api/httpClient';
-
 import { CalendarDays } from "lucide-react";
 import {
   FolderGit2,
   User,
+  Users,
   MapPin,
   Plus,
   PlusCircle,
@@ -200,19 +202,107 @@ const SubproyectoModal = ({
 
   const [nucleos, setNucleos] = useState([]);
   const [nucleosSel, setNucleosSel] = useState([]);
+  const [personas, setPersonas] = useState([]);
   const [actDisponibles, setActDisponibles] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [nuevasAsigs, setNuevasAsigs] = useState([]);
-  const [personas, setPersonas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadData, setLoadData] = useState(false);
   const [formErrors, setFormErrors] = useState([]);
   const fechaInicioPickerRef = useRef(null);
   const fechaFinPickerRef = useRef(null);
 
+  const getZonaIdentifier = (proyecto) => {
+    if (!proyecto) return null;
+
+    const zona = proyecto.zona;
+    if (zona) {
+      if (typeof zona === 'string' || typeof zona === 'number') return String(zona);
+      if (typeof zona === 'object') {
+        return String(
+          zona._id ??
+          zona.id ??
+          zona.code ??
+          zona.codeZona ??
+          zona.codigo ??
+          zona.nombreZona ??
+          zona.nombre ??
+          zona.name ??
+          null
+        );
+      }
+    }
+
+    if (proyecto.zona_id) return String(proyecto.zona_id);
+    if (proyecto.zona_codigo) return String(proyecto.zona_codigo);
+    if (proyecto.zona_nombre) return String(proyecto.zona_nombre);
+
+    return null;
+  };
+
+  const getZonaQueryParams = (proyecto) => {
+    const params = {};
+    const zonaId = getZonaIdentifier(proyecto);
+
+    if (zonaId) {
+      params.zona = zonaId;
+      params.zona_id = zonaId;
+    }
+
+    const zonaCodigo = String(
+      typeof proyecto.zona === 'string' || typeof proyecto.zona === 'number'
+        ? proyecto.zona
+        : proyecto.zona?.codeZona ?? proyecto.zona?.code ?? proyecto.zona?.codigo ?? proyecto.zona_codigo ?? ''
+    ).trim();
+    const zonaNombre = String(
+      proyecto.zona?.nombreZona ?? proyecto.zona?.nombre ?? proyecto.zona?.name ?? proyecto.zona_nombre ?? ''
+    ).trim();
+
+    if (zonaCodigo) params.zona_codigo = zonaCodigo;
+    if (zonaNombre) params.zona_nombre = zonaNombre;
+
+    return params;
+  };
+
   useEffect(() => {
     if (!isOpen || !proyecto) return;
     setFormErrors([]);
+
+    if (modoEditar && subproyecto) {
+      setForm({
+        codigo: subproyecto.codigo ?? '',
+        nombre: subproyecto.nombre ?? '',
+        supervisor: subproyecto.supervisor?._id ?? subproyecto.supervisor ?? '',
+        fecha_inicio: subproyecto.fecha_inicio?.slice(0, 10) ?? '',
+        fecha_fin_estimada: subproyecto.fecha_fin_estimada?.slice(0, 10) ?? '',
+        observaciones: subproyecto.observaciones ?? '',
+      });
+
+      setDisplayFechas({
+        fecha_inicio: formatIsoToDisplay(subproyecto.fecha_inicio),
+        fecha_fin_estimada: formatIsoToDisplay(subproyecto.fecha_fin_estimada),
+      });
+
+      setNucleosSel(
+        subproyecto.nucleos?.map((n) => {
+          if (typeof n === 'string') return n;
+          return String(n.id ?? n._id ?? n.value ?? n.codigo ?? '');
+        }).filter(Boolean) ?? []
+      );
+    } else {
+      setForm({
+        codigo: getNextSubproyectoCode(proyecto?.codigo, subproyectosActuales),
+        nombre: '',
+        supervisor: '',
+        fecha_inicio: '',
+        fecha_fin_estimada: '',
+        observaciones: '',
+      });
+      setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
+      setNucleosSel([]);
+      setAsignaciones([]);
+      setNuevasAsigs([]);
+    }
 
     const cargar = async () => {
       try {
@@ -227,49 +317,13 @@ const SubproyectoModal = ({
         setPersonas(Array.isArray(pd) ? pd : []);
         setActDisponibles(aRes?.data?.data ?? []);
 
-        const zonaId = proyecto.zona?._id ?? proyecto.zona ?? null;
-        const nucleosParams = zonaId ? { zona: zonaId } : {};
+        const nucleosParams = getZonaQueryParams(proyecto);
         const nRes = await httpClient.get('/nucleos', { params: nucleosParams });
         setNucleos(nRes?.data?.data ?? []);
 
         if (modoEditar && subproyecto) {
-          setForm({
-            codigo: subproyecto.codigo ?? '',
-            nombre: subproyecto.nombre ?? '',
-            supervisor: subproyecto.supervisor?._id ?? subproyecto.supervisor ?? '',
-            fecha_inicio: subproyecto.fecha_inicio?.slice(0, 10) ?? '',
-            fecha_fin_estimada: subproyecto.fecha_fin_estimada?.slice(0, 10) ?? '',
-            observaciones: subproyecto.observaciones ?? '',
-          });
-
-          setDisplayFechas({
-            fecha_inicio: formatIsoToDisplay(subproyecto.fecha_inicio),
-            fecha_fin_estimada: formatIsoToDisplay(subproyecto.fecha_fin_estimada),
-          });
-
-          // ✅ CAMBIO 3: Soportar núcleos como objetos con id, _id, value o codigo
-          setNucleosSel(
-            subproyecto.nucleos?.map((n) => {
-              if (typeof n === 'string') return n;
-              return String(n.id ?? n._id ?? n.value ?? n.codigo ?? '');
-            }).filter(Boolean) ?? []
-          );
-
           const asRes = await getAsignaciones({ subproyecto: subproyecto._id });
           setAsignaciones(asRes?.data?.data ?? []);
-        } else {
-          setForm({
-            codigo: getNextSubproyectoCode(proyecto?.codigo, subproyectosActuales),
-            nombre: '',
-            supervisor: '',
-            fecha_inicio: '',
-            fecha_fin_estimada: '',
-            observaciones: '',
-          });
-          setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
-          setNucleosSel([]);
-          setAsignaciones([]);
-          setNuevasAsigs([]);
         }
       } catch (e) {
         console.error('Error cargando datos del subproyecto', e);
@@ -340,6 +394,41 @@ const SubproyectoModal = ({
       setFormErrors([e?.response?.data?.message ?? 'Error cancelando asignación']);
     }
   };
+
+  const renderSupervisorOption = (p) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: '50%',
+          background: '#e8f5ee',
+          color: '#1f8f57',
+          fontSize: 11,
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {(`${p.nombres ?? p.name ?? '?'}`.charAt(0) + `${p.apellidos ?? ''}`.charAt(0)).toUpperCase()}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {`${p.nombres ?? ''} ${p.apellidos ?? ''}`.trim() || p.name}
+        </div>
+        {(p.cc || p.num_doc) && (
+          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+            CC {p.cc ?? p.num_doc}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderSupervisorSelected = (p) =>
+    `${p.nombres ?? ''} ${p.apellidos ?? ''}`.trim() || p.name;
 
   const renderDateField = ({ label, field, pickerRef }) => (
     <div className="form-group">
@@ -497,10 +586,14 @@ const SubproyectoModal = ({
         observaciones: form.observaciones?.trim() || undefined,
       };
 
+      // 🔍 DEBUG: Ver payload que se envía al backend
+      console.log('📤 Payload enviando al backend:', payload);
+
       // Solo agregar supervisor si hay uno seleccionado
       if (supervisorSeleccionado) {
         payload.supervisor = {
           nombre: String(
+            supervisorSeleccionado.nombre ??
             supervisorSeleccionado.name ??
             supervisorSeleccionado.nombres ??
             `${supervisorSeleccionado.nombres ?? ''} ${supervisorSeleccionado.apellidos ?? ''}`.trim() ??
@@ -715,7 +808,7 @@ const SubproyectoModal = ({
               Cargando datos...
             </div>
           ) : (
-            <>
+            <Fragment>
               <SectionHeader
                 title="Información general"
                 subtitle="Completa los datos base del subproyecto"
@@ -779,29 +872,11 @@ const SubproyectoModal = ({
                     const doc = String(p.cc ?? p.num_doc ?? "");
                     return nombre.includes(s) || doc.includes(s);
                   }}
-                  renderOption={(p) => (
-                    <>
-                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#e8f5ee", color: "#1f8f57", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {(`${p.nombres ?? p.name ?? "?"}`.charAt(0) + `${p.apellidos ?? ""}`.charAt(0)).toUpperCase()}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {`${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.name}
-                        </div>
-                        {(p.cc || p.num_doc) && (
-                          <div style={{ fontSize: 11, color: "#94a3b8" }}>
-                            CC {p.cc ?? p.num_doc}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                  renderSelected={(p) =>
-                    `${p.nombres ?? ""} ${p.apellidos ?? ""}`.trim() || p.name
-                  }
+                  renderOption={renderSupervisorOption}
+                  renderSelected={renderSupervisorSelected}
                 />
               </div>
-              
+
               <div className="modal-grid">
                 {renderDateField({
                   label: 'Fecha Inicio',
@@ -906,8 +981,9 @@ const SubproyectoModal = ({
                   }}
                   placeholder="Observaciones opcionales..."
                   rows={3}
-                />
+                ></textarea>
               </div>
+
 
               <SectionHeader
                 title="Asignación de actividades"
@@ -1014,26 +1090,35 @@ const SubproyectoModal = ({
                   </div>
                 )}
 
-                {Object.entries(disponiblesPorIntervencion).map(([tipo, acts]) => {
-                  const col = INTERVENCION_COLOR[tipo] ?? {};
+                <SectionHeader
+                  title="Actividades disponibles"
+                  subtitle="Selecciona las actividades que quieres asignar al subproyecto."
+                  icon={<PlusCircle size={18} />}
+                  tone="blue"
+                />
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
+                  {Object.entries(disponiblesPorIntervencion).map(([tipo, acts]) => {
+                    const col = INTERVENCION_COLOR[tipo] ?? {};
 
                   return (
                     <div key={tipo}>
                       <p
                         style={{
                           margin: '0 0 10px',
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: 700,
                           color: col.color,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 6,
+                          gap: 8,
+                          textTransform: 'uppercase',
                         }}
                       >
-                        {TIPO_EMOJI[tipo]} {String(tipo).replace(/_/g, ' ').toUpperCase()}
+                        {TIPO_EMOJI[tipo]} {String(tipo).replace(/_/g, ' ')}
                       </p>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                         {acts.map((a) => {
                           const enBorrador = nuevasAsigs.some(
                             (n) => n.actividad_proyecto_id === a._id
@@ -1049,11 +1134,12 @@ const SubproyectoModal = ({
                             <div
                               key={a._id}
                               style={{
-                                background: cerrada ? '#f8fafc' : '#fff',
+                                background: '#fff',
                                 border: `1.5px solid ${cerrada ? '#e2e8f0' : col.border}`,
-                                borderRadius: 12,
-                                padding: '12px 14px',
-                                opacity: cerrada ? 0.65 : 1,
+                                borderRadius: 14,
+                                padding: '16px 18px',
+                                opacity: cerrada ? 0.7 : 1,
+                                boxShadow: '0 1px 6px rgba(15,23,42,0.06)',
                               }}
                             >
                               <div
@@ -1111,9 +1197,9 @@ const SubproyectoModal = ({
                                   <span
                                     style={{
                                       fontSize: 11,
-                                      background: '#f0faf4',
-                                      color: '#1f8f57',
-                                      padding: '3px 10px',
+                                      background: '#ecfdf5',
+                                      color: '#166534',
+                                      padding: '4px 10px',
                                       borderRadius: 999,
                                       fontWeight: 700,
                                       flexShrink: 0,
@@ -1149,38 +1235,35 @@ const SubproyectoModal = ({
                     </div>
                   );
                 })}
+                </div>
 
                 {nuevasAsigs.length > 0 && (
                   <div>
-                    <p
-                      style={{
-                        margin: '0 0 10px',
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: '#0f172a',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      📝 Por asignar (ingresa cantidades)
-                    </p>
+                    <SectionHeader
+                      title="Por asignar"
+                      subtitle="Ingresa cantidades para las actividades seleccionadas."
+                      icon={<PlusCircle size={18} />}
+                      tone="green"
+                    />
+                    <div style={{ marginTop: 16 }} />
 
                     <div
                       style={{
                         border: '1.5px solid #e2e8f0',
-                        borderRadius: 12,
+                        borderRadius: 14,
                         overflow: 'hidden',
+                        background: '#fff',
                       }}
                     >
                       <div
                         style={{
                           display: 'grid',
-                          gridTemplateColumns: '1fr 160px 32px',
+                          gridTemplateColumns: '1.5fr 1fr 32px',
                           gap: 8,
-                          padding: '8px 14px',
+                          padding: '12px 16px',
                           background: '#f8fafc',
                           borderBottom: '1px solid #e6e8ef',
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: 700,
                           color: '#64748b',
                           textTransform: 'uppercase',
@@ -1199,9 +1282,9 @@ const SubproyectoModal = ({
                             key={i}
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: '1fr 160px 32px',
+                              gridTemplateColumns: '1.5fr 1fr 32px',
                               gap: 8,
-                              padding: '10px 14px',
+                              padding: '14px 16px',
                               borderBottom:
                                 i < nuevasAsigs.length - 1 ? '1px solid #f0f2f5' : 'none',
                               alignItems: 'center',
@@ -1233,10 +1316,11 @@ const SubproyectoModal = ({
                               onChange={(e) => actualizarCantidad(i, e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '7px 10px',
+                                padding: '10px 12px',
                                 border: '1.5px solid #e6e8ef',
-                                borderRadius: 8,
+                                borderRadius: 10,
                                 fontSize: 13,
+                                background: '#f8fafc',
                               }}
                             />
 
@@ -1280,7 +1364,7 @@ const SubproyectoModal = ({
                   </div>
                 )}
               </div>
-            </>
+            </Fragment>
           )}
         </div>
         <div style={{ padding: '16px 24px', borderTop: '1px solid #f0f2f5' }}>
@@ -1329,5 +1413,3 @@ const SubproyectoModal = ({
 };
 
 export default SubproyectoModal;
-
-

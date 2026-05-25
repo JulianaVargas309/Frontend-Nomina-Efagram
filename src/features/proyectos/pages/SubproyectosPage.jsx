@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../../app/layouts/DashboardLayout';
 import SubproyectoModal from '../components/SubproyectoModal';
@@ -9,50 +9,6 @@ import '../../../assets/styles/proyectos.css';
 import SubproyectoCuadrillas from '../components/SubproyectoCuadrillas';
 import GestionarSubproyectoModal from './GestionarSubproyectoModal';
 import { getResumenHorasSubproyecto } from '../services/horasService';
-
-// 🔥 Error Boundary para capturar errores de renderización
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('🔴 Error Boundary capturó error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <DashboardLayout>
-          <div
-            style={{
-              background: '#fee2e2',
-              border: '2px solid #dc2626',
-              borderRadius: 12,
-              padding: '24px 20px',
-              color: '#991b1b',
-              textAlign: 'center',
-            }}
-          >
-            <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700 }}>
-              ❌ Error crítico en Subproyectos
-            </p>
-            <p style={{ margin: 0, fontSize: 14, fontFamily: 'monospace' }}>
-              {this.state.error?.message}
-            </p>
-          </div>
-        </DashboardLayout>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 const ESTADO_COLOR = {
   ACTIVO: { bg: '#f0faf4', color: '#1f8f57', border: '#1f8f57' },
@@ -70,51 +26,37 @@ const SubproyectosPage = () => {
   const [subproyectos, setSubproyectos] = useState([]);
   const [resumenHoras, setResumenHoras] = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [modalState, setModalState] = useState({ open: false, sub: null });
   const [gestionarModal, setGestionarModal] = useState({ open: false, sub: null });
 
   useEffect(() => {
-    console.log('🔄 SubproyectosPage: Cargando proyectos...');
     getProyectos()
       .then((res) => {
-        console.log('✅ SubproyectosPage: Proyectos cargados', res);
         const data = res?.data?.data ?? [];
         setProyectos(data);
-        setError(null);
 
         if (proyectoIdParam) {
           setProyectoObj(data.find((p) => p._id === proyectoIdParam) ?? null);
         }
       })
-      .catch((err) => {
-        console.error('❌ SubproyectosPage: Error cargando proyectos', err);
-        setError(err?.message || 'Error al cargar proyectos');
-      });
+      .catch(console.error);
   }, [proyectoIdParam]);
 
   useEffect(() => {
     const cargar = async () => {
       if (!proyectoSel) {
-        console.log('⏸️  SubproyectosPage: No hay proyecto seleccionado');
         setSubproyectos([]);
         setProyectoObj(null);
         setResumenHoras({});
-        setError(null);
         return;
       }
 
-      console.log('🔄 SubproyectosPage: Cargando subproyectos para proyecto:', proyectoSel);
       setLoading(true);
-      setError(null);
 
       try {
-        console.log('📡 Llamando a getSubproyectos...');
         const res = await getSubproyectos({ proyecto: proyectoSel });
-        console.log('✅ Respuesta de getSubproyectos:', res);
-        
-        const subs = res?.data?.data ?? res?.data ?? [];
-        console.log('📋 Subproyectos procesados:', subs);
+        const subs = res?.data?.data ?? [];
+
         setSubproyectos(subs);
 
         const resumenTemp = {};
@@ -123,7 +65,6 @@ const SubproyectosPage = () => {
             const r = await getResumenHorasSubproyecto(s._id);
             resumenTemp[s._id] = r?.data?.data ?? r?.data ?? [];
           } catch (e) {
-            console.warn(`⚠️  Error cargando horas para subproyecto ${s._id}:`, e);
             resumenTemp[s._id] = [];
           }
         }
@@ -131,9 +72,7 @@ const SubproyectosPage = () => {
         setResumenHoras(resumenTemp);
         setProyectoObj(proyectos.find((p) => p._id === proyectoSel) ?? null);
       } catch (err) {
-        console.error('❌ Error cargando subproyectos:', err);
-        setError(err?.message || 'Error al cargar subproyectos');
-        setSubproyectos([]);
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -187,20 +126,6 @@ const SubproyectosPage = () => {
   return (
     <DashboardLayout>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        {/* 🔥 ERROR UI */}
-        {error && (
-          <div
-            style={{
-              background: '#fee2e2',
-              border: '2px solid #fca5a5',
-              borderRadius: 12,
-              padding: '16px 20px',
-              color: '#991b1b',
-            }}
-          >
-            <strong>⚠️ Error:</strong> {error}
-          </div>
-        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2
@@ -459,7 +384,6 @@ const SubproyectosPage = () => {
                     { label: 'Proyecto', width: null },
                     { label: 'Cliente', width: null },
                     { label: 'Nombre', width: null },
-                    { label: 'Progreso', width: '180px' },
                     { label: 'Horas Trabajadas', width: null },
                     { label: 'Horas No Trabajadas', width: null },
                     { label: 'Cuadrillas', width: null },
@@ -534,42 +458,6 @@ const SubproyectosPage = () => {
 
                       <td style={{ padding: '13px 16px', fontSize: 13, color: '#0f172a' }}>
                         {s.nombre}
-                      </td>
-
-                      <td style={{ padding: '13px 16px', minWidth: 180, width: '180px' }}>
-                        {typeof s.porcentaje === 'number' || typeof s.porcentaje_distribuido === 'number' ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: '#0f172a',
-                              }}
-                            >
-                              {`${Math.round(s.porcentaje ?? s.porcentaje_distribuido ?? 0)}%`}
-                            </div>
-                            <div
-                              style={{
-                                width: '100%',
-                                height: 10,
-                                borderRadius: 999,
-                                background: '#e2e8f0',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  width: `${Math.min(Math.max(s.porcentaje ?? s.porcentaje_distribuido ?? 0, 0), 100)}%`,
-                                  height: '100%',
-                                  background: '#3b82f6',
-                                  borderRadius: 999,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <span style={{ color: '#64748b' }}>Sin progreso</span>
-                        )}
                       </td>
 
                       <td
@@ -757,10 +645,4 @@ const SubproyectosPage = () => {
   );
 };
 
-export default function SubproyectosPageWrapper() {
-  return (
-    <ErrorBoundary>
-      <SubproyectosPage />
-    </ErrorBoundary>
-  );
-}                                                                                        
+export default SubproyectosPage;                                                                                        
