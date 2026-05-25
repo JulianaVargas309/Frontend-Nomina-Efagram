@@ -234,7 +234,7 @@ const SubproyectoModal = ({
         console.log('📦 proyecto.zona_id:', proyecto.zona_id);
         console.log('📦 proyecto._id:', proyecto._id);
         console.log('📦 Propiedades de proyecto.zona:', Object.keys(proyecto.zona || {}));
-        
+
         // Intentar extraer zona ID de múltiples formas
         let zonaId = null;
         if (proyecto.zona?._id) {
@@ -255,19 +255,19 @@ const SubproyectoModal = ({
         } else if (proyecto.zona) {
           console.warn('⚠️  proyecto.zona existe pero NO tiene id/codigo:', proyecto.zona);
         }
-        
+
         console.log('🎯 Zona ID final:', zonaId);
-        
+
         // Hacer llamada a API CON log de parámetros
         let nucleosParams = zonaId ? { zona: zonaId } : {};
         console.log('📡 Intento 1 - Llamando a /nucleos desde EFASTACK con params:', nucleosParams);
-        
+
         let nRes = await httpEfaStack.get('/nucleos', { params: nucleosParams });
         console.log('📡 Response /nucleos completo:', nRes.data);
-        
+
         let nucleosCargados = nRes?.data?.data ?? nRes?.data ?? [];
-        
-        console.log('📡 Respuesta /nucleos:', { 
+
+        console.log('📡 Respuesta /nucleos:', {
           status: nRes.status,
           dataKeys: Object.keys(nRes.data || {}),
           cantidad: nucleosCargados.length,
@@ -318,7 +318,7 @@ const SubproyectoModal = ({
           console.log('📍 TODOS los núcleos:', nucleosCargados.length);
           console.log('📍 Response TODOS:', nRes.data);
         }
-        
+
         console.log('✅ Núcleos finales a mostrar:', nucleosCargados.length);
         if (nucleosCargados.length > 0) {
           console.log('📍 Estructura del primer núcleo:', JSON.stringify(nucleosCargados[0], null, 2));
@@ -895,7 +895,7 @@ const SubproyectoModal = ({
                   }
                 />
               </div>
-              
+
               <div className="modal-grid">
                 {renderDateField({
                   label: 'Fecha Inicio',
