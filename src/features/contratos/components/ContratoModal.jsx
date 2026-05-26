@@ -186,7 +186,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
     codigo: '', subproyecto: '', finca: '',
     fecha_inicio: '', fecha_fin: '',
     observaciones: '', estado: 'PENDIENTE',
-    porcentaje_distribuido: 0,
   });
 
   const [displayFechas, setDisplayFechas] = useState({
@@ -355,9 +354,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       const subId = contrato.subproyecto?._id ?? contrato.subproyecto ?? '';
 
       // Obtener el porcentaje del subproyecto (no del contrato anterior)
-      const subproyectoSel = subproyectos.find(s => (s._id ?? s.id) === subId);
-      const porcentajeDelSubproyecto = subproyectoSel?.porcentaje_distribuido ?? 0;
-
       setForm({
         codigo: contrato.codigo ?? '',
         subproyecto: subId,
@@ -365,7 +361,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         fecha_inicio: toDateInput(contrato.fecha_inicio),
         fecha_fin: toDateInput(contrato.fecha_fin),
         observaciones: contrato.observaciones ?? '',
-        porcentaje_distribuido: porcentajeDelSubproyecto,
         estado: contrato.estado ?? 'PENDIENTE',
       });
 
@@ -426,7 +421,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
       fecha_fin: '',
       observaciones: '',
       estado: 'PENDIENTE',
-      porcentaje_distribuido: 0,
     });
     setLotes([]);
     setNuevoLote('');
@@ -451,14 +445,9 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
   };
 
   const handleSubproyectoChange = (subId) => {
-    // Obtener el porcentaje del subproyecto seleccionado
-    const subproyectoSel = subproyectos.find(s => (s._id ?? s.id) === subId);
-    const porcentajeDelSubproyecto = subproyectoSel?.porcentaje_distribuido ?? 0;
-
     setForm(p => ({
       ...p,
       subproyecto: subId,
-      porcentaje_distribuido: porcentajeDelSubproyecto,
     }));
     setActividadesSel([]);
     cargarActividadesDisponibles(subId, contrato?._id ?? contrato?.id ?? null);
@@ -713,7 +702,6 @@ export default function ContratoModal({ isOpen, onClose, onSuccess, contrato = n
         cuadrillas: cuadrillaIds,
         fecha_inicio: form.fecha_inicio || null,
         fecha_fin: form.fecha_fin || null,
-        porcentaje_distribuido: Number(form.porcentaje_distribuido) || 0,
         observaciones: String(form.observaciones ?? '').trim(),
       };
 
