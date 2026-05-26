@@ -10,7 +10,7 @@ import {
   PauseCircle
 } from 'lucide-react';
 import programacionService from '../services/programacionService';
-import { getContrato } from '../../contratos/services/contratosService';
+import { getContrato, getContratos } from '../../contratos/services/contratosService';
 
 const ESTADO_COLOR = {
   COMPLETADO: { bg: '#dcfce7', color: '#16a34a', label: 'Completado' },
@@ -160,50 +160,88 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
 
       // Cargar cuadrillas del contrato si existe
       let contratoId = null;
+      let codigoContrato = null;
 
       if (programacion?.contrato) {
         if (typeof programacion.contrato === 'string') {
           contratoId = programacion.contrato;
-        } else if (programacion.contrato._id) {
-          contratoId = programacion.contrato._id;
-        } else if (programacion.contrato.id) {
-          contratoId = programacion.contrato.id;
+        } else if (typeof programacion.contrato === 'object') {
+          contratoId = programacion.contrato._id || programacion.contrato.id;
+          codigoContrato = programacion.contrato.codigo;
         }
       }
 
+      console.log('🔍 Buscando cuadrillas:');
+      console.log('  - Contrato ID:', contratoId);
+      console.log('  - Código Contrato:', codigoContrato);
+      console.log('  - Estructura contrato:', programacion?.contrato);
+
+      let contrato = null;
+
+      // Intenta primero por ID
       if (contratoId) {
         try {
-          console.log('Cargando cuadrillas para contrato ID:', contratoId);
+          console.log('📡 Opción 1: Buscando por ID:', contratoId);
           const contratoResponse = await getContrato(contratoId);
-          const contrato = contratoResponse?.data || contratoResponse;
-          console.log('Contrato obtenido:', contrato);
+          contrato = contratoResponse?.data || contratoResponse;
+          console.log('✅ Contrato encontrado por ID:', contrato);
+        } catch (err) {
+          console.warn('⚠️ No se encontró por ID, intentando por código...', err);
+        }
+      }
 
-          let cuadrillas = contrato?.cuadrillas || [];
+      // Si no encontró por ID, busca por código
+      if (!contrato && codigoContrato) {
+        try {
+          console.log('📡 Opción 2: Buscando por código:', codigoContrato);
+          const contratosResponse = await getContratos({ codigo: codigoContrato });
+          const contratos = contratosResponse?.data || contratosResponse || [];
+          console.log('📋 Contratos encontrados:', contratos);
 
-          if (Array.isArray(cuadrillas) && cuadrillas.length > 0) {
-            console.log('Cuadrillas encontradas:', cuadrillas);
-            const cuadrillasFormateadas = cuadrillas
-              .filter(c => c)
-              .map(c => {
-                if (typeof c === 'string') {
-                  return { value: c, label: c };
-                }
-                const nombre = c.nombre || c.codigo || c._id;
-                const id = c._id || c.id || c.nombre;
-                return { value: id, label: nombre };
-              });
-            console.log('Cuadrillas formateadas:', cuadrillasFormateadas);
-            setCuadrillasDisponibles(cuadrillasFormateadas);
-          } else {
-            console.warn('El contrato no tiene cuadrillas asignadas');
-            setCuadrillasDisponibles([]);
+          if (Array.isArray(contratos) && contratos.length > 0) {
+            contrato = contratos[0];
+            console.log('✅ Contrato encontrado por código:', contrato);
           }
         } catch (err) {
-          console.error('Error al cargar cuadrillas:', err);
+          console.error('❌ Error al buscar por código:', err);
+        }
+      }
+
+      // Extraer cuadrillas del contrato
+      if (contrato) {
+        console.log('🎯 Contrato obtenido:', contrato);
+        console.log('📋 Propiedades del contrato:', Object.keys(contrato || {}));
+
+        let cuadrillas =
+          contrato?.cuadrillas ||
+          contrato?.data?.cuadrillas ||
+          contrato?.cuadrillasAsignadas ||
+          [];
+
+        console.log('📦 Cuadrillas encontradas:', cuadrillas);
+
+        if (Array.isArray(cuadrillas) && cuadrillas.length > 0) {
+          console.log('✅ Procesando cuadrillas:', cuadrillas);
+          const cuadrillasFormateadas = cuadrillas
+            .filter(c => c)
+            .map(c => {
+              if (typeof c === 'string') {
+                return { value: c, label: c };
+              }
+              const nombre = c.nombre || c.codigo || c.name || c._id || 'Sin nombre';
+              const id = c._id || c.id || c.nombre || c.codigo;
+              return { value: id, label: nombre };
+            })
+            .filter(c => c.value);
+
+          console.log('✅ Cuadrillas formateadas:', cuadrillasFormateadas);
+          setCuadrillasDisponibles(cuadrillasFormateadas);
+        } else {
+          console.warn('⚠️ El contrato no tiene cuadrillas');
           setCuadrillasDisponibles([]);
         }
       } else {
-        console.log('No hay contrato válido en programacion:', programacion);
+        console.log('⚠️ No se pudo encontrar el contrato');
         setCuadrillasDisponibles([]);
       }
     } catch (err) {
@@ -891,15 +929,60 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                gap: 14,
-              }}
-            >
-              {dias.map(renderDiaCard)}
-            </div>
+            <>
+              {cuadrillasDisponibles.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{
+                    background: '#ecfdf5',
+                    border: '1.5px solid #bbf7d0',
+                    borderRadius: 12,
+                    padding: '14px 16px',
+                  }}>
+                    <h4 style={{
+                      margin: '0 0 10px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: '#15803d',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.3px',
+                    }}>
+                      👥 Cuadrillas del Contrato
+                    </h4>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}>
+                      {cuadrillasDisponibles.map((cuadrilla) => (
+                        <span
+                          key={cuadrilla.value}
+                          style={{
+                            background: '#fff',
+                            border: '1px solid #1f8f57',
+                            color: '#1f8f57',
+                            padding: '5px 12px',
+                            borderRadius: 20,
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {cuadrilla.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gap: 14,
+                }}
+              >
+                {dias.map(renderDiaCard)}
+              </div>
+            </>
           )}
         </div>
 

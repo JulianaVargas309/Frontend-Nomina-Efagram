@@ -387,11 +387,8 @@ const SubproyectosPage = () => {
                     { label: 'Proyecto', width: null },
                     { label: 'Cliente', width: null },
                     { label: 'Nombre', width: null },
-                    { label: 'Horas Trabajadas', width: null },
-                    { label: 'Horas No Trabajadas', width: null },
-                    { label: 'Cuadrillas', width: null },
-                    { label: 'Núcleos', width: null },
                     { label: 'Supervisor', width: null },
+                    { label: '% Distribuido', width: null },
                     { label: 'Estado', width: null },
                     { label: 'Acciones', width: '130px' },
                   ].map(({ label, width }) => (
@@ -463,49 +460,22 @@ const SubproyectosPage = () => {
                         {s.nombre}
                       </td>
 
-                      <td
-                        style={{
-                          padding: '13px 16px',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: '#1f8f57',
-                        }}
-                      >
-                        {s.horasTrabajadas ?? 0}
-                      </td>
-
-                      <td
-                        style={{
-                          padding: '13px 16px',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: '#dc2626',
-                        }}
-                      >
-                        {s.horasNoTrabajadas ?? 0}
-                      </td>
-
-                      <td style={{ padding: '13px 16px' }}>
-                        <SubproyectoCuadrillas
-                          subproyecto={s}
-                          resumen={resumenHoras[s._id]}
-                        />
-                      </td>
-
-                      <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b' }}>
-                        {s.nucleos?.length > 0 ? (
-                          s.nucleos.map((n) => n.nombre ?? n).join(', ')
-                        ) : (
-                          <span style={{ color: '#cbd5e1' }}>Sin núcleos</span>
-                        )}
-                      </td>
-
                       <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b' }}>
                         {s.supervisor ? (
                           `${s.supervisor.nombres ?? ''} ${s.supervisor.apellidos ?? ''}`.trim()
                         ) : (
                           <span style={{ color: '#cbd5e1' }}>—</span>
                         )}
+                      </td>
+
+                      <td style={{ padding: '13px 16px' }}>
+                        <span style={{
+                          fontWeight: 700,
+                          color: (s.porcentaje_distribuido ?? 0) >= 100 ? '#dc2626' : (s.porcentaje_distribuido ?? 0) >= 75 ? '#e67e22' : '#1f8f57',
+                          fontSize: 14
+                        }}>
+                          {Math.round(s.porcentaje_distribuido ?? 0)}%
+                        </span>
                       </td>
 
                       <td style={{ padding: '13px 16px' }}>

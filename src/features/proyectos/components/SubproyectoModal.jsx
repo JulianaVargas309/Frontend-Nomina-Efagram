@@ -26,6 +26,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
+  TrendingUp,
 } from 'lucide-react';
 
 const ErrorBanner = ({ errors }) => {
@@ -194,6 +195,7 @@ const SubproyectoModal = ({
     fecha_inicio: '',
     fecha_fin_estimada: '',
     observaciones: '',
+    porcentaje_distribuido: 0,
   });
 
   const [displayFechas, setDisplayFechas] = useState({
@@ -277,6 +279,7 @@ const SubproyectoModal = ({
         fecha_inicio: subproyecto.fecha_inicio?.slice(0, 10) ?? '',
         fecha_fin_estimada: subproyecto.fecha_fin_estimada?.slice(0, 10) ?? '',
         observaciones: subproyecto.observaciones ?? '',
+        porcentaje_distribuido: subproyecto.porcentaje_distribuido ?? 0,
       });
 
       setDisplayFechas({
@@ -298,6 +301,7 @@ const SubproyectoModal = ({
         fecha_inicio: '',
         fecha_fin_estimada: '',
         observaciones: '',
+        porcentaje_distribuido: 0,
       });
       setDisplayFechas({ fecha_inicio: '', fecha_fin_estimada: '' });
       setNucleosSel([]);
@@ -605,6 +609,7 @@ const SubproyectoModal = ({
         fecha_inicio: form.fecha_inicio || undefined,
         fecha_fin_estimada: form.fecha_fin_estimada || undefined,
         observaciones: form.observaciones?.trim() || undefined,
+        porcentaje_distribuido: Number(form.porcentaje_distribuido) || 0,
       };
 
       // 🔍 DEBUG: Ver payload que se envía al backend
@@ -1016,6 +1021,31 @@ const SubproyectoModal = ({
                 ></textarea>
               </div>
 
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <TrendingUp size={13} /> % Distribuido
+                </label>
+                <input
+                  type="number"
+                  name="porcentaje_distribuido"
+                  value={form.porcentaje_distribuido}
+                  onChange={(e) => {
+                    setFormErrors([]);
+                    setForm((p) => ({ ...p, porcentaje_distribuido: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) }));
+                  }}
+                  placeholder="0"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  style={{
+                    width: '100%',
+                  }}
+                />
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
+                  Porcentaje del proyecto que se distribuye a este subproyecto (0-100%).
+                </p>
+              </div>
+
 
               <SectionHeader
                 title="Asignación de actividades"
@@ -1133,140 +1163,140 @@ const SubproyectoModal = ({
                   {Object.entries(disponiblesPorIntervencion).map(([tipo, acts]) => {
                     const col = INTERVENCION_COLOR[tipo] ?? {};
 
-                  return (
-                    <div key={tipo}>
-                      <p
-                        style={{
-                          margin: '0 0 10px',
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: col.color,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        {TIPO_EMOJI[tipo]} {String(tipo).replace(/_/g, ' ')}
-                      </p>
+                    return (
+                      <div key={tipo}>
+                        <p
+                          style={{
+                            margin: '0 0 10px',
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: col.color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {TIPO_EMOJI[tipo]} {String(tipo).replace(/_/g, ' ')}
+                        </p>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {acts.map((a) => {
-                          const enBorrador = nuevasAsigs.some(
-                            (n) => n.actividad_proyecto_id === a._id
-                          );
-                          const yaAsignada = asignaciones.some(
-                            (as) =>
-                              (as.actividad_proyecto?._id ?? as.actividad_proyecto) === a._id &&
-                              as.estado !== 'CANCELADA'
-                          );
-                          const cerrada = a.estado === 'CERRADA';
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          {acts.map((a) => {
+                            const enBorrador = nuevasAsigs.some(
+                              (n) => n.actividad_proyecto_id === a._id
+                            );
+                            const yaAsignada = asignaciones.some(
+                              (as) =>
+                                (as.actividad_proyecto?._id ?? as.actividad_proyecto) === a._id &&
+                                as.estado !== 'CANCELADA'
+                            );
+                            const cerrada = a.estado === 'CERRADA';
 
-                          return (
-                            <div
-                              key={a._id}
-                              style={{
-                                background: '#fff',
-                                border: `1.5px solid ${cerrada ? '#e2e8f0' : col.border}`,
-                                borderRadius: 14,
-                                padding: '16px 18px',
-                                opacity: cerrada ? 0.7 : 1,
-                                boxShadow: '0 1px 6px rgba(15,23,42,0.06)',
-                              }}
-                            >
+                            return (
                               <div
+                                key={a._id}
                                 style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  justifyContent: 'space-between',
-                                  gap: 10,
+                                  background: '#fff',
+                                  border: `1.5px solid ${cerrada ? '#e2e8f0' : col.border}`,
+                                  borderRadius: 14,
+                                  padding: '16px 18px',
+                                  opacity: cerrada ? 0.7 : 1,
+                                  boxShadow: '0 1px 6px rgba(15,23,42,0.06)',
                                 }}
                               >
-                                <div>
-                                  <p
-                                    style={{
-                                      margin: 0,
-                                      fontSize: 13,
-                                      fontWeight: 700,
-                                      color: '#0f172a',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 6,
-                                    }}
-                                  >
-                                    {cerrada && <Lock size={13} color="#64748b" />}
-                                    {a.actividad?.nombre}
-                                  </p>
-                                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
-                                    {a.actividad?.codigo} · {a.actividad?.unidad_medida}
-                                  </p>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    justifyContent: 'space-between',
+                                    gap: 10,
+                                  }}
+                                >
+                                  <div>
+                                    <p
+                                      style={{
+                                        margin: 0,
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        color: '#0f172a',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                      }}
+                                    >
+                                      {cerrada && <Lock size={13} color="#64748b" />}
+                                      {a.actividad?.nombre}
+                                    </p>
+                                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
+                                      {a.actividad?.codigo} · {a.actividad?.unidad_medida}
+                                    </p>
+                                  </div>
+
+                                  {!cerrada && !yaAsignada && !enBorrador && (
+                                    <button
+                                      type="button"
+                                      onClick={() => agregarActividad(a)}
+                                      style={{
+                                        background: col.bg,
+                                        border: `1.5px solid ${col.border}`,
+                                        color: col.color,
+                                        borderRadius: 8,
+                                        padding: '5px 12px',
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 5,
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      <Plus size={12} /> Asignar
+                                    </button>
+                                  )}
+
+                                  {(yaAsignada || enBorrador) && (
+                                    <span
+                                      style={{
+                                        fontSize: 11,
+                                        background: '#ecfdf5',
+                                        color: '#166534',
+                                        padding: '4px 10px',
+                                        borderRadius: 999,
+                                        fontWeight: 700,
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      ✅ Agregada
+                                    </span>
+                                  )}
+
+                                  {cerrada && (
+                                    <span
+                                      style={{
+                                        fontSize: 11,
+                                        background: '#fee2e2',
+                                        color: '#dc2626',
+                                        padding: '3px 10px',
+                                        borderRadius: 999,
+                                        fontWeight: 700,
+                                        flexShrink: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                      }}
+                                    >
+                                      <Lock size={10} /> Cerrada
+                                    </span>
+                                  )}
                                 </div>
-
-                                {!cerrada && !yaAsignada && !enBorrador && (
-                                  <button
-                                    type="button"
-                                    onClick={() => agregarActividad(a)}
-                                    style={{
-                                      background: col.bg,
-                                      border: `1.5px solid ${col.border}`,
-                                      color: col.color,
-                                      borderRadius: 8,
-                                      padding: '5px 12px',
-                                      fontSize: 12,
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 5,
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <Plus size={12} /> Asignar
-                                  </button>
-                                )}
-
-                                {(yaAsignada || enBorrador) && (
-                                  <span
-                                    style={{
-                                      fontSize: 11,
-                                      background: '#ecfdf5',
-                                      color: '#166534',
-                                      padding: '4px 10px',
-                                      borderRadius: 999,
-                                      fontWeight: 700,
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    ✅ Agregada
-                                  </span>
-                                )}
-
-                                {cerrada && (
-                                  <span
-                                    style={{
-                                      fontSize: 11,
-                                      background: '#fee2e2',
-                                      color: '#dc2626',
-                                      padding: '3px 10px',
-                                      borderRadius: 999,
-                                      fontWeight: 700,
-                                      flexShrink: 0,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 4,
-                                    }}
-                                  >
-                                    <Lock size={10} /> Cerrada
-                                  </span>
-                                )}
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
                 </div>
 
                 {nuevasAsigs.length > 0 && (
