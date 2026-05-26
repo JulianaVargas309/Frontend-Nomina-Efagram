@@ -159,21 +159,51 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
       });
 
       // Cargar cuadrillas del contrato si existe
-      if (programacion?.contrato?._id) {
+      let contratoId = null;
+      
+      if (programacion?.contrato) {
+        if (typeof programacion.contrato === 'string') {
+          contratoId = programacion.contrato;
+        } else if (programacion.contrato._id) {
+          contratoId = programacion.contrato._id;
+        } else if (programacion.contrato.id) {
+          contratoId = programacion.contrato.id;
+        }
+      }
+
+      if (contratoId) {
         try {
-          console.log('Cargando cuadrillas para contrato:', programacion.contrato._id);
-          const contratoResponse = await getContrato(programacion.contrato._id);
+          console.log('Cargando cuadrillas para contrato ID:', contratoId);
+          const contratoResponse = await getContrato(contratoId);
           const contrato = contratoResponse?.data || contratoResponse;
           console.log('Contrato obtenido:', contrato);
-          const cuadrillas = contrato?.cuadrillas || [];
-          console.log('Cuadrillas encontradas:', cuadrillas);
-          setCuadrillasDisponibles(cuadrillas.map(c => ({ value: c.nombre || c._id, label: c.nombre || `Cuadrilla ${c._id}` })));
+          
+          let cuadrillas = contrato?.cuadrillas || [];
+          
+          if (Array.isArray(cuadrillas) && cuadrillas.length > 0) {
+            console.log('Cuadrillas encontradas:', cuadrillas);
+            const cuadrillasFormateadas = cuadrillas
+              .filter(c => c)
+              .map(c => {
+                if (typeof c === 'string') {
+                  return { value: c, label: c };
+                }
+                const nombre = c.nombre || c.codigo || c._id;
+                const id = c._id || c.id || c.nombre;
+                return { value: id, label: nombre };
+              });
+            console.log('Cuadrillas formateadas:', cuadrillasFormateadas);
+            setCuadrillasDisponibles(cuadrillasFormateadas);
+          } else {
+            console.warn('El contrato no tiene cuadrillas asignadas');
+            setCuadrillasDisponibles([]);
+          }
         } catch (err) {
-          console.warn('Error al cargar cuadrillas:', err);
+          console.error('Error al cargar cuadrillas:', err);
           setCuadrillasDisponibles([]);
         }
       } else {
-        console.log('No hay contrato._id en programacion:', programacion);
+        console.log('No hay contrato válido en programacion:', programacion);
         setCuadrillasDisponibles([]);
       }
     } catch (err) {
@@ -224,6 +254,15 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
   const handleCambiarMotivoPersonalizado = (index, valor) => {
     setDias(prev =>
       prev.map((d, i) => (i === index ? { ...d, motivo_detencion_otro: valor } : d))
+    );
+  };
+
+  const handleCambiarTiempoDetenido = (index, valor) => {
+    const tiempo = parseFloat(valor) || 0;
+    setDias(prev =>
+      prev.map((d, i) =>
+        i === index ? { ...d, tiempo_detenido: tiempo } : d
+      )
     );
   };
 
@@ -597,8 +636,8 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
                 border: '1.5px solid #fcd34d',
                 borderRadius: 8,
                 background: '#fffbeb',
-                padding: '8px 12px',
-                maxHeight: '120px',
+                padding: '10px 12px',
+                maxHeight: '180px',
                 overflowY: 'auto',
               }}
             >
@@ -611,11 +650,12 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 6,
-                      fontSize: 12,
+                      gap: 8,
+                      fontSize: 13,
                       color: '#92400e',
-                      marginBottom: 4,
+                      marginBottom: 6,
                       cursor: 'pointer',
+                      userSelect: 'none',
                     }}
                   >
                     <input
@@ -629,8 +669,11 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
                       }}
                       disabled={guardando}
                       style={{
-                        margin: 0,
+                        width: 16,
+                        height: 16,
+                        cursor: guardando ? 'not-allowed' : 'pointer',
                         accentColor: '#92400e',
+                        flexShrink: 0,
                       }}
                     />
                     {cuadrilla.label}

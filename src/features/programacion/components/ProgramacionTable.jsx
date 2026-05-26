@@ -52,6 +52,7 @@ export default function ProgramacionTable({
             <th>Actividad</th>
             <th>Proyectado</th>
             <th>Ejecutado</th>
+            <th>% Distribuido</th>
             <th>Registro de hoy</th>
             <th>Fechas</th>
             <th>Semana</th>
@@ -83,6 +84,16 @@ export default function ProgramacionTable({
                   cantidad={prog.cantidad_ejecutada_total}
                   cantidadProyectada={prog.cantidad_proyectada}
                 />
+              </td>
+
+              <td>
+                <span style={{
+                  fontWeight: 700,
+                  color: (prog.contrato?.porcentaje_distribuido ?? 0) >= 100 ? '#dc2626' : (prog.contrato?.porcentaje_distribuido ?? 0) >= 75 ? '#e67e22' : '#1f8f57',
+                  fontSize: 14
+                }}>
+                  {Math.round(prog.contrato?.porcentaje_distribuido ?? 0)}%
+                </span>
               </td>
 
               <td>{renderEstadoHoy(prog)}</td>

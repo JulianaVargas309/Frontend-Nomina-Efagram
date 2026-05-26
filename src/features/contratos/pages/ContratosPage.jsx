@@ -183,6 +183,7 @@ export default function ContratosPage() {
                   <th>Actividades</th>
                   <th>Cuadrillas</th>
                   <th>Fecha inicio</th>
+                  <th>% Distribuido</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -238,6 +239,15 @@ export default function ContratosPage() {
                       </td>
 
                       <td>{fmtFecha(c.fecha_inicio)}</td>
+                      <td>
+                        <span style={{
+                          fontWeight: 700,
+                          color: (c.porcentaje_distribuido ?? 0) >= 100 ? '#dc2626' : (c.porcentaje_distribuido ?? 0) >= 75 ? '#e67e22' : '#1f8f57',
+                          fontSize: 14
+                        }}>
+                          {Math.round(c.porcentaje_distribuido ?? 0)}%
+                        </span>
+                      </td>
                       <td>
                         <span className={`badge-estado badge-${c.estado}`}>
                           {ESTADO_LABEL[c.estado] ?? c.estado}
