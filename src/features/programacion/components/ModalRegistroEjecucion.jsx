@@ -160,7 +160,7 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
 
       // Cargar cuadrillas del contrato si existe
       let contratoId = null;
-      
+
       if (programacion?.contrato) {
         if (typeof programacion.contrato === 'string') {
           contratoId = programacion.contrato;
@@ -177,9 +177,9 @@ export default function ModalRegistroEjecucion({ isOpen, onClose, programacion }
           const contratoResponse = await getContrato(contratoId);
           const contrato = contratoResponse?.data || contratoResponse;
           console.log('Contrato obtenido:', contrato);
-          
+
           let cuadrillas = contrato?.cuadrillas || [];
-          
+
           if (Array.isArray(cuadrillas) && cuadrillas.length > 0) {
             console.log('Cuadrillas encontradas:', cuadrillas);
             const cuadrillasFormateadas = cuadrillas
