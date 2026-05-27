@@ -746,13 +746,13 @@ const ProyectoModal = ({
     const zonaPayload = selectedZona
       ? buildZonaPayload(selectedZona)
       : form.zona
-      ? buildZonaPayload({ _id: normalizeId(form.zona) })
-      : undefined;
+        ? buildZonaPayload({ _id: normalizeId(form.zona) })
+        : undefined;
     const responsablePayload = selectedResponsable
       ? buildResponsablePayload(selectedResponsable)
       : form.responsable
-      ? buildResponsablePayload({ _id: normalizeId(form.responsable) })
-      : undefined;
+        ? buildResponsablePayload({ _id: normalizeId(form.responsable) })
+        : undefined;
 
     intervenciones.forEach((bloque) => {
       const key = normalizeIntervencionKey(bloque);
@@ -777,10 +777,21 @@ const ProyectoModal = ({
       });
     });
 
+    // Calcular total_proyecto sumando precio * cantidad de todas las actividades
+    const totalProyectoCalculado = intervenciones.reduce((sum, bloque) => {
+      return sum + bloque.actividades.reduce((s, act) => {
+        const precio = Number(act.precio_unitario) || 0;
+        const cantidad = Number(act.cantidad_total ?? act.cantidad) || 0;
+        return s + precio * cantidad;
+      }, 0);
+    }, 0);
+
     return {
       ...form,
-
       codigo: form.codigo.trim().toUpperCase(),
+      nombre: form.nombre.trim(),
+      total_proyecto: totalProyectoCalculado,
+      valor_total: totalProyectoCalculado,
       nombre: form.nombre.trim(),
 
       zona: zonaPayload || form.zona || undefined,
@@ -859,7 +870,8 @@ const ProyectoModal = ({
         proyectoId = proyecto._id;
       } else {
         const res = await createProyecto(payload);
-        proyectoId = res?.data?.data?._id;
+        const proyectoCreado = res?.data?.data ?? res?.data ?? res;
+        proyectoId = proyectoCreado?._id ?? proyectoCreado?.id;
       }
 
       if (proyectoId) {
@@ -877,7 +889,7 @@ const ProyectoModal = ({
                     cliente: bloque.cliente_id || undefined,
                     supervisor: bloque.supervisor_id || undefined,
                     precio_unitario: Number(act.precio_unitario) || 0,
-                    cantidad_total: Number(act.cantidad) || 1,
+                    cantidad_total: Number(act.cantidad_total ?? act.cantidad) || 0,
                     unidad: act.unidad || "UNIDAD",
                   })
               );

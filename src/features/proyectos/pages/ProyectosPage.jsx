@@ -113,7 +113,7 @@ const getContratoIdFromProgramacion = (programacion) => {
 
 const calcularAvanceNumerico = (programacionesDelProyecto) => {
   if (!Array.isArray(programacionesDelProyecto) || programacionesDelProyecto.length === 0) {
-    return 0;
+    return { totalProyectado: 0, totalEjecutado: 0, avance: 0 };
   }
 
   let totalProyectado = 0;
@@ -122,35 +122,29 @@ const calcularAvanceNumerico = (programacionesDelProyecto) => {
   programacionesDelProyecto.forEach((prog) => {
     totalProyectado += Number(prog.cantidad_proyectada) || 0;
 
-    // Soportar diferentes estructuras de registros diarios
     if (Array.isArray(prog.registros_diarios)) {
       prog.registros_diarios.forEach((reg) => {
         totalEjecutado += Number(reg.cantidad_ejecutada) || 0;
       });
     }
-
     if (Array.isArray(prog.registrosDiarios)) {
       prog.registrosDiarios.forEach((reg) => {
         totalEjecutado += Number(reg.cantidad_ejecutada) || 0;
       });
     }
-
     if (Array.isArray(prog.registros)) {
       prog.registros.forEach((reg) => {
         totalEjecutado += Number(reg.cantidad_ejecutada) || 0;
       });
     }
-
-    // Algunas programaciones pueden tener cantidad_ejecutada directa
     totalEjecutado += Number(prog.cantidad_ejecutada) || 0;
   });
 
-  if (totalProyectado <= 0) return 0;
+  const avance = totalProyectado <= 0
+    ? 0
+    : Math.min(Math.round((totalEjecutado / totalProyectado) * 100), 100);
 
-  return Math.min(
-    Math.round((totalEjecutado / totalProyectado) * 100),
-    100
-  );
+  return { totalProyectado, totalEjecutado, avance };
 };
 
 // ── Componente principal ──────────────────────────────────
@@ -174,7 +168,7 @@ const ProyectosPage = () => {
 
   // ── Helper: Calcular avance de proyecto basado en programaciones ──
   const calcularAvanceProyecto = (programacionesDelProyecto) => {
-    return calcularAvanceNumerico(programacionesDelProyecto);
+    return calcularAvanceNumerico(programacionesDelProyecto).avance;
   };
 
   // ── Cargar proyectos ──
@@ -183,7 +177,7 @@ const ProyectosPage = () => {
       setLoading(true);
       setError(null);
       const response = await getProyectos();
-      const data = response?.data?.success ? response.data.data : [];
+      const data = normalizeList(response);
       setProyectos(data);
 
       // Cargar actividades de todos los proyectos para los badges
@@ -363,9 +357,10 @@ const ProyectosPage = () => {
             const intervByObj = actsProyecto.reduce((acc, a) => {
               const id = a.intervencion?._id ?? a.intervencion ?? "sin_tipo";
               const nombre = getText(a.intervencion, id);
-              if (!acc[id]) acc[id] = { nombre, acts: [], monto: 0 };
+              if (!acc[id]) acc[id] = { nombre, acts: [], monto: 0, cantidad: 0 };
               acc[id].acts.push(a);
-              acc[id].monto += (a.precio_unitario || 0) * (a.cantidad_total || 0);
+              acc[id].monto += (a.precio_unitario || 0) * (Number(a.cantidad_total ?? a.cantidad) || 0);
+              acc[id].cantidad += Number(a.cantidad_total ?? a.cantidad) || 0;
               return acc;
             }, {});
             const intervOld = actsProyecto.length === 0
@@ -377,9 +372,12 @@ const ProyectosPage = () => {
             const totalActividades = proyecto.total_actividades ??
               (actsProyecto.length || intervOld.reduce((acc, [, arr]) => acc + arr.length, 0));
 
-            const totalProyecto = proyecto.total_proyecto ?? proyecto.valor_total ??
-              (intervenciones.reduce((acc, iv) => acc + (iv.monto || 0), 0) +
-                Object.values(presupuesto).reduce((acc, p) => acc + (p?.monto_presupuestado || 0), 0));
+            const totalProyecto =
+              Number(proyecto.total_proyecto) > 0 ? proyecto.total_proyecto :
+                Number(proyecto.valor_total) > 0 ? proyecto.valor_total :
+                  (intervenciones.reduce((acc, iv) => acc + (iv.monto || 0), 0) ||
+                    Object.values(presupuesto).reduce((acc, p) => acc + (p?.monto_presupuestado || 0), 0)) ||
+                  0;
 
             return (
               <div key={proyecto._id} className="proy-card">
@@ -417,11 +415,19 @@ const ProyectosPage = () => {
                   (() => {
                     const proyectoId = getId(proyecto);
                     const programacionesProyecto = programacionesPorProyecto[proyectoId] || [];
-                    const avanceDinamico = calcularAvanceProyecto(programacionesProyecto);
+                    const totales = calcularAvanceNumerico(programacionesProyecto);
 
                     const avanceTotal = programacionesProyecto.length > 0
-                      ? avanceDinamico
+                      ? totales.avance
                       : Number(proyecto.avance) || 0;
+
+                    const totalEjecutado = programacionesProyecto.length > 0
+                      ? totales.totalEjecutado
+                      : Number(proyecto.cantidad_ejecutada_total ?? proyecto.total_ejecutado) || 0;
+
+                    const totalProyectado = programacionesProyecto.length > 0
+                      ? totales.totalProyectado
+                      : Number(proyecto.cantidad_proyectada_total ?? proyecto.total_proyectado) || 0;
 
                     const hasProgramaciones = programacionesProyecto.length > 0;
 
@@ -433,25 +439,24 @@ const ProyectosPage = () => {
                           alignItems: 'center',
                           marginBottom: 6,
                         }}>
-                          <span style={{
-                            fontSize: 12,
-                            fontWeight: 500,
-                            color: '#64748b',
-                          }}>
+                          <span style={{ fontSize: 12, fontWeight: 500, color: '#64748b' }}>
                             Avance {hasProgramaciones ? `(${programacionesProyecto.length} programaciones)` : '(manual)'}
                           </span>
                           <span style={{
-                            fontSize: 13,
-                            fontWeight: 700,
+                            fontSize: 13, fontWeight: 700,
                             color: avanceTotal >= 75 ? '#10b981' : avanceTotal >= 50 ? '#3b82f6' : '#ef4444',
                           }}>
                             {avanceTotal}%
                           </span>
                         </div>
+                        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b', marginBottom: 6 }}>
+                          <span>Proyectado: <strong>{Number(totalProyectado).toLocaleString('es-CO')}</strong></span>
+                          <span>Ejecutado: <strong>{Number(totalEjecutado).toLocaleString('es-CO')}</strong></span>
+                        </div>
                         <BarraProgreso
                           porcentaje={avanceTotal}
-                          cantidad={0}
-                          cantidadProyectada={0}
+                          cantidad={totalEjecutado}
+                          cantidadProyectada={totalProyectado}
                           showLabel={false}
                           className="proyecto-barra-progreso"
                         />
@@ -466,8 +471,7 @@ const ProyectosPage = () => {
                     {intervenciones.map((iv) => (
                       <span key={iv.nombre} className="proy-interv-chip">
                         🌿 {iv.nombre}&nbsp;
-                        <strong>{iv.acts.length}</strong>
-                        {iv.monto > 0 && <>&nbsp;{fmtMonto(iv.monto)}</>}
+                        <strong>{iv.cantidad || 0}</strong>
                       </span>
                     ))}
                     {intervOld.map(([tipo, acts]) => {
